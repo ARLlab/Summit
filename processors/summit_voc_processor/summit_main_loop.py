@@ -2,14 +2,14 @@ import os, asyncio
 
 homedir = r'C:\Users\arl\Desktop\Summit Processors\Summit VOC Processor'
 locallogdir = r'C:\Users\arl\Desktop\Summit Processors\Summit VOC Processor\logs'
-plotdir = r'C:\Users\arl\Desktop\Summit Processors\Summit VOC Processor\plots'
+plotdir = r'C:\Users\arl\Desktop\summit_master\processors\summit_master\summit_master\static\img\coding'
 
 async def check_load_logs(logpath, homedir, sleeptime):
     '''
     Checks the directory against the database for new log files. Loads and commits
     to db if there are any new files.
 
-    Basic format: Connect to the db, check for new log files. If new files
+    Basic format: Connect to the db, check for new log files. If new file
     exist, load and commit them to the db. In all cases, sleep for (n) seconds before
     looping back.
     '''
@@ -380,11 +380,11 @@ os.chdir(homedir)
 
 loop = asyncio.get_event_loop()
 
-loop.create_task(check_load_logs(locallogdir, homedir, 5))
-loop.create_task(check_load_pas('VOC.LOG', homedir, 5))
-loop.create_task(create_gc_runs(homedir, 5))
-loop.create_task(load_crfs(homedir, 5))
-loop.create_task(integrate_runs(homedir, 5))
-loop.create_task(plot_new_data(homedir, plotdir, 5))
+loop.create_task(check_load_logs(locallogdir, homedir, 1200))
+loop.create_task(check_load_pas('VOC.LOG', homedir, 1200))
+loop.create_task(create_gc_runs(homedir, 1200))
+loop.create_task(load_crfs(homedir, 1200))
+loop.create_task(integrate_runs(homedir, 1200))
+loop.create_task(plot_new_data(homedir, plotdir, 1200))
 
 loop.run_forever()

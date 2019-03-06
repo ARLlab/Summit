@@ -46,7 +46,6 @@ class JList(TypeDecorator):
 
 MutableList.associate_with(JList)
 
-# TODO : Update param lists, compound lists, etc
 log_params_list = (['filename', 'date', 'sampletime', 'sampleflow1', 'sampleflow2',
 					'sampletype', 'backflushtime', 'desorbtemp', 'flashheattime',
 					'injecttime', 'bakeouttemp', 'bakeouttime', 'carrierflow',

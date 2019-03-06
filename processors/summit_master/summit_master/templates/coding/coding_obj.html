@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+
+<section class="page-section">
+  <div class="container">
+    <div class="product-item">
+      <div class="product-item-title d-flex">
+        <div class="bg-faded p-5 d-flex m{% block orient_head %}{% endblock %}-auto rounded">
+          <h2 class="section-heading mb-0">
+            <span class="section-heading-upper">{% block subhead %}{% endblock %}</span>
+            <span class="section-heading-lower">{% block head %}{% endblock %}</span>
+          </h2>
+        </div>
+      </div>
+      <img class="product-item-img mx-auto d-flex rounded img-fluid mb-3 mb-lg-0" src="{{ url_for('static', filename = item_image) }}" alt="">
+      <div class="product-item-description d-flex m{% block orient_text %}{% endblock %}-auto">
+        <div class="bg-faded p-5 rounded">
+          <p class="mb-0">{% block body %}{% endblock %}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
