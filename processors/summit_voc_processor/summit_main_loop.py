@@ -35,7 +35,7 @@ async def check_load_logs(logpath, homedir, sleeptime):
         logs_to_load = []
         for log in logfns:
             if log not in logs_in_db:
-                logs_to_load.append(log) # add files if not in the database filenames
+                logs_to_load.append(log)  # add files if not in the database filenames
 
         if len(logs_to_load) is 0:
             print('No new logs were found.')
