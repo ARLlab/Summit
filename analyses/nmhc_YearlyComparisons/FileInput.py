@@ -12,6 +12,7 @@ Overall Project Goals:
 3) Remove outliers from the data sets
 4) [Maybe?] Put each compound graph in one larger subplot for trend comparison
 5) Modularize code to have an input / sort matrices file, and then a plotting file
+
 """
 
 ## Import Libraries
