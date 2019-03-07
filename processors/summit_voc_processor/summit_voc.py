@@ -880,7 +880,7 @@ def get_dates_peak_info(res_session, compound, info, date_start=None, date_end=N
 
 	if date_start is None and date_end is None:
 		try:
-			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound)
+			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
 						 .join(NmhcLine).join(GcRun).join(LogFile).order_by(LogFile.date)) # get everything
 			info, dates = zip(*peak_info.all())
 		except ValueError:
@@ -891,7 +891,7 @@ def get_dates_peak_info(res_session, compound, info, date_start=None, date_end=N
 
 	elif date_start is None:
 		try:
-			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound)
+			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
 						 .join(NmhcLine).join(GcRun).join(LogFile)
 						 .filter(LogFile.date < date_end).order_by(LogFile.date)) # get only before the end date given
 
@@ -905,7 +905,7 @@ def get_dates_peak_info(res_session, compound, info, date_start=None, date_end=N
 
 	elif date_end is None:
 		try:
-			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound)
+			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
 						 .join(NmhcLine).join(GcRun).join(LogFile)
 						 .filter(LogFile.date > date_start).order_by(LogFile.date))
 			info, dates = zip(*peak_info.all()) # get only after the start date given
@@ -917,7 +917,7 @@ def get_dates_peak_info(res_session, compound, info, date_start=None, date_end=N
 
 	else:
 		try:
-			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound)
+			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
 						 .join(NmhcLine).join(GcRun).join(LogFile)
 						 .filter(LogFile.date.between(date_start, date_end)).order_by(LogFile.date)) # get between date bookends (inclusive beginning!)
 			info, dates = zip(*peak_info.all())
