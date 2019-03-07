@@ -4,6 +4,7 @@ homedir = r'C:\Users\arl\Desktop\Summit Processors\Summit VOC Processor'
 locallogdir = r'C:\Users\arl\Desktop\Summit Processors\Summit VOC Processor\logs'
 plotdir = r'C:\Users\arl\Desktop\summit_master\processors\summit_master\summit_master\static\img\coding'
 
+
 async def check_load_logs(logpath, homedir, sleeptime):
     '''
     Checks the directory against the database for new log files. Loads and commits
