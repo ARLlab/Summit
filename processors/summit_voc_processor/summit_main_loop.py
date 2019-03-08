@@ -1,8 +1,9 @@
 import os, asyncio
+from pathlib import Path
 
-homedir = r'C:\Users\arl\Desktop\Summit Processors\Summit VOC Processor'
-locallogdir = r'C:\Users\arl\Desktop\Summit Processors\Summit VOC Processor\logs'
-plotdir = r'C:\Users\arl\Desktop\summit_master\processors\summit_master\summit_master\static\img\coding'
+homedir = Path(os.getcwd())
+locallogdir = homedir / 'logs'  # folder containing log files
+plotdir = homedir / '../summit_master/summit_master/static/img/coding'  # local flask static folder
 
 
 async def check_load_logs(logpath, homedir, sleeptime):
@@ -11,7 +12,7 @@ async def check_load_logs(logpath, homedir, sleeptime):
     to db if there are any new files.
 
     Basic format: Connect to the db, check for new log files. If new file
-    exist, load and commit them to the db. In all cases, sleep for (n) seconds before
+    exists, load and commit them to the db. In all cases, sleep for (n) seconds before
     looping back.
     '''
 

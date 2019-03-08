@@ -1,7 +1,9 @@
 import os
 import json
+import logging
 import datetime as dt
 from datetime import datetime
+from pathlib import Path
 
 from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import MutableDict, MutableList
@@ -11,6 +13,28 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
+
+"""
+Logging Thoughts, Justifications, Musings:
+
+Print: 
+When a process runs (with datetime)
+
+Log INFO:
+Logs/lines/runs/data are added
+
+Log WARNING:
+Files failed to parse, no new data warnings, etc.
+
+Log ERROR:
+TBD...
+
+
+"""
+
+logdir = Path(os.getcwd()) / 'processor_logs'
+logging.basicConfig(filename='example.log',level=logging.DEBUG)
+
 
 class JDict(TypeDecorator):
 	"""
