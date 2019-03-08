@@ -24,27 +24,35 @@ Log INFO:
 Logs/lines/runs/data are added
 
 Log WARNING:
-Files failed to parse, no new data warnings, etc.
+Files failed to parse, 
 
 Log ERROR:
-TBD...
+No new data warnings, etc.
 
-
+Log CRITICAL:
+Key files missing, such as VOC.LOG. It'll continue running, but for no reason, really.
 """
 
-logfile = Path(os.getcwd()) / 'processor_logs/summit_voc.log'
-logger = logging.getLogger('summit_voc')
-logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler(logfile)
-fh.setLevel(logging.DEBUG)
 
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+def configure_logger():
+	logfile = Path(os.getcwd()) / 'processor_logs/summit_voc.log'
+	logger = logging.getLogger('summit_voc')
+	logger.setLevel(logging.DEBUG)
+	fh = logging.FileHandler(logfile)
+	fh.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter('%(asctime)s -%(levelname)s- %(message)s')
+	ch = logging.StreamHandler()
+	ch.setLevel(logging.INFO)
 
-[H.setFormatter(formatter) for H in [ch, fh]]
-[logger.addHandler(H) for H in [ch, fh]]
+	formatter = logging.Formatter('%(asctime)s -%(levelname)s- %(message)s')
+
+	[H.setFormatter(formatter) for H in [ch, fh]]
+	[logger.addHandler(H) for H in [ch, fh]]
+
+	return logger
+
+
+logger = configure_logger()
 
 class JDict(TypeDecorator):
 	"""
