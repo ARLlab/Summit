@@ -18,15 +18,17 @@ Overall Project Goals:
 ## Code from previous singular script
 # Need to figure out how to import variables from FileInput.py function into this
 
-plt.figure(1) # NMHC Plots
+## Plotting [Ethane]
+plt.figure(1)
+# Compound indicies coorespond with dates, would prefer not to hardcode them in though
+plt.plot(dates2008,ethane[0:476:1],'.',dates2009,ethane[477:2182:1],'.',dates2010,ethane[2183:3067:1],'.'\
+         ,dates2012,ethane[3068:3709:1],'.',dates2013,ethane[3710:4616:1],'.',dates2014,ethane[4617:5315:1],'.'\
+         ,dates2015,ethane[5316:6215:1],'.',dates2016,ethane[6216:7248:1],'.',dates2017,ethane[7249:8111:1],'.'\
+         ,dates2018,ethane[8112:8794:1],'.')
 
-plt.plot(nmhcDates,ethane,'.',nmhcDates,ethene,'.',nmhcDates,propane,'.',nmhcDates,propene, \
-         '.',nmhcDates,iButane,'.',nmhcDates,acetylene,'.',nmhcDates,nButane,'.',nmhcDates,iPentane,'.' \
-         ,nmhcDates,nPentane,'.',nmhcDates,hexane,'.',nmhcDates,benzene,'.',nmhcDates,toluene,'.')
-plt.title('Summit NMHC from 2008-2018',fontdict=None,loc='center',pad=None) # Plot Title
-plt.xlabel('Date [Fractional Year]',fontdict=None,labelpad=None) # Plot Xlabel
+plt.title('Summit Ethane from 2008-2018',fontdict=None,loc='center',pad=None) # Plot Title
+plt.xlabel('Day of Year',fontdict=None,labelpad=None) # Plot Xlabel
 plt.ylabel('Mixing Ratio [Parts per Billion]',fontdict=None,labelpad=None) # Plot Ylabel
-plt.legend(loc='upper right')
+# FIX THE Y AXIS, SHOULD START AT 0 AND CLEARLY END AT 360, I like the gap though ?
+# plt.legend(loc='upper right') # brainstorm ways to make this look better
 plt.show()
-
-# Need legend
