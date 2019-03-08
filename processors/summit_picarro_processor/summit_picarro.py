@@ -4,7 +4,7 @@ from pathlib import Path
 import sqlalchemy
 
 def configure_logger():
-	logfile = Path(os.getcwd()) / 'processor_logs/summit_voc.log'
+	logfile = Path(os.getcwd()) / 'processor_logs/summit_picarro.log'
 	logger = logging.getLogger('summit_voc')
 	logger.setLevel(logging.DEBUG)
 	fh = logging.FileHandler(logfile)
@@ -22,3 +22,18 @@ def configure_logger():
 
 
 logger = configure_logger()
+
+def list_files_recur(path):
+	from pathlib import Path
+	files = []
+	for file in path.rglob('*'):
+		files.append(file.name)
+
+	return files
+
+path = Path(os.getcwd())
+
+lst = list_files_recur(path)
+
+lst[:] = [file for file in lst if '.dat' in file]
+
