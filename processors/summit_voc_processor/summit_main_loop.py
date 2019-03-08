@@ -1,9 +1,12 @@
-import os, asyncio
+from summit_voc import logger
 from pathlib import Path
+import os, asyncio
 
 homedir = Path(os.getcwd())
 locallogdir = homedir / 'logs'  # folder containing log files
 plotdir = homedir / '../summit_master/summit_master/static/img/coding'  # local flask static folder
+
+os.chdir(homedir)
 
 
 async def check_load_logs(logpath, homedir, sleeptime):
@@ -29,7 +32,7 @@ async def check_load_logs(logpath, homedir, sleeptime):
 
         if len(logfns) is 0:
             await asyncio.sleep(sleeptime)
-            print('There we no log files in the directory!')
+            logger.warning('There were no log files in the directory.')
             continue # no logs in directory? Sleep and look again
 
         logs_in_db = [log.filename for log in LogFiles] #log names
@@ -40,8 +43,7 @@ async def check_load_logs(logpath, homedir, sleeptime):
                 logs_to_load.append(log)  # add files if not in the database filenames
 
         if len(logs_to_load) is 0:
-            print('No new logs were found.')
-            await asyncio.sleep(sleeptime)
+            logger.info('No new logs were found.')
             session.commit()
             session.close()
             engine.dispose()
@@ -54,9 +56,9 @@ async def check_load_logs(logpath, homedir, sleeptime):
 
             if len(new_logs) != 0:
                 for item in new_logs:
-                    print(item)
                     session.merge(item)
-                print('New logs were added!')
+                    logger.info(f'Log File {item} added.')
+
 
             session.commit()
             session.close()
@@ -74,6 +76,7 @@ async def check_load_pas(filename, directory, sleeptime):
     start_line = 0
 
     while True:
+        logger.info('Running check_load_pas()')
         from summit_voc import connect_to_summit_db, TempDir, NmhcLine, read_pa_line
         from summit_voc import name_summit_peaks
 
@@ -101,12 +104,11 @@ async def check_load_pas(filename, directory, sleeptime):
                         with TempDir(directory):
                             new_lines.append(read_pa_line(line))
                     except:
-                        print('A line in NMHC_PA.LOG was not processed by read_pa_line() due to an exception.')
-                        print(f'The line was: {line}')
-
+                        logger.warning('A line in NMHC_PA.LOG was not processed by read_pa_line() due to an exception.')
+                        logger.warning(f'That line was: {line}')
 
                 if len(new_lines) is 0:
-                    print('No new pa lines added.')
+                    logger.info('No new pa lines were added.')
                     await asyncio.sleep(sleeptime)
                     continue
 
@@ -114,25 +116,24 @@ async def check_load_pas(filename, directory, sleeptime):
                     # If list isn't empty, attempt to name all peaks
                     new_lines[:] = [name_summit_peaks(line) for line in new_lines]
 
-
                 for item in new_lines:
                     if item.date not in line_dates: #prevents duplicates in db
                         line_dates.append(item.date) #prevents duplicates in one load
                         session.merge(item)
+                        logger.info(f'PA Line {item} added.')
 
                 session.commit()
 
                 start_line = len(contents)
                 pa_file_size = new_file_size # set filesize to current file size
-                print('Some PA lines found and added.')
                 await asyncio.sleep(sleeptime)
 
             else:
-                print('PA file was not larger, so it was not touched.')
+                logger.info('PA file was not larger, so  it was not touched.')
                 await asyncio.sleep(sleeptime)
 
         else:
-            print('PA file did not exist!')
+            print(logger.critical('VOC.LOG does not exist.'))
             await asyncio.sleep(sleeptime)
 
         await asyncio.sleep(sleeptime)
@@ -143,7 +144,7 @@ async def check_load_pas(filename, directory, sleeptime):
 async def load_crfs(directory, sleeptime):
 
     while True:
-        print('Running load_crfs()')
+        logger.info('Running load_crfs()')
         from summit_voc import read_crf_data
         from summit_voc import Peak, LogFile, NmhcLine, GcRun, Crf
         from summit_voc import connect_to_summit_db, TempDir
@@ -161,6 +162,7 @@ async def load_crfs(directory, sleeptime):
             if rf.date_start not in crf_dates: # prevent duplicates in db
                 crf_dates.append(rf.date_start) # prevent duplicates in this load
                 session.merge(rf)
+                logger.info(f'CRF {rf} added.')
 
         session.commit()
 
@@ -172,8 +174,8 @@ async def load_crfs(directory, sleeptime):
 async def create_gc_runs(directory, sleeptime):
 
     while True:
-        print('Running create_gc_runs()')
-        from summit_voc import Peak, LogFile, NmhcLine, GcRun, TempDir
+        logger.info('Running create_gc_runs()')
+        from summit_voc import LogFile, NmhcLine, GcRun
         from summit_voc import connect_to_summit_db, match_log_to_pa
 
         engine, session, Base = connect_to_summit_db('sqlite:///summit_vocs.sqlite', directory)
@@ -188,6 +190,7 @@ async def create_gc_runs(directory, sleeptime):
                     .order_by(LogFile.id).all())
 
         if len(LogFiles) == 0 or len(NmhcLines) == 0: # wait then continue if no un-matched logs or lines found
+            logger.info('No new logs or pa lines matched.')
             session.close()
             engine.dispose()
             await asyncio.sleep(sleeptime)
@@ -202,6 +205,7 @@ async def create_gc_runs(directory, sleeptime):
             if run.date_end not in run_dates:
                 run_dates.append(run.date_end)
                 session.merge(run)
+                logger.info(f'GC Run {run} added.')
 
         session.commit()
 
@@ -211,14 +215,13 @@ async def create_gc_runs(directory, sleeptime):
 
 
 async def integrate_runs(directory, sleeptime):
-    from datetime import datetime
 
     while True:
-        print('Running integrate_runs()')
+        logger.info('Running integrate_runs()')
         from summit_voc import find_crf
-        from summit_voc import Peak, LogFile, NmhcLine, GcRun, Base, TempDir, Datum, Crf
+        from summit_voc import GcRun, Datum, Crf
 
-        from summit_voc import connect_to_summit_db, TempDir
+        from summit_voc import connect_to_summit_db
 
         engine, session, Base = connect_to_summit_db('sqlite:///summit_vocs.sqlite', directory)
         Base.metadata.create_all(engine)
@@ -239,7 +242,7 @@ async def integrate_runs(directory, sleeptime):
         data_dates = [d.date_end for d in data_in_db]
 
         if len(data) is 0:
-            print(f'No data to integrate found at {datetime.now()}')
+            logger.info('No new runs were integrated.')
             session.commit()
             session.close()
             engine.dispose()
@@ -250,23 +253,22 @@ async def integrate_runs(directory, sleeptime):
                 if datum is not None and datum.date_end not in data_dates: # prevent duplicates in db
                     data_dates.append(datum.date_end) # prevent duplicates on this load
                     session.merge(datum)
-                    print(f'Data {datum} was added!')
+                    logger.info(f'Data {datum} was added.')
 
             session.commit()
-
             session.close()
             engine.dispose()
             await asyncio.sleep(sleeptime)
 
 
 async def plot_new_data(directory, plotdir, sleeptime):
-    data_len = 0
+    data_len = 0  # always start with plotting when initialized
 
     days_to_plot = 7
 
     while True:
-        print('Running plot_new_data()')
-        data_len = 0
+        logger.info('Running plot_new_data()')
+
         from summit_voc import connect_to_summit_db, TempDir
         from summit_voc import get_dates_peak_info, summit_voc_plot
         from datetime import datetime
@@ -288,13 +290,16 @@ async def plot_new_data(directory, plotdir, sleeptime):
             _ , dates = get_dates_peak_info(session, 'ethane', 'mr', date_start=date_ago)  # get dates for data length
 
         except ValueError:
-            print('No new data was found. Plots were not created.')
+            logger.error('No new data was found within time window. Plots were not created.')
             session.close()
             engine.dispose()
             await asyncio.sleep(sleeptime)
             continue
 
         if len(dates) != data_len:
+
+            logger.info('New data found to be plotted.')
+
             with TempDir(plotdir): ## PLOT ethane and propane
                 ethane_mrs, ethane_dates = get_dates_peak_info(session, 'ethane', 'mr', date_start=date_ago)
                 propane_mrs, propane_dates = get_dates_peak_info(session, 'propane', 'mr', date_start=date_ago)
@@ -365,28 +370,34 @@ async def plot_new_data(directory, plotdir, sleeptime):
 
             data_len = len(dates)
 
-            print('New data plots created!')
+            logger.info('New data plots created.')
 
             session.close()
             engine.dispose()
             await asyncio.sleep(sleeptime)
+
         else:
-            print('New data plots were not created, there was no new data.')
+            logger.info('No new data, plots were not created.')
 
             session.close()
             engine.dispose()
             await asyncio.sleep(sleeptime)
 
 
-os.chdir(homedir)
+def main():
+	loop = asyncio.get_event_loop()
 
-loop = asyncio.get_event_loop()
+	loop.create_task(check_load_logs(locallogdir, homedir, 1200))
+	loop.create_task(check_load_pas('VOC.LOG', homedir, 1200))
+	loop.create_task(create_gc_runs(homedir, 1200))
+	loop.create_task(load_crfs(homedir, 1200))
+	loop.create_task(integrate_runs(homedir, 1200))
+	loop.create_task(plot_new_data(homedir, plotdir, 1200))
 
-loop.create_task(check_load_logs(locallogdir, homedir, 1200))
-loop.create_task(check_load_pas('VOC.LOG', homedir, 1200))
-loop.create_task(create_gc_runs(homedir, 1200))
-loop.create_task(load_crfs(homedir, 1200))
-loop.create_task(integrate_runs(homedir, 1200))
-loop.create_task(plot_new_data(homedir, plotdir, 1200))
+	loop.run_forever()
 
-loop.run_forever()
+if __name__ == '__main__':
+	main()
+
+
+

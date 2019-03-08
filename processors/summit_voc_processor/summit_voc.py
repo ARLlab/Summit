@@ -32,9 +32,19 @@ TBD...
 
 """
 
-logdir = Path(os.getcwd()) / 'processor_logs'
-logging.basicConfig(filename='example.log',level=logging.DEBUG)
+logfile = Path(os.getcwd()) / 'processor_logs/summit_voc.log'
+logger = logging.getLogger('summit_voc')
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler(logfile)
+fh.setLevel(logging.DEBUG)
 
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s -%(levelname)s- %(message)s')
+
+[H.setFormatter(formatter) for H in [ch, fh]]
+[logger.addHandler(H) for H in [ch, fh]]
 
 class JDict(TypeDecorator):
 	"""
@@ -52,7 +62,6 @@ class JDict(TypeDecorator):
 			value = json.loads(value)
 		return value
 
-MutableDict.associate_with(JDict)
 
 class JList(TypeDecorator):
 	"""
@@ -68,7 +77,9 @@ class JList(TypeDecorator):
 		value = json.loads(value)
 		return value
 
+
 MutableList.associate_with(JList)
+MutableDict.associate_with(JDict)
 
 log_params_list = (['filename', 'date', 'sampletime', 'sampleflow1', 'sampleflow2',
 					'sampletype', 'backflushtime', 'desorbtemp', 'flashheattime',
@@ -345,6 +356,7 @@ class NmhcCorrection(NmhcLine):
 
 	def __repr__(self):
 		return f'<NmhcCorrection for {self.correction_date} with {len(self.peaklist)} peaks>'
+
 
 class LogFile(Base):
 	"""
@@ -658,6 +670,7 @@ def find_crf(crfs, sample_date):
 
 	return next((crf for crf in crfs if crf.date_start <= sample_date < crf.date_end), None)
 
+
 def read_crf_data(filename):
 
 	lines = open(filename).readlines()
@@ -735,10 +748,12 @@ def read_log_file(filename):
 				return LogFile(log_dict)
 
 			else:
-				print(f'File {file.name} had an improper number of lines and was ignored.')
+				logger.warning(f'File {file.name} had an improper number of lines and was ignored.')
+				# print(f'File {file.name} had an improper number of lines and was ignored.')
 				return None
 		except:
-			print(f'File {file.name} failed to be processed and was ignored.')
+			logger.warning(f'File {file.name} failed to be processed and was ignored.')
+			# print(f'File {file.name} failed to be processed and was ignored.')
 			return None
 
 
@@ -796,6 +811,7 @@ def find_closest_date(date, list_of_dates):
 
 	return match, delta
 
+
 def search_for_attr_value(obj_list, attr, value):
 	"""
 	Finds the first (not necesarilly the only) object in a list, where its
@@ -804,6 +820,7 @@ def search_for_attr_value(obj_list, attr, value):
 	return next((obj for obj in obj_list if getattr(obj,attr, None) == value), None)
 
 	## TODO : Fix so it'll warn that none found or returned
+
 
 def match_log_to_pa(LogFiles, NmhcLines):
 	"""
@@ -849,8 +866,7 @@ def connect_to_summit_db(engine_str, directory):
 	directory: str/path, directory that the database should be made/connected to in.
 		Requires context manager TempDir in order to work with async
 	"""
-	from summit_voc import Crf, Peak, LogFile, NmhcLine
-	from summit_voc import Base, TempDir  # GcRun, Datum,
+	from summit_voc import Base, TempDir
 
 	from sqlalchemy import create_engine
 	from sqlalchemy.orm import sessionmaker
@@ -896,7 +912,6 @@ def get_dates_peak_info(res_session, compound, info, date_start=None, date_end=N
 	info: str, a valid peak attribute ['pa', 'mr', 'rt']
 	"""
 
-
 	peak_info = getattr(Peak, info, None)
 
 	if peak_info is None:
@@ -918,7 +933,6 @@ def get_dates_peak_info(res_session, compound, info, date_start=None, date_end=N
 			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
 						 .join(NmhcLine).join(GcRun).join(LogFile)
 						 .filter(LogFile.date < date_end).order_by(LogFile.date)) # get only before the end date given
-
 
 			info, dates = zip(*peak_info.all())
 		except ValueError:
