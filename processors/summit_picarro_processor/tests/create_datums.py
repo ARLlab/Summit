@@ -1,0 +1,47 @@
+import os, random
+from pathlib import Path
+import pandas as pd
+from summit_picarro import get_all_data_files, connect_to_db, Datum
+
+rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_picarro_processor\tests')
+
+data_basedir = rundir / '..'
+
+engine, session, Base = connect_to_db('sqlite:///summit_picarro.sqlite', data_basedir)
+
+Base.metadata.create_all(engine)
+
+files = get_all_data_files(data_basedir)
+
+flist = []
+while len(flist) < int(len(files)/10):
+	flist.append(random.randint(0, len(files)-1))
+
+print(f'{len(flist)} data files chosen at random.')
+
+data_list = []
+for ind in flist:
+	df = pd.read_csv(files[ind], delim_whitespace=True)
+	df_list = df.to_dict('records')
+
+	for line in df_list:
+		data_list.append(Datum(line))
+
+print(f'{len(data_list)} Datum objects created.')
+
+for d in data_list:
+	session.add(d)
+session.commit()
+
+print(f'{len(data_list)} Datum objects committed.')
+
+
+
+
+
+
+
+
+
+
+
