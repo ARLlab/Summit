@@ -15,14 +15,15 @@ Base = declarative_base()
 rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_picarro_processor')
 # rundir = Path(os.getcwd())
 
-column_names = ['alarm_status', 'instrument_status', 'cavity_pressure', 'cavity_temp', 'das_temp', 'etalon_temp', 'warmbox_temp', 'mpv_position', 'outlet_valve', 'CO', 'CO2', 'CO2_dry', 'CH4', 'CH4_dry', 'H2O']
+column_names = ['alarm_status', 'instrument_status', 'cavity_pressure', 'cavity_temp', 'das_temp', 'etalon_temp',
+				'warmbox_temp', 'mpv_position', 'outlet_valve', 'co', 'co2', 'co2_dry', 'ch4', 'ch4_dry', 'h2o']
 
 column_to_instance_names = {'alarm_status': 'ALARM_STATUS', 'instrument_status': 'INST_STATUS',
-								'cavity_pressure': 'CavityPressure', 'cavity_temp': 'CavityTemp', 'das_temp': 'DasTemp',
-								'etalon_temp': 'EtalonTemp', 'warmbox_temp': 'WarmBoxTemp',
-								'mpv_position': 'MPVPosition', 'outlet_valve': 'OutletValve', 'CO': 'CO_sync',
-								'CO2': 'CO2_sync', 'CO2_dry': 'CO2_dry_sync', 'CH4': 'CH4_sync',
-								'CH4_dry': 'CH4_dry_sync', 'H2O': 'H2O_sync'}
+							'cavity_pressure': 'CavityPressure', 'cavity_temp': 'CavityTemp', 'das_temp': 'DasTemp',
+							'etalon_temp': 'EtalonTemp', 'warmbox_temp': 'WarmBoxTemp',
+							'mpv_position': 'MPVPosition', 'outlet_valve': 'OutletValve', 'co': 'CO_sync',
+							'co2': 'CO2_sync', 'co2_dry': 'CO2_dry_sync', 'ch4': 'CH4_sync',
+							'ch4_dry': 'CH4_dry_sync', 'h2o': 'H2O_sync'}
 
 
 class TempDir():
@@ -88,12 +89,12 @@ class Datum(Base):
 	warmbox_temp = Column(Float)
 	mpv_position = Column(Float)
 	outlet_valve = Column(Float)
-	CO = Column(Float)
-	CO2 = Column(Float)
-	CO2_dry = Column(Float)
-	CH4 = Column(Float)
-	CH4_dry = Column(Float)
-	H2O = Column(Float)
+	co = Column(Float)
+	co2 = Column(Float)
+	co2_dry = Column(Float)
+	ch4 = Column(Float)
+	ch4_dry = Column(Float)
+	h2o = Column(Float)
 
 	# file_id = Column(Integer, ForeignKey('files.id'))
 
