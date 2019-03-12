@@ -7,7 +7,7 @@ from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
@@ -48,12 +48,16 @@ class DataFile(Base):
 
 	id = Column(Integer, primary_key=True)
 	_name = Column(String)
-	_path = Column(String)
+	_path = Column(String, unique=True)
 	size = Column(Integer)
+	processed = Column(Boolean)
+
+	# datum = relationship('Datum')
 
 	def __init__(self, path):
 		self.path = path
 		self.size = Path.stat(path).st_size
+		self.processed = False
 
 	@property
 	def path(self):
@@ -67,7 +71,6 @@ class DataFile(Base):
 	@property
 	def name(self):
 		return self._name
-
 
 
 class Datum(Base):
@@ -91,6 +94,8 @@ class Datum(Base):
 	CH4 = Column(Float)
 	CH4_dry = Column(Float)
 	H2O = Column(Float)
+
+	# file_id = Column(Integer, ForeignKey('files.id'))
 
 	def __init__(self, line_dict):
 
@@ -146,6 +151,15 @@ def configure_logger(rundir):
 logger = configure_logger(rundir)
 
 
+def check_filesize(filepath):
+	'''Returns filesize in bytes'''
+	if Path.is_file(filepath):
+		return Path.stat(filepath).st_size
+	else:
+		logger.warning(f'File {filepath.name} not found.')
+		return
+
+
 def list_files_recur(path):
 	files = []
 	for file in path.rglob('*'):
@@ -154,14 +168,13 @@ def list_files_recur(path):
 	return files
 
 
-def get_all_data_files(rundir_path):
+def get_all_data_files(path):
 	"""
 	Recursively search the
 	:param rundir_path:
 	:return:
 	"""
-	data_path = rundir_path / 'data'
-	files = list_files_recur(data_path)
+	files = list_files_recur(path)
 	files[:] = [file for file in files if '.dat' in file.name]
 
 	return files
