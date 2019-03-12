@@ -1,7 +1,18 @@
-import os, logging
+import os, logging, json
 from pathlib import Path
 import datetime as dt
 from datetime import datetime
+
+"""
+Project-Wide TODO List:
+
+1) Figure out time difference in epoch, make all dates tz-aware
+2) Configure relationship between Datums and DataFiles
+3) Configure relationship between CalEvents and Datums (and Datafiles?)
+4) Update VOC plots per recommendations
+5) Calibration event developmment and testing
+
+"""
 
 from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import MutableDict, MutableList
@@ -24,6 +35,42 @@ column_to_instance_names = {'alarm_status': 'ALARM_STATUS', 'instrument_status':
 							'mpv_position': 'MPVPosition', 'outlet_valve': 'OutletValve', 'co': 'CO_sync',
 							'co2_wet': 'CO2_sync', 'co2': 'CO2_dry_sync', 'ch4_wet': 'CH4_sync',
 							'ch4': 'CH4_dry_sync', 'h2o': 'H2O_sync'}
+
+
+class JDict(TypeDecorator):
+	"""
+	Serializes a dictionary for SQLAlchemy storage.
+	"""
+	impl = VARCHAR
+
+	def process_bind_param(self, value, dialect):
+		if value is not None:
+			value = json.dumps(value)
+		return value
+
+	def process_result_value(self, value, dialect):
+		if value is not None:
+			value = json.loads(value)
+		return value
+
+
+class JList(TypeDecorator):
+	"""
+	Serializes a list for SQLAlchemy storage.
+	"""
+	impl = VARCHAR
+
+	def process_bind_param(self, value, dialect):
+		value = json.dumps(value)
+		return value
+
+	def process_result_value(self, value, dialect):
+		value = json.loads(value)
+		return value
+
+
+MutableList.associate_with(JList)
+MutableDict.associate_with(JDict)
 
 
 class TempDir():
@@ -105,6 +152,26 @@ class Datum(Base):
 			setattr(self, var, line_dict.get(column_to_instance_names.get(var)))
 
 		self.date = datetime.fromtimestamp(line_dict.get('EPOCH_TIME'))
+
+
+class CalEvent():
+
+	__tablename__ = 'calibrations'
+
+	id = Column(Integer, primary_key=True)
+	date = Column(DateTime)
+	co = Column(MutableList.as_mutable(JList))
+	co2 = Column(MutableList.as_mutable(JList))
+	ch4 = Column(MutableList.as_mutable(JList))
+
+	co_result = Column(Float)
+	co2_result = Column(Float)
+	ch4_result = Column(Float)
+
+	# TODO: Needs relationship to it's child Datums
+
+	def __init__(self):
+		pass
 
 
 def connect_to_db(engine_str, directory):

@@ -123,6 +123,6 @@ async def check_load_new_data(directory, sleeptime):
 loop = asyncio.get_event_loop()
 
 loop.create_task(check_load_new_data(rundir, 5))
-loop.create_task(fake_move_data(rundir, 6))
+loop.create_task(fake_move_data(rundir, 4))
 
 loop.run_forever()
