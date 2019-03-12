@@ -20,23 +20,28 @@ while len(flist) < int(len(files)/10):
 print(f'{len(flist)} data files chosen at random.')
 
 file_list = []
-data_list = []
+
 for ind in flist:
+	data_list = []
+
 	df = pd.read_csv(files[ind], delim_whitespace=True)
 	df_list = df.to_dict('records')
 
 	for line in df_list:
 		data_list.append(Datum(line))
 
+	for d in data_list:
+		session.add(d)
+	session.commit()
+
 	file_list.append(DataFile(files[ind]))
 
-print(f'{len(data_list)} Datum objects created.')
 
-for d in data_list:
-	session.add(d)
-session.commit()
+# print(f'{len(data_list)} Datum objects created.')
 
-print(f'{len(data_list)} Datum objects committed.')
+
+
+# print(f'{len(data_list)} Datum objects committed.')
 
 for file in file_list:
 	session.add(file)
