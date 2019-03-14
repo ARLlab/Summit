@@ -20,7 +20,6 @@ attr_list = ['id', 'date', 'co', 'co2', 'ch4']
 querylist = []
 querylist.append([getattr(Datum, attr) for attr in attr_list])
 
-
 cal_data = {}
 for MPV in [2,3,4]:
 	cal_data[mpv_converter[MPV]] = pd.DataFrame(session.query(*attr_list).filter(Datum.mpv_position == MPV).all())
