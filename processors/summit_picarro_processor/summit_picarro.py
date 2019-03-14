@@ -2,6 +2,7 @@ import os, logging, json
 from pathlib import Path
 import datetime as dt
 from datetime import datetime
+import statistics as s
 
 """
 Project-Wide TODO List:
@@ -14,6 +15,15 @@ Project-Wide TODO List:
 4) Update VOC plots per recommendations
 5) Calibration event developmment and testing
 
+"""
+
+"""
+CalEvent Planning
+
+CalEvent is a single high/mid/low standard calibration event
+
+MasterCal is a run of high, mid, low standards that have been joined and have stats including a curve and the 
+distance of the middle from the high/low points.
 """
 
 from sqlalchemy.types import TypeDecorator, VARCHAR
@@ -147,6 +157,8 @@ class Datum(Base):
 	h2o = Column(Float)
 
 	file_id = Column(Integer, ForeignKey('files.id'))
+	cal_id = Column(Integer, ForeignKey('cals.id'))
+	cal = relationship('CalEvent', back_populates='data')
 
 	def __init__(self, line_dict):
 
@@ -156,24 +168,84 @@ class Datum(Base):
 		self.date = datetime.utcfromtimestamp(line_dict.get('EPOCH_TIME'))
 
 
-class CalEvent():
+class CalEvent(Base):
 
-	__tablename__ = 'calibrations'
+	__tablename__ = 'cals'
 
 	id = Column(Integer, primary_key=True)
 	date = Column(DateTime)
-	co = Column(MutableList.as_mutable(JList))
-	co2 = Column(MutableList.as_mutable(JList))
-	ch4 = Column(MutableList.as_mutable(JList))
+	data = relationship('Datum', back_populates='cal')
+	standard_used = Column(String)  # type = 'high' | 'mid' | 'low' | other_specific_names
+	co_result = Column(MutableDict.as_mutable(JDict))  # {'mean': x, 'median': x, 'stdev': x}
+	co2_result = Column(MutableDict.as_mutable(JDict)) # {'mean': x, 'median': x, 'stdev': x}
+	ch4_result = Column(MutableDict.as_mutable(JDict)) # {'mean': x, 'median': x, 'stdev': x}
+	back_period = Column(Float)  # seconds to look back when calculating result (whatever was used for last result)
 
-	co_result = Column(Float)
-	co2_result = Column(Float)
-	ch4_result = Column(Float)
+	def __init__(self, data, standard_used):
+		self.data = data
+		self.date = self.dates[-1]  # date of a CalEvent is the last timestamp in the cal period
+		self.standard_used = standard_used
 
-	# TODO: Needs relationship to it's child Datums
+	def calc_result(self, compound, back_period):
+		"""
 
-	def __init__(self):
-		pass
+		:param compound: string, which compound to average?
+		:param back_period: seconds to back-average from end of calibration period
+		:return:
+		"""
+		assert compound in ['co2', 'ch4', 'co'], "Compound not valid."
+
+		dates = self.dates
+		compound_data = getattr(self, compound)
+
+		cutoff_date = self.date - dt.timedelta(seconds=back_period)
+
+		def find_ind(dates, cutoff):
+			"""
+			:param dates: list of datetimes (assumed to be sorted, increasing)
+			:param cutoff: datetime to find values over
+			:return: index where dates are greater than cutoff
+			"""
+			for ind, date in enumerate(dates):
+				if date > cutoff:
+					return ind - 1
+
+			return None
+
+		if compound_data is not None:
+			ind = find_ind(dates, cutoff_date)
+			if ind is not None:
+				data_to_use = compound_data[ind:]
+				result = {'mean': s.mean(data_to_use), 'median': s.median(data_to_use), 'stdev': s.stdev(data_to_use)}
+			else:
+				result = {'mean': None, 'median': None, 'stdev': None}
+
+			setattr(self, compound + '_result', result)
+
+		self.back_period = back_period
+		return
+
+	@property
+	def dates(self):
+		return [d.date for d in self.data]
+
+	@property
+	def co(self):
+		return [d.co for d in self.data]
+
+	@property
+	def co2(self):
+		return [d.co2 for d in self.data]
+
+	@property
+	def ch4(self):
+		return [d.ch4 for d in self.data]
+
+
+# class MasterCal(Base):
+#
+# 	__tablename__ = 'mastercals'
+# 	pass
 
 
 def connect_to_db(engine_str, directory):
