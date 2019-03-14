@@ -37,7 +37,7 @@ def find_cal_indices(datetimes):
 	:return: list of cal events indices, where each index is the beginning of a new cal event
 	"""
 	diff = datetimes.diff()
-	indices = diff.loc[diff > pd.Timedelta(seconds=10)].index.values.tolist() # subtract one from all indices
+	indices = diff.loc[diff > pd.Timedelta(seconds=20)].index.values.tolist() # subtract one from all indices
 	indices.append(diff.index[-1])
 	return indices
 
@@ -54,6 +54,8 @@ for ind in cal_indices:
 	event_data = session.query(Datum).filter(Datum.id.in_(ids)).all()
 	cal_events[ind] = CalEvent(event_data, 'low')
 	prev_ind = ind+1
+
+
 
 
 

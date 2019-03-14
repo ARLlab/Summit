@@ -121,9 +121,61 @@ async def check_load_new_data(directory, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
+async def find_cal_events(directory, sleeptime):
+	while True:
+		# TODO: Some points are getting through indexing, causing unique events to be found repeatedly, with decreasing counts
+		logger.info('Running find_cal_events()')
+		from summit_picarro import connect_to_db, DataFile, Datum, CalEvent, mpv_converter, find_cal_indices
+
+		engine, session, Base = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
+		Base.metadata.create_all(engine)
+
+		standard_data = {}
+		for MPV in [2, 3, 4]:
+			mpv_data = pd.DataFrame(session
+									.query(Datum.id, Datum.date)
+									.filter(Datum.mpv_position == MPV)
+									.filter(Datum.cal_id == None)
+									.all())
+
+			if len(mpv_data) is 0:
+				logger.info(f'No new calibration events found for standard {mpv_converter[MPV]}')
+				session.close()
+				engine.dispose()
+				await asyncio.sleep(sleeptime)
+				continue
+
+			mpv_data['date'] = pd.to_datetime(mpv_data['date'])
+			standard_data[mpv_converter[MPV]] = mpv_data.sort_values(by=['date']).reset_index(drop=True)
+
+		for standard, data in standard_data.items():
+			indices = find_cal_indices(data['date'])
+
+			prev_ind = 0
+			cal_events = []
+			print(indices)
+			for ind in indices:
+				if ind == prev_ind:
+					continue  # TODO: Create a finer control on length of events necessary to pass
+
+				event_data = session.query(Datum).filter(Datum.id.in_(data['id'].iloc[prev_ind:ind])).all()
+				cal_events.append(CalEvent(event_data, standard))
+				prev_ind = ind + 1
+
+			for ev in cal_events:
+				session.merge(ev)
+				logger.info(f'CalEvent for date {ev.date} added.')
+			session.commit()
+
+		session.close()
+		engine.dispose()
+		await asyncio.sleep(sleeptime)
+
+
 loop = asyncio.get_event_loop()
 
-loop.create_task(check_load_new_data(rundir, 5))
-loop.create_task(fake_move_data(rundir, 4))
+#loop.create_task(check_load_new_data(rundir, 5))
+#loop.create_task(fake_move_data(rundir, 4))
+loop.create_task(find_cal_events(rundir, 5))
 
 loop.run_forever()

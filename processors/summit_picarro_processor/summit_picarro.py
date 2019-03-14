@@ -3,6 +3,7 @@ from pathlib import Path
 import datetime as dt
 from datetime import datetime
 import statistics as s
+import pandas as pd
 
 """
 Project-Wide TODO List:
@@ -48,6 +49,8 @@ column_to_instance_names = {'alarm_status': 'ALARM_STATUS', 'instrument_status':
 							'mpv_position': 'MPVPosition', 'outlet_valve': 'OutletValve', 'co': 'CO_sync',
 							'co2_wet': 'CO2_sync', 'co2': 'CO2_dry_sync', 'ch4_wet': 'CH4_sync',
 							'ch4': 'CH4_dry_sync', 'h2o': 'H2O_sync'}
+
+mpv_converter = {1: 'ambient', 2: 'low_std', 4: 'mid_std', 3: 'high_std'}
 
 
 class JDict(TypeDecorator):
@@ -157,8 +160,8 @@ class Datum(Base):
 	h2o = Column(Float)
 
 	file_id = Column(Integer, ForeignKey('files.id'))
-	cal_id = Column(Integer, ForeignKey('cals.id'))
 	cal = relationship('CalEvent', back_populates='data')
+	cal_id = Column(Integer, ForeignKey('cals.id'))
 
 	def __init__(self, line_dict):
 
@@ -321,6 +324,20 @@ def get_all_data_files(path):
 	files[:] = [file for file in files if '.dat' in file.name]
 
 	return files
+
+
+def find_cal_indices(datetimes):
+	"""
+	Cal events are any time a standard is injected and being quantified by the system. Here, they're separated as though
+	any calibration data that's more than 10s away from the previous cal data is a new event.
+
+	:param epoch_time: array of epoch times for all of the supplied data
+	:return: list of cal events indices, where each index is the beginning of a new cal event
+	"""
+	diff = datetimes.diff()
+	indices = diff.loc[diff > pd.Timedelta(seconds=60)].index.values.tolist() # subtract one from all indices
+	indices.append(diff.index[-1])
+	return indices
 
 
 
