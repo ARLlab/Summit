@@ -23,7 +23,8 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
-rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_picarro_processor')
+# rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_picarro_processor')
+rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_picarro_processor')
 # rundir = Path(os.getcwd())
 
 column_names = ['alarm_status', 'instrument_status', 'cavity_pressure', 'cavity_temp', 'das_temp', 'etalon_temp',
@@ -100,7 +101,7 @@ class DataFile(Base):
 	size = Column(Integer)
 	processed = Column(Boolean)
 
-	# datum = relationship('Datum')
+	datum = relationship('Datum')
 
 	def __init__(self, path):
 		self.path = path
@@ -128,6 +129,9 @@ class Datum(Base):
 	id = Column(Integer, primary_key=True)
 	date = Column(DateTime)
 	# TODO: Need to sort out time difference. Date from epoch is 7 hours behind date in file.
+	# Adding the epoch times from file to 1970,1,1 result in the same datetimes as the file, but:
+		# datetime.fromtimestamp(epoch_time) produces a time that's 7 hours behind the datestring the files
+		# changed to datetime.utcfromtimestamp(epoch_time) to see if that corrects it.
 	alarm_status = Column(Integer)
 	instrument_status = Column(Integer)
 	cavity_pressure = Column(Float)
@@ -144,14 +148,14 @@ class Datum(Base):
 	ch4 = Column(Float)
 	h2o = Column(Float)
 
-	# file_id = Column(Integer, ForeignKey('files.id'))
+	file_id = Column(Integer, ForeignKey('files.id'))
 
 	def __init__(self, line_dict):
 
 		for var in column_names:
 			setattr(self, var, line_dict.get(column_to_instance_names.get(var)))
 
-		self.date = datetime.fromtimestamp(line_dict.get('EPOCH_TIME'))
+		self.date = datetime.utcfromtimestamp(line_dict.get('EPOCH_TIME'))
 
 
 class CalEvent():
