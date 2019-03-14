@@ -97,7 +97,7 @@ async def check_load_new_data(directory, sleeptime):
 			continue
 
 		for ind, file in enumerate(files_to_process):
-			files_to_process[ind] = session.merge(file)
+			files_to_process[ind] = session.merge(file)  # merge files and return the merged object to overwrite the old
 			logger.info(f'File {file.name} added for processing.')
 		session.commit()
 
@@ -111,6 +111,7 @@ async def check_load_new_data(directory, sleeptime):
 
 			for d in data_list:
 				if d.date not in db_dates:
+					d.file_id = file.id  # relate Datum to the file it originated in
 					session.add(d)
 
 			file.processed = True

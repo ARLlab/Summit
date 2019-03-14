@@ -6,7 +6,9 @@ from datetime import datetime
 """
 Project-Wide TODO List:
 
-1) Figure out time difference in epoch, make all dates tz-aware
+# 1) Figure out time difference in epoch
+# 	1.1) Make all dates tz-aware
+
 2) Configure relationship between Datums and DataFiles
 3) Configure relationship between CalEvents and Datums (and Datafiles?)
 4) Update VOC plots per recommendations
@@ -128,10 +130,6 @@ class Datum(Base):
 
 	id = Column(Integer, primary_key=True)
 	date = Column(DateTime)
-	# TODO: Need to sort out time difference. Date from epoch is 7 hours behind date in file.
-	# Adding the epoch times from file to 1970,1,1 result in the same datetimes as the file, but:
-		# datetime.fromtimestamp(epoch_time) produces a time that's 7 hours behind the datestring the files
-		# changed to datetime.utcfromtimestamp(epoch_time) to see if that corrects it.
 	alarm_status = Column(Integer)
 	instrument_status = Column(Integer)
 	cavity_pressure = Column(Float)
