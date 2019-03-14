@@ -23,23 +23,21 @@ methaneData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\Methane.XLSX")
 ## Ethane / Methane
 dateCH4 = methaneData.loc[:,'DecYear']
 dateNMHC = nmhcData.loc[:,'DecYear']
-# numYears = np.linspace(2012,2018,num=((2018-2012)+1))
-numYears = [2012]
-
+numYears = np.linspace(2012,2018,num=((2018-2012)+1))
 
 # Method 1
 """
-This method takes way to long to run and doesn't give reasonable values
-for the edge cases. Need to figure out a way to broadcast the
-ethane array onto the methane array for elementwise division then plotting
+Method isn't terrible but it takes long to run and I believe it is currently
+misrepresenting the edge cases (since I just assume 1 value there even though
+the times wouldn't match up exactly)
 
-Currently it only runs for the 2012 year, and the legend does not work
+legend currently not working
 """
 for i in numYears:
     x = (((nmhcData.loc[(dateNMHC >= i) & (dateNMHC < (i+1)),'DecYear'].values)-i) * 365) + 1
     ethane = nmhcData.loc[(dateNMHC >= i) & (dateNMHC < (i+1)),'ethane'].values
 
-    plt.figure(i)
+    plt.figure(1)
     plt.title('Summit Ethane/Methane Ratio from 2012-2018',fontdict=None,pad=None)
     plt.xlabel('Day of Year',fontdict=None,labelpad=None) # x labels all same
     plt.ylabel('Mixing Ratio [Parts per Billion]',fontdict=None,labelpad=None) # y labels
@@ -59,7 +57,7 @@ for i in numYears:
         # The ratio is plotted against the day of year
         plt.plot(x[j],(ethane[j] / methane),'.')
 
-plt.legend(bbox_to_anchor=(1.04,1), loc="upper left") # puts legend outside of graph
+# plt.legend(bbox_to_anchor=(1.04,1), loc="upper left") # puts legend outside of graph
 plt.show()
 
 """
