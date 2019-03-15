@@ -11,8 +11,8 @@ Project-Wide TODO List:
 # 1) Figure out time difference in epoch
 # 	1.1) Make all dates tz-aware
 
-2) Configure relationship between Datums and DataFiles
-3) Configure relationship between CalEvents and Datums (and Datafiles?)
+# 2) Configure relationship between Datums and DataFiles
+# 3) Configure relationship between CalEvents and Datums (and Datafiles?)
 4) Update VOC plots per recommendations
 5) Calibration event developmment and testing
 
@@ -244,6 +244,10 @@ class CalEvent(Base):
 	def ch4(self):
 		return [d.ch4 for d in self.data]
 
+	@property
+	def duration(self):
+		return self.date - self.dates[0]
+
 
 # class MasterCal(Base):
 #
@@ -339,4 +343,15 @@ def find_cal_indices(datetimes):
 	return indices
 
 
+def log_event_quantification(logger, event):
+	logger.debug(f'CalEvent for date {event.date}, of duration {event.duration} quantified:')
+	logger.debug('Result Sets Below (Mean, Median, StDev)')
+	logger.debug(
+		f'CO: {event.co_result["mean"]:.03f}, CO2: {event.co2_result["mean"]:.03f}, CH4: {event.ch4_result["mean"]:.03f}')
+	logger.debug(
+		f'CO: {event.co_result["median"]:.03f}, CO2: {event.co2_result["median"]:.03f}, CH4: {event.ch4_result["median"]:.03f}')
+	logger.debug(
+		f'CO: {event.co_result["stdev"]:.03f}, CO2: {event.co2_result["stdev"]:.03f}, CH4: {event.ch4_result["stdev"]:.03f}')
+
+	return
 

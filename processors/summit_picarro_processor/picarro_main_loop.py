@@ -126,6 +126,7 @@ async def find_cal_events(directory, sleeptime):
 	while True:
 		logger.info('Running find_cal_events()')
 		from summit_picarro import connect_to_db, Datum, CalEvent, mpv_converter, find_cal_indices
+		from summit_picarro import log_event_quantification
 
 		engine, session, Base = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
 		Base.metadata.create_all(engine)
@@ -169,9 +170,16 @@ async def find_cal_events(directory, sleeptime):
 			for ev in cal_events:
 				if ev.date - ev.dates[0] < dt.timedelta(seconds=90):
 					logger.info(f'CalEvent for date {ev.date} had a duration < 90s and was ignored.')
+					ev.standard_used = 'dump'  # give not-long-enough events standard type 'dump' so they're ignored
+					session.merge(ev)
 				else:
+
+					for cpd in ['co', 'co2', 'ch4']:
+						ev.calc_result(cpd, 21)  # calculate results for all compounds going 21s back
+
 					session.merge(ev)
 					logger.info(f'CalEvent for date {ev.date} added.')
+					log_event_quantification(logger, ev)
 			session.commit()
 
 		session.close()
