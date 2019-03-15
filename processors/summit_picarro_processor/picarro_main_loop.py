@@ -1,5 +1,6 @@
 import os, asyncio
 import pandas as pd
+import datetime as dt
 from summit_picarro import logger, rundir
 
 """
@@ -123,9 +124,8 @@ async def check_load_new_data(directory, sleeptime):
 
 async def find_cal_events(directory, sleeptime):
 	while True:
-		# TODO: Some points are getting through indexing, causing unique events to be found repeatedly, with decreasing counts
 		logger.info('Running find_cal_events()')
-		from summit_picarro import connect_to_db, DataFile, Datum, CalEvent, mpv_converter, find_cal_indices
+		from summit_picarro import connect_to_db, Datum, CalEvent, mpv_converter, find_cal_indices
 
 		engine, session, Base = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
 		Base.metadata.create_all(engine)
@@ -137,12 +137,10 @@ async def find_cal_events(directory, sleeptime):
 									.filter(Datum.mpv_position == MPV)
 									.filter(Datum.cal_id == None)
 									.all())
+			# get only data for this switching valve position, and not already in any calibration event
 
 			if len(mpv_data) is 0:
 				logger.info(f'No new calibration events found for standard {mpv_converter[MPV]}')
-				session.close()
-				engine.dispose()
-				await asyncio.sleep(sleeptime)
 				continue
 
 			mpv_data['date'] = pd.to_datetime(mpv_data['date'])
@@ -151,20 +149,29 @@ async def find_cal_events(directory, sleeptime):
 		for standard, data in standard_data.items():
 			indices = find_cal_indices(data['date'])
 
+			if len(indices) == 0:
+				logger.info(f'No new cal events were found for {standard} standard.')
+				continue
+
 			prev_ind = 0
 			cal_events = []
-			print(indices)
-			for ind in indices:
-				if ind == prev_ind:
-					continue  # TODO: Create a finer control on length of events necessary to pass
 
+			for num, ind in enumerate(indices):  # get all data within this event
 				event_data = session.query(Datum).filter(Datum.id.in_(data['id'].iloc[prev_ind:ind])).all()
 				cal_events.append(CalEvent(event_data, standard))
-				prev_ind = ind + 1
+
+				if num == len(indices):  # if it's the last index, get all ahead of it as the last event
+					event_data = session.query(Datum).filter(Datum.id.in_(data['id'].iloc[ind:])).all()
+					cal_events.append(CalEvent(event_data, standard))
+
+				prev_ind = ind
 
 			for ev in cal_events:
-				session.merge(ev)
-				logger.info(f'CalEvent for date {ev.date} added.')
+				if ev.date - ev.dates[0] < dt.timedelta(seconds=90):
+					logger.info(f'CalEvent for date {ev.date} had a duration < 90s and was ignored.')
+				else:
+					session.merge(ev)
+					logger.info(f'CalEvent for date {ev.date} added.')
 			session.commit()
 
 		session.close()
@@ -174,8 +181,8 @@ async def find_cal_events(directory, sleeptime):
 
 loop = asyncio.get_event_loop()
 
-#loop.create_task(check_load_new_data(rundir, 5))
-#loop.create_task(fake_move_data(rundir, 4))
-loop.create_task(find_cal_events(rundir, 5))
+loop.create_task(check_load_new_data(rundir, 5))
+loop.create_task(fake_move_data(rundir, 4))
+loop.create_task(find_cal_events(rundir, 20))
 
 loop.run_forever()

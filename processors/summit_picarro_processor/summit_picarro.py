@@ -36,8 +36,8 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
-# rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_picarro_processor')
-rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_picarro_processor')
+rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_picarro_processor')
+# rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_picarro_processor')
 # rundir = Path(os.getcwd())
 
 column_names = ['alarm_status', 'instrument_status', 'cavity_pressure', 'cavity_temp', 'das_temp', 'etalon_temp',
@@ -336,7 +336,6 @@ def find_cal_indices(datetimes):
 	"""
 	diff = datetimes.diff()
 	indices = diff.loc[diff > pd.Timedelta(seconds=60)].index.values.tolist() # subtract one from all indices
-	indices.append(diff.index[-1])
 	return indices
 
 
