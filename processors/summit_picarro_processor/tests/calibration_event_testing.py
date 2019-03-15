@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 from summit_picarro import connect_to_db, Datum, CalEvent
 
-# homedir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_picarro_processor\tests')
-homedir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_picarro_processor\tests')
+homedir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_picarro_processor\tests')
+# homedir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_picarro_processor\tests')
 
 data_basedir = homedir / '..'
 
@@ -28,19 +28,7 @@ for MPV in [2, 3, 4]:
 	cal_data[mpv_converter[MPV]] = data.sort_values(by=['date']).reset_index(drop=True)
 
 
-def find_cal_indices(datetimes):
-	"""
-	Cal events are any time a standard is injected and being quantified by the system. Here, they're separated as though
-	any calibration data that's more than 10s away from the previous cal data is a new event.
-
-	:param epoch_time: array of epoch times for all of the supplied data
-	:return: list of cal events indices, where each index is the beginning of a new cal event
-	"""
-	diff = datetimes.diff()
-	indices = diff.loc[diff > pd.Timedelta(seconds=20)].index.values.tolist() # subtract one from all indices
-	indices.append(diff.index[-1])
-	return indices
-
+from summit_picarro import find_cal_indices
 
 low_data = cal_data['low_std']
 
