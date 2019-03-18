@@ -187,10 +187,78 @@ async def find_cal_events(directory, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
+async def create_mastercals(directory, sleeptime):
+	"""
+	This will search all un-committed CalEvents, looking for high, middle, low three-pairs that can have a curve and
+	other stats calculated. It will report them as DEBUG items in the log.
+
+	:param directory: path, to begin running in
+	:param sleeptime: int, seconds to sleep in between runs
+	:return:
+	"""
+	while True:
+		from summit_picarro import connect_to_db, MasterCal, CalEvent, match_cals_by_min
+
+		engine, session, Base = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
+
+		# Get cals by standard, but only if they're not in another MasterCal already
+		lowcals = (session.query(CalEvent)
+				   .filter(CalEvent.mastercal_id == None, CalEvent.standard_used == 'low_std')
+				   .all())
+
+		highcals = (session.query(CalEvent)
+					.filter(CalEvent.mastercal_id == None, CalEvent.standard_used == 'high_std')
+					.all())
+
+		midcals = (session.query(CalEvent)
+				   .filter(CalEvent.mastercal_id == None, CalEvent.standard_used == 'mid_std')
+				   .all())
+
+		mastercals = []
+		for lowcal in lowcals:
+			matching_high = match_cals_by_min(lowcal, highcals, minutes=5)
+
+			if matching_high is not None:
+				matching_mid = match_cals_by_min(matching_high, midcals, minutes=5)
+
+				if matching_mid is not None:
+					mastercals.append(MasterCal([lowcal, matching_high, matching_mid]))
+
+		if len(mastercals) > 0:
+			for mc in mastercals:
+				session.add(mc)
+				logger.info(f'MasterCal for {mc.subcals[0].date} created.')
+
+			session.commit()
+			await asyncio.sleep(sleeptime)
+		else:
+			logger.info('No MasterCals were created.')
+
+		session.close()
+		engine.dispose()
+		await asyncio.sleep(sleeptime)
+
+
+async def plot_new_data(directory, sleeptime):
+
+	while True:
+		from summit_picarro import summit_picarro_plot
+		pass
+
+		# summit_picarro_plot(None, ({'i/n Pentane ratio': [ipent_dates, inpent_ratio]}),
+		# 					limits={'right': date_limits.get('right', None),
+		# 							'left': date_limits.get('left', None),
+		# 							'bottom': 0,
+		# 							'top': 3},
+		# 					major_ticks=major_ticks,
+		# 					minor_ticks=minor_ticks)
+
+
 loop = asyncio.get_event_loop()
 
 loop.create_task(check_load_new_data(rundir, 5))
 loop.create_task(fake_move_data(rundir, 4))
 loop.create_task(find_cal_events(rundir, 20))
+loop.create_task(create_mastercals(rundir, 20))
 
 loop.run_forever()
