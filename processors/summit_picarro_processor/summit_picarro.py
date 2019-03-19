@@ -6,6 +6,8 @@ import statistics as s
 import pandas as pd
 from collections import namedtuple
 
+# TODO: Class explanations/docstrings
+
 """
 Project-Wide TODO List:
 
@@ -120,6 +122,10 @@ class TempDir():
 
 
 class DataFile(Base):
+	"""
+	A file containing synced 5-second data from the Picarro. Used mostly for tracking where data originated from for
+	manual inspection, etc.
+	"""
 	__tablename__ = 'files'
 
 	id = Column(Integer, primary_key=True)
@@ -150,6 +156,10 @@ class DataFile(Base):
 
 
 class Datum(Base):
+	"""
+	A piece of 5-second data, originating from a file written by the Picarro. Most fields are preserved from the
+	original files, but CO2 is changed to CO2_wet (etc), and the standard versions (CO2, CH4) are the dry measurements.
+	"""
 	__tablename__ = 'data'
 
 	id = Column(Integer, primary_key=True)
@@ -182,6 +192,10 @@ class Datum(Base):
 
 
 class CalEvent(Base):
+	"""
+	A section of calibration data for a single standard or gas. These are related to their sub-data, but have result
+	statistics, as well as a record of how they were made.
+	"""
 	__tablename__ = 'cals'
 
 	id = Column(Integer, primary_key=True)
@@ -203,6 +217,7 @@ class CalEvent(Base):
 
 	def calc_result(self, compound, back_period):
 		"""
+		Calculate the results for this standard for the given compound.
 
 		:param compound: string, which compound to average?
 		:param back_period: seconds to back-average from end of calibration period
@@ -262,6 +277,15 @@ class CalEvent(Base):
 
 
 class MasterCal(Base):
+	"""
+	A whole calibration, which consists of a high standard, low standard, and middle standard measurement.
+	The three are joined into a MasterCal when all three have been run in sequence.
+
+	A curve is calculated from the high/low values, then the middle's difference from it's expected value is used as a
+	QC measure.
+
+	As of 3/19/2019, it's not clear how these will be applied to the final data.
+	"""
 
 	__tablename__ = 'mastercals'
 	id = Column(Integer, primary_key=True)
@@ -281,6 +305,10 @@ class MasterCal(Base):
 		self.subcals = standards
 
 	def create_curve(self):
+		"""
+		Calculate a slope and intercept from the high/low values, and computer the y-difference from the curve to the
+		middle value for QC.
+		"""
 		for cpd in ['co', 'co2', 'ch4']:
 			low_val = getattr(self.low_std, cpd+'_result').get('mean')
 			high_val = getattr(self.high_std, cpd+'_result').get('mean')
@@ -325,14 +353,14 @@ def find_cal_by_type(standards, std_type):
 
 def connect_to_db(engine_str, directory):
 	"""
-	Example:
-	engine, session, Base = connect_to_db('sqlite:///reservoir.sqlite', dir)
-
 	Takes string name of the database to create/connect to, and the directory it should be in.
 
-	engine_str: str, name of the database to create/connect to.
-	directory: str/path, directory that the database should be made/connected to in.
-		Requires context manager TempDir in order to work with async
+	:param engine_str: connection string for the database
+	:param directory: directory the database should in (created?) in
+	:return: engine, session, Base
+
+	Example:
+	engine, session, Base = connect_to_db('sqlite:///reservoir.sqlite', dir)
 	"""
 
 	from summit_picarro import Base, TempDir
@@ -349,6 +377,12 @@ def connect_to_db(engine_str, directory):
 
 
 def configure_logger(rundir):
+	"""
+	Create the project-specific logger. DEBUG and up is saved to the log, INFO and up appears in the console.
+
+	:param rundir: path to create log sub-path in
+	:return: logger object
+	"""
 	logfile = Path(rundir) / 'processor_logs/summit_picarro.log'
 	logger = logging.getLogger('summit_voc')
 	logger.setLevel(logging.DEBUG)
@@ -370,7 +404,11 @@ logger = configure_logger(rundir)
 
 
 def check_filesize(filepath):
-	'''Returns filesize in bytes'''
+	"""
+	Returns the filesize in bytes.
+	:param filepath: file-like object
+	:return: int
+	"""
 	if Path.is_file(filepath):
 		return Path.stat(filepath).st_size
 	else:
@@ -379,6 +417,11 @@ def check_filesize(filepath):
 
 
 def list_files_recur(path):
+	"""
+
+	:param path: Path object
+	:return: list, of file-like Path objects
+	"""
 	files = []
 	for file in path.rglob('*'):
 		files.append(file)
@@ -388,9 +431,10 @@ def list_files_recur(path):
 
 def get_all_data_files(path):
 	"""
-	Recursively search the
+	Recursively search the given directory for .dat files.
+
 	:param rundir_path:
-	:return:
+	:return: list, of file-like Path objects
 	"""
 	files = list_files_recur(path)
 	files[:] = [file for file in files if '.dat' in file.name]
@@ -412,6 +456,13 @@ def find_cal_indices(datetimes):
 
 
 def log_event_quantification(logger, event):
+	"""
+	This condenses some repetitive logging behavior. Each time a CalEvent is created, this will log the results to the
+	log as DEBUG (not console).
+	:param logger: logger object from logging library
+	:param event: CalEvent object, with new results
+	:return: None, output to log file
+	"""
 	logger.debug(f'CalEvent for date {event.date}, of duration {event.duration} quantified:')
 	logger.debug('Result Sets Below (Mean, Median, StDev)')
 	logger.debug(
@@ -426,6 +477,19 @@ def log_event_quantification(logger, event):
 
 def summit_picarro_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None, unit_string = 'ppbv'):
 	"""
+	:param dates: list, of Python datetimes; if set, this applies to all compounds.
+		If None, each compound supplies its own date values
+	:param compound_dict: dict, {'compound_name':[dates, mrs]}
+		keys: str, the name to be plotted and put into filename
+		values: list, len(list) == 2, two parallel lists that are...
+			dates: list, of Python datetimes. If None, dates come from dates input parameter (for all compounds)
+			mrs: list, of [int/float/None]s; these are the mixing ratios to be plotted
+	:param limits: dict, optional dictionary of limits including ['top','bottom','right','left']
+	:param minor_ticks: list, of major tick marks
+	:param major_ticks: list, of minor tick marks
+	:param unit_string: string, will be displayed in y-axis label as f'Mixing Ratio ({unit_string})'
+	:return: None
+
 	This plots stuff.
 
 	Example with all dates supplied:
@@ -435,18 +499,6 @@ def summit_picarro_plot(dates, compound_dict, limits=None, minor_ticks=None, maj
 	Example with single date list supplied:
 		plot_last_week([date, date, date], {'ethane':[None, [1, 2, 3]],
 								'propane':[None, [.5, 1, 1.5]]})
-
-	dates: list, of Python datetimes; if set, this applies to all compounds.
-		If None, each compound supplies its own date values
-	compound_dict: dict, {'compound_name':[dates, mrs]}
-		keys: str, the name to be plotted and put into filename
-		values: list, len(list) == 2, two parallel lists that are...
-			dates: list, of Python datetimes. If None, dates come from dates input parameter (for all compounds)
-			mrs: list, of [int/float/None]s; these are the mixing ratios to be plotted
-
-	limits: dict, optional dictionary of limits including ['top','bottom','right','left']
-	major_ticks: list, of major tick marks
-	minor_ticks: list, of minor tick marks
 	"""
 
 	import matplotlib.pyplot as plt
@@ -460,7 +512,8 @@ def summit_picarro_plot(dates, compound_dict, limits=None, minor_ticks=None, maj
 	if dates is None:  # dates supplied by individual compounds
 		for compound, val_list in compound_dict.items():
 			assert val_list[0] is not None, 'A supplied date list was None'
-			assert len(val_list[0]) > 0 and len(val_list[0]) == len(val_list[1]), 'Supplied dates were empty or lengths did not match'
+			assert (len(val_list[0]) > 0 and len(val_list[0]) == len(val_list[1]),
+					'Supplied dates were empty or lengths did not match')
 			ax.plot(val_list[0], val_list[1], '-o')
 
 	else:
@@ -508,7 +561,12 @@ def find_closest_date(date, list_of_dates):
 	"""
 	This is a helper function that works on Python datetimes. It returns the closest date value,
 	and the timedelta from the provided date.
+	:param date: datetime
+	:param list_of_dates: list, of datetimes
+	:return: match, delta: the matching date from the list, and it's difference to the original as a timedelta
+
 	"""
+
 	match = min(list_of_dates, key = lambda x: abs(x - date))
 	delta = match - date
 
@@ -517,6 +575,13 @@ def find_closest_date(date, list_of_dates):
 
 def search_for_attr_value(obj_list, attr, value):
 	"""
+
+	:param obj_list: list, of objects to search
+	:param attr: string, attribute to search for
+	:param value: mixed types, value that should be searched for
+	:return: obj, from obj_list, where attribute attr matches value
+		**** warning: returns the *first* obj, not necessarily the only
+
 	Finds the first (not necesarilly the only) object in a list, where its
 	attribute 'attr' is equal to 'value', returns None if none is found.
 	"""
@@ -528,7 +593,7 @@ def match_cals_by_min(cal, cals, minutes=4):
 	:param cal: CalEvent, the one to be matched to from cals
 	:param cals: list, of CalEvents
 	:param minutes: int, minutes difference to tolerate ## MAY CHANGE TO upper/lower limits
-	:return:
+	:return: cal from the list cals, or None
 	"""
 	cal_dates = [c.date for c in cals]
 
