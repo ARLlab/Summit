@@ -104,7 +104,12 @@ async def check_load_new_data(directory, sleeptime):
 
 		for file in files_to_process:
 			df = pd.read_csv(file.path, delim_whitespace=True)
-			df_list = df.to_dict('records')
+			# CO2 stays in ppm
+			df['CO_sync'] *= 1000  # convert CO to ppb
+			df['CH4_sync'] *= 1000  # convert CH4 to ppb
+			df['CH4_dry_sync'] *= 1000
+
+			df_list = df.to_dict('records')  # convert to list of dicts
 
 			data_list = []
 			for line in df_list:
@@ -226,6 +231,7 @@ async def create_mastercals(directory, sleeptime):
 
 		if len(mastercals) > 0:
 			for mc in mastercals:
+				mc.create_curve()  # calculate curve from low - high point, and check middle distance
 				session.add(mc)
 				logger.info(f'MasterCal for {mc.subcals[0].date} created.')
 

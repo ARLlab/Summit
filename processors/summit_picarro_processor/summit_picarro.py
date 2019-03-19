@@ -4,6 +4,7 @@ import datetime as dt
 from datetime import datetime
 import statistics as s
 import pandas as pd
+from collections import namedtuple
 
 """
 Project-Wide TODO List:
@@ -55,6 +56,9 @@ mpv_converter = {1: 'ambient', 2: 'low_std', 4: 'mid_std', 3: 'high_std'}
 standards = {'low_std': {'co': 69.6, 'co2': 390.24, 'ch4': 1838.5},
 			 'mid_std': {'co': 117.4, 'co2': 408.65, 'ch4': 1925.5},
 			 'high_std': {'co': 174.6, 'co2': 428.53, 'ch4': 2050.6}}
+
+Point = namedtuple('Point', 'x y')
+Curve = namedtuple('Point', 'm intercept')
 
 # high_limit_dict = {'CH4': (2035, 2055, 2050.6),'CO2': (415, 435, 428.53),'CO': (160, 190, 174.6)}  # values are (high limit, low limit, cert value)
 # mid_limit_dict = {'CH4': (1905, 1935, 1925.5),'CO2': (390, 410, 408.65),'CO': (100, 130, 117.4)}
@@ -263,27 +267,48 @@ class MasterCal(Base):
 	id = Column(Integer, primary_key=True)
 	subcals = relationship('CalEvent', back_populates='mastercal')
 
+	co_slope = Column(Float)
+	co_intercept = Column(Float)
+	co_middle_offset = Column(Float)
+	co2_slope = Column(Float)
+	co2_intercept = Column(Float)
+	co2_middle_offset = Column(Float)
+	ch4_slope = Column(Float)
+	ch4_intercept = Column(Float)
+	ch4_middle_offset = Column(Float)
+
 	def __init__(self, standards):
 		self.subcals = standards
 
 	def create_curve(self):
-		low = find_cal_by_type(self.subcals, 'low_std')
-		mid = find_cal_by_type(self.subcals, 'mid_std')
-		high = find_cal_by_type(self.subcals, 'high_std')
-
 		for cpd in ['co', 'co2', 'ch4']:
-			low_val = getattr(low, cpd+'_result').get('mean')
-			high_val = getattr(high, cpd+'_result').get('mean')
-			mid_val = getattr(mid, cpd+'_result').get('mean')
+			low_val = getattr(self.low_std, cpd+'_result').get('mean')
+			high_val = getattr(self.high_std, cpd+'_result').get('mean')
+			mid_val = getattr(self.mid_std, cpd+'_result').get('mean')
 
-			low_coord = (standards.get('low_std'), low_val)  # (x, y) where x is the independent (certified value)
-			mid_coord = (standards.get('mid_std'), mid_val)
-			high_coord = (standards.get('high_std'), high_val)
+			low_coord = Point(standards.get('low_std').get(cpd), low_val)  # (x, y) where x is the independent (certified value)
+			mid_coord = Point(standards.get('mid_std').get(cpd), mid_val)
+			high_coord = Point(standards.get('high_std').get(cpd), high_val)
 
+			curve = calc_two_pt_curve(low_coord, high_coord)  # returns Curve(m, intercept) namedtuple
+			setattr(self, cpd+'_slope', curve.m)
+			setattr(self, cpd+'_intercept', curve.intercept)
+			middle_y_offset = mid_coord.y - (curve.m * mid_coord.x + curve.intercept)
+			setattr(self, cpd+'_middle_offset', middle_y_offset)
+			# y offset is the (actual y) - (expected y along the curve)
+			# so a positive offset means the actual measurement was above the curve; negative below
 
+	@property
+	def high_std(self):
+		return find_cal_by_type(self.subcals, 'high_std')
 
+	@property
+	def mid_std(self):
+		return find_cal_by_type(self.subcals, 'mid_std')
 
-		print(f'Low CO2: {low.co2_result["mean"]}, Mid CO2: {mid.co2_result["mean"]}, High CO2: {high.co2_result["mean"]}')
+	@property
+	def low_std(self):
+		return find_cal_by_type(self.subcals, 'low_std')
 
 
 def find_cal_by_type(standards, std_type):
@@ -512,11 +537,14 @@ def match_cals_by_min(cal, cals, minutes=4):
 		return
 
 
-def calc_two_pt_curve(pt1, pt2):
+def calc_two_pt_curve(low, high):
 	"""
-	:param pt1: tuple, (x,y)
-	:param pt2: tuple, (x,y)
+	:param low: Point namedtuple, (x,y)
+	:param high: Point namedtuple, (x,y)
 	:return: tuple, (float, float), (m, intercept)
 	"""
 
-	# TODO: Finish calculating and incorporate in MasterCal method
+	m = (high.y - low.y) / (high.x - low.x)
+	intercept = low.y - m * low.x
+
+	return Curve(m, intercept)
