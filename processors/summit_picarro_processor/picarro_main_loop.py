@@ -37,6 +37,7 @@ async def fake_move_data(directory, sleeptime):
 
 async def check_load_new_data(directory, sleeptime):
 	"""
+	Checks for new files, checks length of old ones for updates, and processes/commits new data to the database.
 
 	:param directory: path, the path it should run in
 	:param sleeptime: float, seconds to sleep between runs
@@ -112,6 +113,13 @@ async def check_load_new_data(directory, sleeptime):
 
 
 async def find_cal_events(directory, sleeptime):
+	"""
+	Searches the existing data for unused calibration data and creates/commits CalEvents if possible.
+
+	:param directory: path to run in
+	:param sleeptime: time to sleep between runs
+	:return: None
+	"""
 	while True:
 		logger.info('Running find_cal_events()')
 		from summit_picarro import connect_to_db, Datum, CalEvent, mpv_converter, find_cal_indices
@@ -178,12 +186,12 @@ async def find_cal_events(directory, sleeptime):
 
 async def create_mastercals(directory, sleeptime):
 	"""
-	This will search all un-committed CalEvents, looking for high, middle, low three-pairs that can have a curve and
+	Searches all un-committed CalEvents, looking for (high, middle, low) sets that can then have a curve and
 	other stats calculated. It will report them as DEBUG items in the log.
 
 	:param directory: path, to begin running in
 	:param sleeptime: int, seconds to sleep in between runs
-	:return:
+	:return: None
 	"""
 	while True:
 		from summit_picarro import connect_to_db, MasterCal, CalEvent, match_cals_by_min
@@ -229,6 +237,13 @@ async def create_mastercals(directory, sleeptime):
 
 
 async def plot_new_data(directory, sleeptime):
+	"""
+	Checks data against the last plotting time, and creates new plots for CO, CO2, and CH4 if new data exists.
+
+	:param directory: directory to run in
+	:param sleeptime: seconds to sleep between runs
+	:return: None
+	"""
 	from datetime import datetime
 	import datetime as dt
 
