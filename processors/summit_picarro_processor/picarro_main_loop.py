@@ -1,30 +1,9 @@
-import os, asyncio
-import pandas as pd
+import asyncio
 import datetime as dt
+
+import pandas as pd
+
 from summit_picarro import logger, rundir
-
-"""
-Things Needed:
-
-File checking:
-	Needs to:
-		Check for new or updated files
-		Read new files
-		
-Calibration Handling:
-	Needs to:
-		Search all data, then new data
-		Pick out all calibration data
-		Separate into low, middle, high standards based on valves
-			Group in a single calibration event and calculate some things based on the regression, etc
-		Potentially apply information from the above on data
-		
-Plotting:
-	Needs to:
-		Plot data if new data is available
-		
-
-"""
 
 
 async def fake_move_data(directory, sleeptime):
@@ -55,7 +34,14 @@ async def fake_move_data(directory, sleeptime):
 
 		await asyncio.sleep(sleeptime)
 
+
 async def check_load_new_data(directory, sleeptime):
+	"""
+
+	:param directory: path, the path it should run in
+	:param sleeptime: float, seconds to sleep between runs
+	:return: None
+	"""
 
 	while True:
 		logger.info('Running check_load_new_data()')
@@ -89,8 +75,6 @@ async def check_load_new_data(directory, sleeptime):
 				# if a matching file was found and it's now bigger, append for processing
 				logger.info(f'File {file.name} had more data and was added for procesing.')
 				files_to_process.append(db_match)
-			else:
-				pass
 
 		if len(files_to_process) is 0:
 			logger.warning('No new data was found.')
@@ -150,6 +134,7 @@ async def find_cal_events(directory, sleeptime):
 				continue
 
 			mpv_data['date'] = pd.to_datetime(mpv_data['date'])
+			# use mpv_converter dict to get standard information
 			standard_data[mpv_converter[MPV]] = mpv_data.sort_values(by=['date']).reset_index(drop=True)
 
 		for standard, data in standard_data.items():
@@ -178,13 +163,12 @@ async def find_cal_events(directory, sleeptime):
 					ev.standard_used = 'dump'  # give not-long-enough events standard type 'dump' so they're ignored
 					session.merge(ev)
 				else:
-
 					for cpd in ['co', 'co2', 'ch4']:
 						ev.calc_result(cpd, 21)  # calculate results for all compounds going 21s back
 
 					session.merge(ev)
 					logger.info(f'CalEvent for date {ev.date} added.')
-					log_event_quantification(logger, ev)
+					log_event_quantification(logger, ev)  # show quantification info as DEBUG in log
 			session.commit()
 
 		session.close()
@@ -236,7 +220,6 @@ async def create_mastercals(directory, sleeptime):
 				logger.info(f'MasterCal for {mc.subcals[0].date} created.')
 
 			session.commit()
-			await asyncio.sleep(sleeptime)
 		else:
 			logger.info('No MasterCals were created.')
 
@@ -261,7 +244,9 @@ async def plot_new_data(directory, sleeptime):
 		engine, session, Base = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
 		Base.metadata.create_all(engine)
 
-		newest_data_point = session.query(Datum.date).filter(Datum.mpv_position == 1).order_by(Datum.date.desc()).first()[0]
+		newest_data_point = (session.query(Datum.date)
+									.filter(Datum.mpv_position == 1)
+									.order_by(Datum.date.desc()).first()[0])
 
 		if newest_data_point <= last_data_point:
 			logger.info('No new data was found to plot.')
@@ -309,7 +294,7 @@ async def plot_new_data(directory, sleeptime):
 										'top': 650},
 								major_ticks=major_ticks,
 								minor_ticks=minor_ticks,
-								unit_string = 'ppmv')
+								unit_string='ppmv')
 
 			summit_picarro_plot(None, ({'Summit CH4': [dates, ch4]}),
 								limits={'right': date_limits.get('right', None),
@@ -327,12 +312,17 @@ async def plot_new_data(directory, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
-loop = asyncio.get_event_loop()
+def main():
+	loop = asyncio.get_event_loop()
 
-loop.create_task(check_load_new_data(rundir, 5))
-loop.create_task(fake_move_data(rundir, 4))
-loop.create_task(find_cal_events(rundir, 20))
-loop.create_task(create_mastercals(rundir, 20))
-loop.create_task(plot_new_data(rundir, 20))
+	loop.create_task(check_load_new_data(rundir, 5))
+	loop.create_task(fake_move_data(rundir, 4))
+	loop.create_task(find_cal_events(rundir, 20))
+	loop.create_task(create_mastercals(rundir, 20))
+	loop.create_task(plot_new_data(rundir, 20))
 
-loop.run_forever()
+	loop.run_forever()
+
+
+if __name__ == '__main__':
+	main()
