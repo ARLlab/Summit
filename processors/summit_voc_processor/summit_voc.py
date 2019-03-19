@@ -14,28 +14,15 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
-"""
-Logging Thoughts, Justifications, Musings:
 
-Print: 
-When a process runs (with datetime)
+def configure_logger(rundir):
+	"""
+	Create the project-specific logger. DEBUG and up is saved to the log, INFO and up appears in the console.
 
-Log INFO:
-Logs/lines/runs/data are added
-
-Log WARNING:
-Files failed to parse, 
-
-Log ERROR:
-No new data warnings, etc.
-
-Log CRITICAL:
-Key files missing, such as VOC.LOG. It'll continue running, but for no reason, really.
-"""
-
-
-def configure_logger():
-	logfile = Path(os.getcwd()) / 'processor_logs/summit_voc.log'
+	:param rundir: path to create log sub-path in
+	:return: logger object
+	"""
+	logfile = rundir / 'processor_logs/summit_voc.log'
 	logger = logging.getLogger('summit_voc')
 	logger.setLevel(logging.DEBUG)
 	fh = logging.FileHandler(logfile)
@@ -53,6 +40,7 @@ def configure_logger():
 
 
 logger = configure_logger()
+
 
 class JDict(TypeDecorator):
 	"""
@@ -135,62 +123,6 @@ compound_windows = ({'ethane': (1.65, 1.85),  # compound retention windows for e
 					 'toluene': (23.3, 23.75)})
 
 
-def name_summit_peaks(nmhcline):
-	"""The most basic peak identification for Summit data."""
-
-	compound_pools = dict()
-
-	for peak in nmhcline.peaklist:
-		for compound, limits in compound_windows.items():
-			if limits[0] < peak.get_rt() < limits[1]:
-				try:  # add peak to pool for that compound and stop attempting to assign it. NEXT!
-					compound_pools[compound].append(peak)
-					break
-				except KeyError:
-					compound_pools[compound] = [peak]
-					break
-
-	for name, pool in compound_pools.items():
-		"""Address all EXCEPT n-butane, acetylene, and 4b in this loop."""
-		if name not in ['n-butane', 'acetylene', '4b']:
-
-			if len(pool) is 1:
-				chosen = pool[0]  # take only value if there
-			else:
-				chosen = max(pool, key=lambda peak: peak.pa)  # get largest peak in possible peaks
-
-			if chosen is not None:
-				chosen.set_name(name)
-
-	ibut = search_for_attr_value(nmhcline.peaklist, 'name', 'i-butane')
-
-	find_nbut = True
-	find_acet = True  # default to both needing to be found
-
-	if ibut is not None:
-		ibut_rt = ibut.get_rt()
-
-		if find_acet:
-			acet_pool = [peak for peak in nmhcline.peaklist if .6 < (peak.rt - ibut_rt) < .7]
-			# print('acet', acet_pool)
-			if len(acet_pool) == 0:
-				pass
-			else:
-				acet = max(acet_pool, key=lambda peak: peak.pa)  # get largest peak in possible peaks
-				acet.name = 'acetylene'
-
-		if find_nbut:
-			nbut_pool = [peak for peak in nmhcline.peaklist if .55 < (peak.rt - ibut_rt) < .60]
-			# print('nbut', nbut_pool)
-			if len(nbut_pool) == 0:
-				pass
-			else:
-				nbut = max(nbut_pool, key=lambda peak: peak.pa)  # get largest peak in possible peaks
-				nbut.name = 'n-butane'
-
-	return nmhcline
-
-
 class Crf(Base):
 	"""
 	A crf is a set of carbon response factors for compounds, tied to a datetime and standard.
@@ -203,7 +135,6 @@ class Crf(Base):
 	date_revision: datetime, the time this CRF was added into the file
 	standard: str, name of the standard this crf applies to
 	compounds: dict, of compounds and the corresponding crf for each
-
 	"""
 
 	__tablename__ = 'crfs'
@@ -368,8 +299,6 @@ class NmhcCorrection(NmhcLine):
 
 class LogFile(Base):
 	"""
-	TODO: write all descriptions with datatypes
-
 	The output from the LabView VI, it consists of all the listed parameters
 	recorded in the file.
 
@@ -671,15 +600,20 @@ class Datum(Base):
 def find_crf(crfs, sample_date):
 	"""
 	Returns the carbon response factor object for a sample at the given sample_date
-
-	crfs: list, of crf objects
-	sample_date: datetime, the date_start attribute of a sample
+	:param crfs: list, of Crf objects
+	:param sample_date: datetime, datetime of sample to be matched to a CRF
+	:return: Crf object
 	"""
 
 	return next((crf for crf in crfs if crf.date_start <= sample_date < crf.date_end), None)
 
 
 def read_crf_data(filename):
+	"""
+	Read the CRF information from the given filename.
+	:param filename: string, name of file
+	:return: list, of Crf objects
+	"""
 
 	lines = open(filename).readlines()
 
@@ -707,6 +641,11 @@ def read_crf_data(filename):
 
 
 def read_log_file(filename):
+	"""
+	Processes Summit LabView files into a dictionary that's unpacked into a LogFile object
+	:param filename: string, filename to be read
+	:return: LogFile, or None
+	"""
 	with open(filename) as file:
 		contents = file.readlines()
 
@@ -766,12 +705,11 @@ def read_log_file(filename):
 
 
 def read_pa_line(line):
-
 	"""
-	read_pa_line takes one line as a str from the NMHC_PA.LOG file, and parses it
-		into an NmhcLine object
-
-	line: str, a line from NMHC_PA.LOG
+	Takes one line as a string from a PeakSimple log, and processes it in Peak objects and an NmhcLine containing those
+	peaks.
+	:param line: string, one line of data from VOC.LOG, NMHC_PA.LOG, etc.
+	:return: NmhcLine or None
 	"""
 
 	ls = line.split('\t')
@@ -813,6 +751,9 @@ def find_closest_date(date, list_of_dates):
 	"""
 	This is a helper function that works on Python datetimes. It returns the closest date value,
 	and the timedelta from the provided date.
+	:param date: datetime
+	:param list_of_dates: list, of datetimes
+	:return: match, delta: the matching date from the list, and it's difference to the original as a timedelta
 	"""
 	match = min(list_of_dates, key = lambda x: abs(x - date))
 	delta = match - date
@@ -824,10 +765,13 @@ def search_for_attr_value(obj_list, attr, value):
 	"""
 	Finds the first (not necesarilly the only) object in a list, where its
 	attribute 'attr' is equal to 'value', returns None if none is found.
+	:param obj_list: list, of objects to search
+	:param attr: string, attribute to search for
+	:param value: mixed types, value that should be searched for
+	:return: obj, from obj_list, where attribute attr matches value
+		**** warning: returns the *first* obj, not necessarily the only
 	"""
 	return next((obj for obj in obj_list if getattr(obj,attr, None) == value), None)
-
-	## TODO : Fix so it'll warn that none found or returned
 
 
 def match_log_to_pa(LogFiles, NmhcLines):
@@ -835,9 +779,9 @@ def match_log_to_pa(LogFiles, NmhcLines):
 	This takes a list of LogFile and NmhcLine objects and returns a list (empty, even)
 		of resulting GcRun objects. When matching objects, it WILL modify their parameters
 		and status if warranted.
-	LogFiles: list (of LogFile objects), any log files that need partners
-	NmhcLines: list (of NmhcLine objects), any NmhcLine objects that could be matched
-
+	:param LogFiles: list, of LogFile objects that are unmatched
+	:param NmhcLines: list, of NmhcLine objects that are unmatched
+	:return: list, of GcRun objects created by matched LogFile/NmhcLine pairs
 	"""
 
 	runs = []
@@ -865,15 +809,16 @@ def match_log_to_pa(LogFiles, NmhcLines):
 
 def connect_to_summit_db(engine_str, directory):
 	"""
-	Example:
-	engine, session, Base = connect_to_reservoir_db('sqlite:///reservoir.sqlite', dir)
-
 	Takes string name of the database to create/connect to, and the directory it should be in.
 
-	engine_str: str, name of the database to create/connect to.
-	directory: str/path, directory that the database should be made/connected to in.
-		Requires context manager TempDir in order to work with async
+	:param engine_str: connection string for the database
+	:param directory: directory the database should in (created?) in
+	:return: engine, session, Base
+
+	Example:
+	engine, session, Base = connect_to_db('sqlite:///reservoir.sqlite', dir)
 	"""
+
 	from summit_voc import Base, TempDir
 
 	from sqlalchemy import create_engine
@@ -888,7 +833,11 @@ def connect_to_summit_db(engine_str, directory):
 
 
 def check_filesize(filename):
-	'''Returns filesize in bytes'''
+	"""
+	Returns the filesize in bytes.
+	:param filepath: file-like object
+	:return: int, filesize in bytes
+	"""
 	if os.path.isfile(filename):
 		return os.path.getsize(filename)
 	else:
@@ -913,11 +862,15 @@ class TempDir():
 		os.chdir(self.old_dir)
 
 
-def get_dates_peak_info(res_session, compound, info, date_start=None, date_end=None):
+def get_dates_peak_info(session, compound, info, date_start=None, date_end=None):
 	"""
-	Retrieve peak pa, rt, or mr from a session with option start and end dates given.
 
-	info: str, a valid peak attribute ['pa', 'mr', 'rt']
+	:param session: An active sqlalchemy session object
+	:param compound: string, the compound to be retrieved
+	:param info: string, the item from ['mr','pa', 'rt'] to be retrieved
+	:param date_start: datetime, start of the period to be retrieved
+	:param date_end: datetime, end of the period to be retrieved
+	:return: info, dates; lists of the requested info and corresponding dates
 	"""
 
 	peak_info = getattr(Peak, info, None)
@@ -927,7 +880,7 @@ def get_dates_peak_info(res_session, compound, info, date_start=None, date_end=N
 
 	if date_start is None and date_end is None:
 		try:
-			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
+			peak_info = (session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
 						 .join(NmhcLine).join(GcRun).join(LogFile).order_by(LogFile.date)) # get everything
 			info, dates = zip(*peak_info.all())
 		except ValueError:
@@ -938,7 +891,7 @@ def get_dates_peak_info(res_session, compound, info, date_start=None, date_end=N
 
 	elif date_start is None:
 		try:
-			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
+			peak_info = (session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
 						 .join(NmhcLine).join(GcRun).join(LogFile)
 						 .filter(LogFile.date < date_end).order_by(LogFile.date)) # get only before the end date given
 
@@ -951,7 +904,7 @@ def get_dates_peak_info(res_session, compound, info, date_start=None, date_end=N
 
 	elif date_end is None:
 		try:
-			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
+			peak_info = (session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
 						 .join(NmhcLine).join(GcRun).join(LogFile)
 						 .filter(LogFile.date > date_start).order_by(LogFile.date))
 			info, dates = zip(*peak_info.all()) # get only after the start date given
@@ -963,7 +916,7 @@ def get_dates_peak_info(res_session, compound, info, date_start=None, date_end=N
 
 	else:
 		try:
-			peak_info = (res_session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
+			peak_info = (session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
 						 .join(NmhcLine).join(GcRun).join(LogFile)
 						 .filter(LogFile.date.between(date_start, date_end)).order_by(LogFile.date)) # get between date bookends (inclusive beginning!)
 			info, dates = zip(*peak_info.all())
@@ -976,6 +929,18 @@ def get_dates_peak_info(res_session, compound, info, date_start=None, date_end=N
 
 def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None):
 	"""
+	:param dates: list, of Python datetimes; if set, this applies to all compounds.
+		If None, each compound supplies its own date values
+	:param compound_dict: dict, {'compound_name':[dates, mrs]}
+		keys: str, the name to be plotted and put into filename
+		values: list, len(list) == 2, two parallel lists that are...
+			dates: list, of Python datetimes. If None, dates come from dates input parameter (for all compounds)
+			mrs: list, of [int/float/None]s; these are the mixing ratios to be plotted
+	:param limits: dict, optional dictionary of limits including ['top','bottom','right','left']
+	:param minor_ticks: list, of major tick marks
+	:param major_ticks: list, of minor tick marks
+	:return: None
+
 	This plots stuff.
 
 	Example with all dates supplied:
@@ -985,18 +950,6 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
 	Example with single date list supplied:
 		plot_last_week([date, date, date], {'ethane':[None, [1, 2, 3]],
 								'propane':[None, [.5, 1, 1.5]]})
-
-	dates: list, of Python datetimes; if set, this applies to all compounds.
-		If None, each compound supplies its own date values
-	compound_dict: dict, {'compound_name':[dates, mrs]}
-		keys: str, the name to be plotted and put into filename
-		values: list, len(list) == 2, two parallel lists that are...
-			dates: list, of Python datetimes. If None, dates come from dates input parameter (for all compounds)
-			mrs: list, of [int/float/None]s; these are the mixing ratios to be plotted
-
-	limits: dict, optional dictionary of limits including ['top','bottom','right','left']
-	major_ticks: list, of major tick marks
-	minor_ticks: list, of minor tick marks
 	"""
 
 	import matplotlib.pyplot as plt
@@ -1053,10 +1006,75 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
 
 
 def get_peak_data(run):
-	"""Useful for extracing all peak info from newly created GcRuns or Datums in service of integration corrections."""
+	"""
+	Useful for extracing all peak info from newly created GcRuns or Datums in service of integration corrections.
+	:param run: GcRun object
+	:return: list, list; the peak areas and retention times for all components of the run
+	"""
+
 	pas = [peak.pa for peak in run.peaks]
 	rts = [peak.rt for peak in run.peaks]
 
 	assert len(pas) == len(rts), "get_peak_data() produced lists of uneven lengths."
 
 	return (pas, rts)
+
+
+def name_summit_peaks(nmhcline):
+	"""
+	'Simple' peak identification based on retention times. The C4 compounds get more rigorous treatment, though.
+	:param nmhcline: NmhcLine object
+	:return: NmhcLine object, with named peaks
+	"""
+
+	compound_pools = dict()
+
+	for peak in nmhcline.peaklist:
+		for compound, limits in compound_windows.items():
+			if limits[0] < peak.get_rt() < limits[1]:
+				try:  # add peak to pool for that compound and stop attempting to assign it. NEXT!
+					compound_pools[compound].append(peak)
+					break
+				except KeyError:
+					compound_pools[compound] = [peak]
+					break
+
+	for name, pool in compound_pools.items():
+		"""Address all EXCEPT n-butane, acetylene, and 4b in this loop."""
+		if name not in ['n-butane', 'acetylene', '4b']:
+
+			if len(pool) is 1:
+				chosen = pool[0]  # take only value if there
+			else:
+				chosen = max(pool, key=lambda peak: peak.pa)  # get largest peak in possible peaks
+
+			if chosen is not None:
+				chosen.set_name(name)
+
+	ibut = search_for_attr_value(nmhcline.peaklist, 'name', 'i-butane')
+
+	find_nbut = True
+	find_acet = True  # default to both needing to be found
+
+	if ibut is not None:
+		ibut_rt = ibut.get_rt()
+
+		if find_acet:
+			acet_pool = [peak for peak in nmhcline.peaklist if .6 < (peak.rt - ibut_rt) < .7]
+			# print('acet', acet_pool)
+			if len(acet_pool) == 0:
+				pass
+			else:
+				acet = max(acet_pool, key=lambda peak: peak.pa)  # get largest peak in possible peaks
+				acet.name = 'acetylene'
+
+		if find_nbut:
+			nbut_pool = [peak for peak in nmhcline.peaklist if .55 < (peak.rt - ibut_rt) < .60]
+			# print('nbut', nbut_pool)
+			if len(nbut_pool) == 0:
+				pass
+			else:
+				nbut = max(nbut_pool, key=lambda peak: peak.pa)  # get largest peak in possible peaks
+				nbut.name = 'n-butane'
+
+	return nmhcline
