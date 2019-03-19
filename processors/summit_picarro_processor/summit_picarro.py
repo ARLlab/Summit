@@ -294,9 +294,10 @@ class MasterCal(Base):
 			setattr(self, cpd+'_slope', curve.m)
 			setattr(self, cpd+'_intercept', curve.intercept)
 			middle_y_offset = mid_coord.y - (curve.m * mid_coord.x + curve.intercept)
-			setattr(self, cpd+'_middle_offset', middle_y_offset)
-			# y offset is the (actual y) - (expected y along the curve)
+			# y offset is (actual y) - (expected y along the curve)
 			# so a positive offset means the actual measurement was above the curve; negative below
+			setattr(self, cpd+'_middle_offset', middle_y_offset)
+
 
 	@property
 	def high_std(self):
@@ -423,7 +424,7 @@ def log_event_quantification(logger, event):
 	return
 
 
-def summit_picarro_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None):
+def summit_picarro_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None, unit_string = 'ppbv'):
 	"""
 	This plots stuff.
 
@@ -450,6 +451,8 @@ def summit_picarro_plot(dates, compound_dict, limits=None, minor_ticks=None, maj
 
 	import matplotlib.pyplot as plt
 	from matplotlib.dates import DateFormatter
+	from pandas.plotting import register_matplotlib_converters
+	register_matplotlib_converters()
 
 	f1 = plt.figure()
 	ax = f1.gca()
@@ -491,7 +494,7 @@ def summit_picarro_plot(dates, compound_dict, limits=None, minor_ticks=None, maj
 	ax.tick_params(axis='both', which='major', size=8, width=2, labelsize=15)
 	f1.set_size_inches(11.11, 7.406)
 
-	ax.set_ylabel('Mixing Ratio (ppbv)', fontsize=20)
+	ax.set_ylabel(f'Mixing Ratio ({unit_string})', fontsize=20)
 	ax.set_title(f'{comp_list}', fontsize=24, y= 1.02)
 	ax.legend(compound_dict.keys())
 

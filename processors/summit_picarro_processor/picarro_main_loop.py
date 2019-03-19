@@ -246,18 +246,85 @@ async def create_mastercals(directory, sleeptime):
 
 
 async def plot_new_data(directory, sleeptime):
+	from datetime import datetime
+	import datetime as dt
+
+	last_data_point = datetime(1900, 1, 1)  # default on startup - plots will be created on first run always
+	days_to_plot = 7
 
 	while True:
-		from summit_picarro import summit_picarro_plot
-		pass
+		logger.info('Running plot_new_data()')
+		from summit_picarro import summit_picarro_plot, connect_to_db, Datum, TempDir
 
-		# summit_picarro_plot(None, ({'i/n Pentane ratio': [ipent_dates, inpent_ratio]}),
-		# 					limits={'right': date_limits.get('right', None),
-		# 							'left': date_limits.get('left', None),
-		# 							'bottom': 0,
-		# 							'top': 3},
-		# 					major_ticks=major_ticks,
-		# 					minor_ticks=minor_ticks)
+		plotdir = rundir / 'plots'
+
+		engine, session, Base = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
+		Base.metadata.create_all(engine)
+
+		newest_data_point = session.query(Datum.date).filter(Datum.mpv_position == 1).order_by(Datum.date.desc()).first()[0]
+
+		if newest_data_point <= last_data_point:
+			logger.info('No new data was found to plot.')
+			session.close()
+			engine.dispose()
+			await asyncio.sleep(sleeptime)
+			continue
+
+		now = datetime(2019, 3, 14)  # save 'now' as the start of making plots  # TODO: Remove testing temp val
+		date_ago = now - dt.timedelta(days=days_to_plot + 1)
+		# set a static for retrieving data at beginning of plot cycle
+
+		date_limits = dict()
+		date_limits['right'] = now.replace(hour=0, minute=0, second=0, microsecond=0) + dt.timedelta(days=1)
+		date_limits['left'] = date_limits['right'] - dt.timedelta(days=days_to_plot)
+
+		major_ticks = [date_limits['right'] - dt.timedelta(days=x) for x in range(0, days_to_plot + 1)]
+		minor_ticks = [date_limits['right'] - dt.timedelta(hours=x * 6) for x in range(0, days_to_plot * 4 + 1)]
+
+		all_data = session.query(Datum.date, Datum.co, Datum.co2, Datum.ch4).filter(Datum.mpv_position == 1).all()
+		# get only ambient data
+		dates = []
+		co = []
+		co2 = []
+		ch4 = []
+		for result in all_data:
+			dates.append(result.date)
+			co.append(result.co)
+			co2.append(result.co2)
+			ch4.append(result.ch4)
+
+		with TempDir(plotdir):
+			summit_picarro_plot(None, ({'Summit CO': [dates, co]}),
+								limits={'right': date_limits.get('right', None),
+										'left': date_limits.get('left', None),
+										'bottom': 0,
+										'top': 500},
+								major_ticks=major_ticks,
+								minor_ticks=minor_ticks)
+
+			summit_picarro_plot(None, ({'Summit CO2': [dates, co2]}),
+								limits={'right': date_limits.get('right', None),
+										'left': date_limits.get('left', None),
+										'bottom': 350,
+										'top': 650},
+								major_ticks=major_ticks,
+								minor_ticks=minor_ticks,
+								unit_string = 'ppmv')
+
+			summit_picarro_plot(None, ({'Summit CH4': [dates, ch4]}),
+								limits={'right': date_limits.get('right', None),
+										'left': date_limits.get('left', None),
+										'bottom': 1800,
+										'top': 2800},
+								major_ticks=major_ticks,
+								minor_ticks=minor_ticks)
+
+		logger.info('New data plots were created.')
+
+		last_data_point = newest_data_point
+		session.close()
+		engine.dispose()
+		await asyncio.sleep(sleeptime)
 
 
 loop = asyncio.get_event_loop()
@@ -266,5 +333,6 @@ loop.create_task(check_load_new_data(rundir, 5))
 loop.create_task(fake_move_data(rundir, 4))
 loop.create_task(find_cal_events(rundir, 20))
 loop.create_task(create_mastercals(rundir, 20))
+loop.create_task(plot_new_data(rundir, 20))
 
 loop.run_forever()
