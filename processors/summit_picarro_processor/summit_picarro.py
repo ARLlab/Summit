@@ -6,8 +6,6 @@ import statistics as s
 import pandas as pd
 from collections import namedtuple
 
-# TODO: Class explanations/docstrings
-
 """
 Project-Wide TODO List:
 
@@ -19,15 +17,6 @@ Project-Wide TODO List:
 4) Update VOC plots per recommendations
 5) Calibration event developmment and testing
 
-"""
-
-"""
-CalEvent Planning
-
-CalEvent is a single high/mid/low standard calibration event
-
-MasterCal is a run of high, mid, low standards that have been joined and have stats including a curve and the 
-distance of the middle from the high/low points.
 """
 
 from sqlalchemy.types import TypeDecorator, VARCHAR
@@ -407,7 +396,7 @@ def check_filesize(filepath):
 	"""
 	Returns the filesize in bytes.
 	:param filepath: file-like object
-	:return: int
+	:return: int, filesize in bytes
 	"""
 	if Path.is_file(filepath):
 		return Path.stat(filepath).st_size
@@ -575,15 +564,13 @@ def find_closest_date(date, list_of_dates):
 
 def search_for_attr_value(obj_list, attr, value):
 	"""
-
+	Finds the first (not necesarilly the only) object in a list, where its
+	attribute 'attr' is equal to 'value', returns None if none is found.
 	:param obj_list: list, of objects to search
 	:param attr: string, attribute to search for
 	:param value: mixed types, value that should be searched for
 	:return: obj, from obj_list, where attribute attr matches value
 		**** warning: returns the *first* obj, not necessarily the only
-
-	Finds the first (not necesarilly the only) object in a list, where its
-	attribute 'attr' is equal to 'value', returns None if none is found.
 	"""
 	return next((obj for obj in obj_list if getattr(obj,attr, None) == value), None)
 
