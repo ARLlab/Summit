@@ -7,7 +7,6 @@ This script plots the following ratios in a similar fashion to plotTest.py
 
 This code was written in Spyder via Anaconda Distribution [Python 3.7]
 
-
 """
 
 ## Import Libraries
