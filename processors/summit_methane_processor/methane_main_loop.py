@@ -7,6 +7,7 @@ The per-run logs contain sample pressures, etc; those are associated with pairs 
 
 Some runtime QC is needed to prevent quantification from failed standard runs, poor integrations, etc.
 """
+
 from pathlib import Path
 import asyncio
 
@@ -37,7 +38,7 @@ async def check_load_pa_log(directory, path, sleeptime):
 			await asyncio.sleep(sleeptime)
 			continue
 
-		pa_file_contents = path.read_text().split('\n')
+		pa_file_contents = path.read_text().split('\n')[start_line:]
 		start_line = len(pa_file_contents)
 
 		pa_lines = []
@@ -67,21 +68,24 @@ async def check_load_pa_log(directory, path, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
-
 async def check_load_run_logs(directory, sleeptime):
 	while True:
-		from summit_methane import get_all_data_files, connect_to_db
+		from summit_methane import get_all_data_files, connect_to_db, GcRun, Sample, read_log_file
 
 		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
 
+		runs_in_db = session.query(GcRun).all()
+		samples_in_db = session.query(Sample).all()
+
+		run_dates = [r.date for r in runs_in_db]
+
 		files = get_all_data_files(directory / 'data')
 
+		runs = []
 		for file in files:
-			pass
+			runs.append(read_log_file(file))
+			print(runs[-1])
 
-
-			# create GcRuns
-			# add Samples
 
 
 
@@ -91,6 +95,7 @@ def main():
 	loop = asyncio.get_event_loop()
 
 	loop.create_task(check_load_pa_log(rundir, log_path, 10))
+	loop.create_task(check_load_run_logs(rundir, 10))
 
 	loop.run_forever()
 

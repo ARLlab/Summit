@@ -179,6 +179,7 @@ class GcRun(Base):
 	pa_line = relationship('PaLine', back_populates='run')
 	pa_line_id = Column(Integer, ForeignKey('palines.id'))
 
+	_logfile = Column(String)
 	carrier_flow = Column(Float)
 	sample_flow = Column(Float)
 	sample_time = Column(Float)
@@ -188,8 +189,25 @@ class GcRun(Base):
 	loop_p_check1 = Column(Float)
 	loop_p_check2 = Column(Float)
 
-	def __init__(self):
-		pass
+	def __init__(self, logfile, carrier_flow, sample_flow, sample_time, relax_time,
+				 injection_time, wait_time, loop_p_check1, loop_p_check2):
+		self.carrier_flow = carrier_flow
+		self.sample_flow = sample_flow
+		self.sample_time = sample_time
+		self.relax_time = relax_time
+		self.injection_time = injection_time
+		self.wait_time = wait_time
+		self.loop_p_check1 = loop_p_check1
+		self.loop_p_check2 = loop_p_check2
+		self.logfile = logfile
+
+	@property  # logfile is a property that lets logfile be stored as String, but returns Path object
+	def logfile(self):
+		return Path(self._logfile)
+
+	@logfile.setter
+	def logfile(self, value):
+		self._logfile = str(value)
 
 
 class Datum():
@@ -312,17 +330,21 @@ def read_log_file(path):
 
 	contents = path.read_text().split('\n')
 
+	# filter out blank line the VI is writing at the end of files that read_text() keeps
+	contents[:] = [line for line in contents if line != '']
+
 	run_dict = {}
+	run_dict['logfile'] = path
 	run_dict['carrier_flow'] = float(contents[0].split('\t')[1])
 	run_dict['sample_flow'] = float(contents[1].split('\t')[1])
 	run_dict['sample_time'] = float(contents[2].split('\t')[1])
 	run_dict['relax_time'] = float(contents[3].split('\t')[1])
 	run_dict['injection_time'] = float(contents[4].split('\t')[1])
 	run_dict['wait_time'] = float(contents[5].split('\t')[1])
-	run_dict['loop_p_check1'] = float(contents[5].split('\t')[-2])
-	run_dict['loop_p_check2'] = float(contents[5].split('\t')[-1])
+	run_dict['loop_p_check1'] = float(contents[-2].split('\t')[1])
+	run_dict['loop_p_check2'] = float(contents[-1].split('\t')[1])
 
-	# TODO MAKE GC RUN
+	run = GcRun(*run_dict)
 
 	# run information is contained in 23-line blocks with no delimiters, spanning (0-indexed) lines 17:-3
 	# each block of 23 will
@@ -334,15 +356,17 @@ def read_log_file(path):
 	for ind in indices:
 		sample_info = run_blocks[ind:ind+23]
 		sample_dict = {}
-		sample_dict['flow'] = float(sample_info[0].split('\t'))
-		sample_dict['pressure'] = float(sample_info[1].split('\t'))
-		sample_dict['rh'] = float(sample_info[2].split('\t'))
+		sample_dict['flow'] = float(sample_info[0].split('\t')[1])
+		sample_dict['pressure'] = float(sample_info[1].split('\t')[1])
+		sample_dict['rh'] = float(sample_info[2].split('\t')[1])
 
-		relax_pressures = s.mean([float(sample_dict[i]) for i in range(3, 24)])
+		sample_dict['relax_p'] = s.mean([float(sample_info[i].split('\t')[1]) for i in range(3, 23)])
 
-		samples.append(Sample(*sample_dict))
+		samples.append(Sample(run, *sample_dict))
 
+	run.samples = samples
 
+	return run
 
 def configure_logger(rundir):
 	"""
