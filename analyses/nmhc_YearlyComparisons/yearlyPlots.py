@@ -20,6 +20,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+# Change figure seetings
+from matplotlib.pyplot import figure
+
 ## Import function
 from fileInput import fileLoad
 nmhcData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.XLSX")
@@ -33,6 +36,7 @@ numYears = np.linspace(2008,2018,num=((2018 - 2008)+1)) # number of years total
 
 for i in numCompounds:
     plt.figure(i) # Open a new fig for each compounds
+    figure(num=None, figsize=(8, 6), dpi=160, facecolor='w', edgecolor='k')
     plt.xlabel('Day of Year',fontdict=None,labelpad=None) # x labels all same
     plt.ylabel('Mixing Ratio [Parts per Billion]',fontdict=None,labelpad=None) # y labels
     plt.title('Summit %s from 2008-2018' %compounds[int(i)],fontdict=None,pad=None)
@@ -60,6 +64,7 @@ for k in numYearsCH4:
     plt.title('Summit Methane [CH4] from 2012-2018',fontdict=None,pad=None)
     plt.ylim(1750,2050) # Excludes a few  outliers from the picture
     plt.legend(bbox_to_anchor=(1.04,1),loc="upper left")
+    figure(num=None, figsize=(8, 6), dpi=160, facecolor='w', edgecolor='k')
 
 plt.show() # Displays all figures
 
