@@ -16,9 +16,13 @@ rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_
 from summit_methane import logger
 
 async def check_load_pa_log(directory, path, sleeptime):
+
+	start_size = 0  #default to checking entire file on startup
+	start_line = 0
+
 	while True:
 		logger.info('Running check_load_pa_log()')
-		from summit_methane import read_pa_line, connect_to_db, PaLine
+		from summit_methane import read_pa_line, connect_to_db, PaLine, check_filesize
 
 		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
 		Base.metadata.create_all(engine)
@@ -26,20 +30,36 @@ async def check_load_pa_log(directory, path, sleeptime):
 		lines_in_db = session.query(PaLine).all()
 		dates_in_db = [l.date for l in lines_in_db]
 
+		if check_filesize(path) <= start_size:
+			logger.info('PA file did not change size.')
+			session.close()
+			engine.dispose()
+			await asyncio.sleep(sleeptime)
+			continue
+
 		pa_file_contents = path.read_text().split('\n')
+		start_line = len(pa_file_contents)
 
 		pa_lines = []
 		for line in pa_file_contents:
 			pa_lines.append(read_pa_line(line))
 
 		if len(pa_lines) == 0:
-			logger.info('No new PA lines found.')
+			logger.info('No new PaLines found.')
 
 		else:
+			ct = 0  # count committed logs
 			for line in pa_lines:
 				if line.date not in dates_in_db:
 					session.add(line)
-			session.commit()
+					logger.info(f'PaLine for {line.date} added.')
+					ct += 1
+
+			if ct == 0:
+				logger.info('No new PaLines found.')
+			else:
+				logger.info(f'{ct} PaLines added.')
+				session.commit()
 
 		session.close()
 		engine.dispose()
