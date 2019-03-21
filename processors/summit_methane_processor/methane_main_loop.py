@@ -10,26 +10,70 @@ Some runtime QC is needed to prevent quantification from failed standard runs, p
 from pathlib import Path
 import asyncio
 
-rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
+rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
+#rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
 
+from summit_methane import logger
 
-async def check_load_pa_log(rundir, sleeptime):
+async def check_load_pa_log(directory, path, sleeptime):
 	while True:
-		pass
-		# from summit_methane import get_all_data_files
-		# files = get_all_data_files(rundir / 'data')
-		#
-		# for file in files:
-		# 	pass
+		logger.info('Running check_load_pa_log()')
+		from summit_methane import read_pa_line, connect_to_db, PaLine
+
+		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+		Base.metadata.create_all(engine)
+
+		lines_in_db = session.query(PaLine).all()
+		dates_in_db = [l.date for l in lines_in_db]
+
+		pa_file_contents = path.read_text().split('\n')
+
+		pa_lines = []
+		for line in pa_file_contents:
+			pa_lines.append(read_pa_line(line))
+
+		if len(pa_lines) == 0:
+			logger.info('No new PA lines found.')
+
+		else:
+			for line in pa_lines:
+				if line.date not in dates_in_db:
+					session.add(line)
+			session.commit()
+
+		session.close()
+		engine.dispose()
+
+		await asyncio.sleep(sleeptime)
 
 
-async def check_load_run_logs():
+
+async def check_load_run_logs(directory, sleeptime):
 	while True:
-		from summit_methane import get_all_data_files
-		files = get_all_data_files(rundir / 'data')
+		from summit_methane import get_all_data_files, connect_to_db
+
+		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+
+		files = get_all_data_files(directory / 'data')
 
 		for file in files:
+			pass
 
 
 			# create GcRuns
 			# add Samples
+
+
+
+def main():
+	log_path = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor\CH4_test.LOG')
+
+	loop = asyncio.get_event_loop()
+
+	loop.create_task(check_load_pa_log(rundir, log_path, 10))
+
+	loop.run_forever()
+
+
+if __name__ == '__main__':
+	main()

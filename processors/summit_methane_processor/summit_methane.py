@@ -87,7 +87,6 @@ class Peak(Base):
 	__tablename__ = 'peaks'
 
 	id = Column(Integer, primary_key = True)
-	date = Column(DateTime)
 	name = Column(String)
 	pa = Column(Float)
 	mr = Column(Float)
@@ -97,12 +96,14 @@ class Peak(Base):
 	gc_sequence_num = Column(Integer)
 
 	run = relationship('GcRun', back_populates='peaks')
-	run_id = ForeignKey(Integer, 'runs.id')
+	run_id = Column(Integer, ForeignKey('runs.id'))
 
-	sample = relationship('Sample', uselist=False, back_populates='samples')
+	pa_line = relationship('PaLine', back_populates='peaks')
+	pa_line_id = Column(Integer, ForeignKey('palines.id'))
 
-	def __init__(self, date, name, pa, rt):
-		self.date = date;
+	sample = relationship('Sample', uselist=False, back_populates='peak')
+
+	def __init__(self, name, pa, rt):
 		self.name = name.lower()
 		self.pa = pa
 		self.mr = None
@@ -123,12 +124,13 @@ class Sample(Base):
 	__tablename__ = 'samples'
 
 	id = Column(Integer, primary_key=True)
+	date = Column(DateTime)
 
 	peak = relationship('Peak', uselist=False, back_populates='sample')
-	peak_id = ForeignKey(Integer, 'peaks.id')
+	peak_id = Column(Integer, ForeignKey('peaks.id'))
 
 	run = relationship('GcRun', back_populates='samples')
-	run_id = ForeignKey(Integer, 'runs.id')
+	run_id = Column(Integer, ForeignKey( 'runs.id'))
 
 	flow = Column(Float)
 	pressure = Column(Float)
@@ -136,13 +138,25 @@ class Sample(Base):
 	relax_p = Column(Float)
 
 	def __init__(self, run, flow, pressure, rh, relax_p):
+		self.run = run
 		self.flow = flow
 		self.pressure = pressure
 		self.rh = rh
 		self.relax_p = relax_p
-		self.run = run
 
 
+class PaLine(Base):
+
+	__tablename__ = 'palines'
+
+	id = Column(Integer, primary_key=True)
+	peaks = relationship('Peak', back_populates='pa_line')
+	run = relationship('GcRun', back_populates='pa_line')
+	date = Column(DateTime)
+
+	def __init__(self, date, peaks):
+		self.date = date
+		self.peaks = peaks
 
 
 class GcRun(Base):
@@ -162,6 +176,8 @@ class GcRun(Base):
 	id = Column(Integer, primary_key=True)
 	peaks = relationship('Peak', back_populates='run')
 	samples = relationship('Sample', back_populates='run')
+	pa_line = relationship('PaLine', back_populates='run')
+	pa_line_id = Column(Integer, ForeignKey('palines.id'))
 
 	carrier_flow = Column(Float)
 	sample_flow = Column(Float)
@@ -171,8 +187,6 @@ class GcRun(Base):
 	wait_time = Column(Float)
 	loop_p_check1 = Column(Float)
 	loop_p_check2 = Column(Float)
-
-
 
 	def __init__(self):
 		pass
@@ -280,9 +294,11 @@ def read_pa_line(line):
 				line_peaks.append(Peak(peak_dict['name'], peak_dict['pa'], peak_dict['rt']))
 
 	if len(line_peaks) == 0:
-		peaks = None
+		this_line = None
+	else:
+		this_line = PaLine(line_date, line_peaks)
 
-	return peaks
+	return this_line
 
 
 def read_log_file(path):
@@ -335,7 +351,7 @@ def configure_logger(rundir):
 	:param rundir: path to create log sub-path in
 	:return: logger object
 	"""
-	logfile = Path(rundir) / 'processor_logs/summit_picarro.log'
+	logfile = Path(rundir) / 'processor_logs/summit_methane.log'
 	logger = logging.getLogger('summit_voc')
 	logger.setLevel(logging.DEBUG)
 	fh = logging.FileHandler(logfile)
