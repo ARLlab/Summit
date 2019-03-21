@@ -7,15 +7,29 @@ The per-run logs contain sample pressures, etc; those are associated with pairs 
 
 Some runtime QC is needed to prevent quantification from failed standard runs, poor integrations, etc.
 """
-
+from pathlib import Path
 import asyncio
 
+rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
 
-async def check_ps_log():
+
+async def check_load_pa_log(rundir, sleeptime):
 	while True:
 		pass
+		# from summit_methane import get_all_data_files
+		# files = get_all_data_files(rundir / 'data')
+		#
+		# for file in files:
+		# 	pass
 
 
-async def check_run_logs():
+async def check_load_run_logs():
 	while True:
-		pass
+		from summit_methane import get_all_data_files
+		files = get_all_data_files(rundir / 'data')
+
+		for file in files:
+
+
+			# create GcRuns
+			# add Samples

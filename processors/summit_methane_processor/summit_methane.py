@@ -29,22 +29,34 @@ Process:
 1) Create a GcRun, which is just a shell for the data along with some log parameters
 	This requires the log information to come in as a dict, but no samples/peaks
 
-2) Create Samples
+2) Push peaks into the GcRun
+
+3) Create Samples
 	This requires the per-sample log information, which is then parsed to create the incomplete sample
 
-3) Push Samples into GcRun
-	Now, the log information has been processed completely
-
-3) Create Peaks from CH4.LOG and match to Samples
 	Peaks will be id'd with rough retention windows and given a sequence #, and take the largest within it above a limit
 	None is okay, even likely given the GC
 	These will be correctable later from the real integration sheet
 
+4) Create Samples in GcRun method, pass rt window dict to find correct peaks
+	Now, the log information has been processed completely
+
+
+
+	##############################
+	NEW
+
+	Peaks get a date
+	All peaks get committed from new lines in the pa file (distinguish by date)
+	Then peaks gets queried per GcRun for within a date range
 
 """
 
 from pathlib import Path
 import logging, json, os
+from datetime import datetime
+import datetime as dt
+import statistics as s
 
 from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import MutableDict, MutableList
@@ -75,6 +87,7 @@ class Peak(Base):
 	__tablename__ = 'peaks'
 
 	id = Column(Integer, primary_key = True)
+	date = Column(DateTime)
 	name = Column(String)
 	pa = Column(Float)
 	mr = Column(Float)
@@ -87,9 +100,9 @@ class Peak(Base):
 	run_id = ForeignKey(Integer, 'runs.id')
 
 	sample = relationship('Sample', uselist=False, back_populates='samples')
-	# TODO: Does it make more sense to have Peak, or Sample hold the foreignkey?
 
-	def __init__(self, name, pa, rt):
+	def __init__(self, date, name, pa, rt):
+		self.date = date;
 		self.name = name.lower()
 		self.pa = pa
 		self.mr = None
@@ -117,6 +130,18 @@ class Sample(Base):
 	run = relationship('GcRun', back_populates='samples')
 	run_id = ForeignKey(Integer, 'runs.id')
 
+	flow = Column(Float)
+	pressure = Column(Float)
+	rh = Column(Float)
+	relax_p = Column(Float)
+
+	def __init__(self, run, flow, pressure, rh, relax_p):
+		self.flow = flow
+		self.pressure = pressure
+		self.rh = rh
+		self.relax_p = relax_p
+		self.run = run
+
 
 
 
@@ -137,6 +162,17 @@ class GcRun(Base):
 	id = Column(Integer, primary_key=True)
 	peaks = relationship('Peak', back_populates='run')
 	samples = relationship('Sample', back_populates='run')
+
+	carrier_flow = Column(Float)
+	sample_flow = Column(Float)
+	sample_time = Column(Float)
+	relax_time = Column(Float)
+	injection_time = Column(Float)
+	wait_time = Column(Float)
+	loop_p_check1 = Column(Float)
+	loop_p_check2 = Column(Float)
+
+
 
 	def __init__(self):
 		pass
@@ -208,6 +244,47 @@ def connect_to_db(engine_str, directory):
 	return engine, sess, Base
 
 
+def read_pa_line(line):
+	"""
+	Takes one line as a string from a PeakSimple log, and processes it in Peak objects and an NmhcLine containing those
+	peaks. (This one is a minor modification of the one in summit_voc.py)
+	:param line: string, one line of data from VOC.LOG, NMHC_PA.LOG, etc.
+	:return: NmhcLine or None
+	"""
+
+	ls = line.split('\t')
+	line_peaks = []
+
+	line_date = datetime.strptime(ls[1] + ' ' + ls[2], '%m/%d/%Y %H:%M:%S')
+
+	for ind, item in enumerate(ls[3:]):
+
+		ind = ind+3 # offset ind since we're working with ls[3:]
+
+		peak_dict = dict()
+
+		if '"' in item:
+
+			peak_dict['name'] = item.strip('"') # can't fail, " is definitely there
+
+			try:
+				peak_dict['rt'] = float(ls[ind+1])
+			except:
+				peak_dict['rt'] = None
+			try:
+				peak_dict['pa'] = float(ls[ind+2])
+			except:
+				peak_dict['pa'] = None
+
+			if None not in peak_dict.values():
+				line_peaks.append(Peak(peak_dict['name'], peak_dict['pa'], peak_dict['rt']))
+
+	if len(line_peaks) == 0:
+		peaks = None
+
+	return peaks
+
+
 def read_log_file(path):
 	"""
 	A single log file actually accounts for a whole run, which includes 10 samples. There is information that is
@@ -217,7 +294,38 @@ def read_log_file(path):
 	:return:
 	"""
 
-	pass
+	contents = path.read_text().split('\n')
+
+	run_dict = {}
+	run_dict['carrier_flow'] = float(contents[0].split('\t')[1])
+	run_dict['sample_flow'] = float(contents[1].split('\t')[1])
+	run_dict['sample_time'] = float(contents[2].split('\t')[1])
+	run_dict['relax_time'] = float(contents[3].split('\t')[1])
+	run_dict['injection_time'] = float(contents[4].split('\t')[1])
+	run_dict['wait_time'] = float(contents[5].split('\t')[1])
+	run_dict['loop_p_check1'] = float(contents[5].split('\t')[-2])
+	run_dict['loop_p_check2'] = float(contents[5].split('\t')[-1])
+
+	# TODO MAKE GC RUN
+
+	# run information is contained in 23-line blocks with no delimiters, spanning (0-indexed) lines 17:-3
+	# each block of 23 will
+	run_blocks = contents[17:-3]
+	# run blocks come in sets of 23 lines with not particular delimiters
+	indices = [i*23 for i in range(int(len(run_blocks)))]
+
+	samples = []
+	for ind in indices:
+		sample_info = run_blocks[ind:ind+23]
+		sample_dict = {}
+		sample_dict['flow'] = float(sample_info[0].split('\t'))
+		sample_dict['pressure'] = float(sample_info[1].split('\t'))
+		sample_dict['rh'] = float(sample_info[2].split('\t'))
+
+		relax_pressures = s.mean([float(sample_dict[i]) for i in range(3, 24)])
+
+		samples.append(Sample(*sample_dict))
+
 
 
 def configure_logger(rundir):
@@ -269,6 +377,19 @@ def list_files_recur(path):
 	files = []
 	for file in path.rglob('*'):
 		files.append(file)
+
+	return files
+
+
+def get_all_data_files(path):
+	"""
+	Recursively search the given directory for .dat files.
+
+	:param rundir_path:
+	:return: list, of file-like Path objects
+	"""
+	files = list_files_recur(path)
+	files[:] = [file for file in files if '.txt' in file.name]
 
 	return files
 
