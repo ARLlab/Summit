@@ -1,13 +1,11 @@
 """
 Created on Tuesday, March 19th, 2019.
 
-This script plots the following ratios in a similar fashion to plotTest.py
+This script plots the following ratio in a similar fashion to plotTest.py
 1) Ethane / Methane
-2) Acetylene / Methane
 
 This code was written in Spyder via Anaconda Distribution [Python 3.7]
 
-[METHOD 2 using df.apply]
 """
 
 ## Import Libraries
@@ -27,16 +25,29 @@ hrs3 = 3 * 60 * 60 # three hours in seconds
 
 from isleapyear import isleapyear
 for i in numYears:
+    ## Define date variables for given year
     ethaneDate = nmhcData.loc[(nmhcDate >= i) & (nmhcDate < (i+1)),'DecYear'].values # Past 2012
     ethaneDate = (ethaneDate - i) * (365 + isleapyear(i)) * 24 * 60 * 60 # Convert to seconds
-
+    
     methaneDate= methaneData.loc[(ch4Date >= i) & (ch4Date < (i+1)),'DecYear'].values
     methaneDate = (methaneDate - i) * (365 + isleapyear(i))* 24 * 60* 60
 
     ethane = nmhcData.loc[(nmhcDate >= i) & (nmhcDate < (i+1)),'ethane'].values # Gets ethane column, past 2012
     methane = methaneData.loc[(ch4Date >= i) & (ch4Date < (i+1)),'MR'].values
 
-    # Applies methaneAverage function to the ethane block
-    # ethaneMethane = ethane.applymap(methaneAverage)
+    ethaneMethane = np.zeros(np.size(ethane)) # Preallocate ethaneMethane matrix
 
-    # Plot ethaneDate on x axis, ethane/methane on y axis
+    ## Iterate over each value in ethane
+    for j,value in np.ndenumerate(ethane):
+        high = ethaneDate[j] + hrs3 # Current Ethane timestep in seconds + 3 hours
+        low = ethaneDate[j] - hrs3 # current ethane timestep in seconds - 3 hours
+        # Get the average of all methane values between high and low
+        methaneAverage = np.mean(methane[(methaneDate[:] <= high) & (methaneDate[:] >= low)])
+        ethaneMethane[j] = value / methaneAverage # Puts ratios in matrix for plotting
+
+    ## Plotting
+    plt.plot((ethaneDate/60/60/24),ethaneMethane,'.',alpha=0.5,label='%i'%i)
+    plt.xlabel('Day of Year',fontdict=None,labelpad=None) # Plot Xlabel
+    plt.ylabel('Mixing Ratio [Parts per Billion]',fontdict=None,labelpad=None) # Plot Ylabel
+    plt.title('Summit Ethane / Methane from 2012-2018',fontdict=None,pad=None)
+    plt.legend(bbox_to_anchor=(1.04,1),loc="upper left")
