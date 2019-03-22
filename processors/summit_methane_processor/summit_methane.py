@@ -361,7 +361,7 @@ def read_log_file(path):
 
 	# run information is contained in 23-line blocks with no delimiters, spanning (0-indexed) lines 17:-3
 	# each block of 23 will
-	run_blocks = contents[17:-3]
+	run_blocks = contents[17:-2]
 	# run blocks come in sets of 23 lines with not particular delimiters
 	indices = [i*23 for i in range(int(len(run_blocks)/23))]
 
@@ -372,7 +372,6 @@ def read_log_file(path):
 		sample_dict['flow'] = float(sample_info[0].split('\t')[1])
 		sample_dict['pressure'] = float(sample_info[1].split('\t')[1])
 		sample_dict['rh'] = float(sample_info[2].split('\t')[1])
-
 		sample_dict['relax_p'] = s.mean([float(sample_info[i].split('\t')[1]) for i in range(3, 23)])
 
 		samples.append(Sample(run, **sample_dict))

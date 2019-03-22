@@ -77,7 +77,9 @@ async def check_load_run_logs(directory, sleeptime):
 		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
 
 		runs_in_db = session.query(GcRun).all()
-		samples_in_db = session.query(Sample).all()
+		samples = session.query(Sample)
+		samples_in_db = samples.all()
+		sample_count = samples.count()
 
 		run_dates = [r.date for r in runs_in_db]
 
@@ -87,19 +89,22 @@ async def check_load_run_logs(directory, sleeptime):
 		for file in files:
 			runs.append(read_log_file(file))
 
-		ct = 0  # count runs added
+		new_run_count = 0  # count runs added
 		for run in runs:
 			if run.date not in run_dates:
 				session.add(run)
 				logger.info(f'GcRun for {run.date} added.')
-				# print(run.date)
-				ct +=1
+				new_run_count +=1
 
-		if ct == 0:
+		if new_run_count == 0:
 			logger.info('No new GcRuns added.')
 		else:
 			session.commit()
-			logger.info(f'{ct} GcRuns added.')
+			new_sample_count = session.query(Sample).count() - sample_count
+			logger.info(f'{new_run_count} GcRuns added, containing {new_sample_count} Samples.')
+
+			if new_run_count * 10 != new_sample_count:
+				logger.warning('There were not ten Samples per GcRun as expected.')
 
 		session.close()
 		engine.dispose()
