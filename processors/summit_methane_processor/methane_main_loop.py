@@ -111,6 +111,30 @@ async def check_load_run_logs(directory, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
+async def match_runs_to_peaks(directory, sleeptime):
+	while True:
+		logger.info('Running match_runs_to_peaks()')
+		from summit_methane import connect_to_db, GcRun, PaLine, match_lines_to_runs
+
+		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+
+		unmatched_lines = session.query(PaLine).filter(PaLine.run == None).all()
+		unmatched_runs = session.query(GcRun).filter(GcRun.pa_line_id == None).all()
+
+		married_runs_count = session.query(GcRun).filter(GcRun.status == 'married').count()
+
+		lines, runs, count = match_lines_to_runs(unmatched_lines, unmatched_runs)
+
+		session.commit()
+		logger.info(f'{count} GcRuns matched with PaLines.')
+
+		"""
+		Next, match peaks to samples, based on retention times.
+		"""
+
+		await asyncio.sleep(sleeptime)
+
+
 def main():
 	# log_path = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor\CH4_test.LOG')
 	log_path = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor\CH4_test.LOG')
@@ -119,6 +143,7 @@ def main():
 
 	loop.create_task(check_load_pa_log(rundir, log_path, 10))
 	loop.create_task(check_load_run_logs(rundir, 10))
+	loop.create_task(match_runs_to_peaks(rundir, 10))
 
 	loop.run_forever()
 

@@ -52,8 +52,8 @@ Process:
 
 """
 
-## TODO: Only 9/10 samples are getting processed.
-## TODO:
+## TODO: Sample types are not persisted from files yet
+## TODO: Samples need to be matched with peaks (or none)
 
 from pathlib import Path
 import logging, json, os
@@ -72,6 +72,18 @@ from sqlalchemy.orm import relationship
 rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
 
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
+
+# retention times based on sample number
+sample_rts = {1: [2, 3],
+			  2: [8.3, 9.3],
+			  3: [14.65, 15.65],
+			  4: [21, 22],
+			  5: [27.3, 28.3],
+			  6: [33.65, 34.65],
+			  7: [40, 41],
+			  8: [46.4, 47.4],
+			  9: [52.75, 53.75],
+			  10: [59, 60]}
 
 
 class Peak(Base):
@@ -157,10 +169,12 @@ class PaLine(Base):
 	peaks = relationship('Peak', back_populates='pa_line')
 	run = relationship('GcRun', back_populates='pa_line')
 	date = Column(DateTime)
+	status = Column(String)
 
 	def __init__(self, date, peaks):
 		self.date = date
 		self.peaks = peaks
+		self.status = 'single'
 
 
 class GcRun(Base):
@@ -193,6 +207,7 @@ class GcRun(Base):
 	wait_time = Column(Float)
 	loop_p_check1 = Column(Float)
 	loop_p_check2 = Column(Float)
+	status = Column(String)
 
 	def __init__(self, logfile, date, carrier_flow, sample_flow, sample_time, relax_time,
 				 injection_time, wait_time, loop_p_check1, loop_p_check2):
@@ -206,6 +221,7 @@ class GcRun(Base):
 		self.loop_p_check2 = loop_p_check2
 		self.logfile = logfile
 		self.date = date
+		self.status = 'single'
 
 	@property  # logfile is a property that lets logfile be stored as String, but returns Path object
 	def logfile(self):
@@ -461,5 +477,68 @@ class TempDir():
 
 	def __exit__(self, *args):
 		os.chdir(self.old_dir)
+
+
+def find_closest_date(date, list_of_dates):
+	"""
+	This is a helper function that works on Python datetimes. It returns the closest date value,
+	and the timedelta from the provided date.
+	:param date: datetime
+	:param list_of_dates: list, of datetimes
+	:return: match, delta: the matching date from the list, and it's difference to the original as a timedelta
+	"""
+	match = min(list_of_dates, key = lambda x: abs(x - date))
+	delta = match - date
+
+	return match, delta
+
+
+def search_for_attr_value(obj_list, attr, value):
+	"""
+	Finds the first (not necesarilly the only) object in a list, where its
+	attribute 'attr' is equal to 'value', returns None if none is found.
+	:param obj_list: list, of objects to search
+	:param attr: string, attribute to search for
+	:param value: mixed types, value that should be searched for
+	:return: obj, from obj_list, where attribute attr matches value
+		**** warning: returns the *first* obj, not necessarily the only
+	"""
+	return next((obj for obj in obj_list if getattr(obj,attr, None) == value), None)
+
+
+def match_lines_to_runs(lines, runs):
+	"""
+	This takes a list of PaLine and GcRun objects and matched them by date, within a tolerance.
+	When matching objects, it WILL modify their parameters and status if warranted.
+
+	:param lines: list, of PaLine objects that are unmatched
+	:param runs: list, of GcRun objects that are unmatched
+	:return: (lines, runs, match_count) list of line objects, list of run objects, and int of runs that were matched
+	"""
+	match_count = 0
+
+	for line in lines:
+		# For each log, attempt to find matching NmhcLine
+		# unpack date attr from all NmhcLines provided
+		run_dates = [run.date for run in runs]
+
+		[match, diff] = find_closest_date(line.date, run_dates)  # get matching date and it's difference
+
+
+		if abs(diff) < dt.timedelta(minutes=5):
+			# Valid matches *usually* have ~03:22 difference
+
+			matched_run = search_for_attr_value(runs, 'date', match)  # pull matching NmhcLine
+
+			line.status = 'married'
+			matched_run.status = 'married'
+
+			matched_run.pa_line = line
+			logger.info(f'PaLine {line.date} matched to GcRun for {matched_run.date}.')
+			match_count += 1
+		else:
+			continue
+
+	return (lines, runs, match_count)
 
 
