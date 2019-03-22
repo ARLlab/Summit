@@ -52,6 +52,9 @@ Process:
 
 """
 
+## TODO: Only 9/10 samples are getting processed.
+## TODO:
+
 from pathlib import Path
 import logging, json, os
 from datetime import datetime
@@ -65,7 +68,8 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
-rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
+# rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
+rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
 
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
@@ -180,6 +184,7 @@ class GcRun(Base):
 	pa_line_id = Column(Integer, ForeignKey('palines.id'))
 
 	_logfile = Column(String)
+	date = Column(DateTime)
 	carrier_flow = Column(Float)
 	sample_flow = Column(Float)
 	sample_time = Column(Float)
@@ -189,7 +194,7 @@ class GcRun(Base):
 	loop_p_check1 = Column(Float)
 	loop_p_check2 = Column(Float)
 
-	def __init__(self, logfile, carrier_flow, sample_flow, sample_time, relax_time,
+	def __init__(self, logfile, date, carrier_flow, sample_flow, sample_time, relax_time,
 				 injection_time, wait_time, loop_p_check1, loop_p_check2):
 		self.carrier_flow = carrier_flow
 		self.sample_flow = sample_flow
@@ -200,6 +205,7 @@ class GcRun(Base):
 		self.loop_p_check1 = loop_p_check1
 		self.loop_p_check2 = loop_p_check2
 		self.logfile = logfile
+		self.date = date
 
 	@property  # logfile is a property that lets logfile be stored as String, but returns Path object
 	def logfile(self):
@@ -333,8 +339,15 @@ def read_log_file(path):
 	# filter out blank line the VI is writing at the end of files that read_text() keeps
 	contents[:] = [line for line in contents if line != '']
 
+	run_year = int(path.name[:4])
+	run_doy = int(path.name[4:7]) - 1  # when adding, if it's DOY 1, you don't want to add 1 to Jan 1 of that year...
+	run_hour = int(path.name[7:9])
+
+	run_date = datetime(run_year, 1, 1) + dt.timedelta(days=run_doy, hours=run_hour)
+
 	run_dict = {}
 	run_dict['logfile'] = path
+	run_dict['date'] = run_date
 	run_dict['carrier_flow'] = float(contents[0].split('\t')[1])
 	run_dict['sample_flow'] = float(contents[1].split('\t')[1])
 	run_dict['sample_time'] = float(contents[2].split('\t')[1])
@@ -344,13 +357,13 @@ def read_log_file(path):
 	run_dict['loop_p_check1'] = float(contents[-2].split('\t')[1])
 	run_dict['loop_p_check2'] = float(contents[-1].split('\t')[1])
 
-	run = GcRun(*run_dict)
+	run = GcRun(**run_dict)
 
 	# run information is contained in 23-line blocks with no delimiters, spanning (0-indexed) lines 17:-3
 	# each block of 23 will
 	run_blocks = contents[17:-3]
 	# run blocks come in sets of 23 lines with not particular delimiters
-	indices = [i*23 for i in range(int(len(run_blocks)))]
+	indices = [i*23 for i in range(int(len(run_blocks)/23))]
 
 	samples = []
 	for ind in indices:
@@ -362,7 +375,7 @@ def read_log_file(path):
 
 		sample_dict['relax_p'] = s.mean([float(sample_info[i].split('\t')[1]) for i in range(3, 23)])
 
-		samples.append(Sample(run, *sample_dict))
+		samples.append(Sample(run, **sample_dict))
 
 	run.samples = samples
 

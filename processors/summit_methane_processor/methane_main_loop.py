@@ -11,10 +11,11 @@ Some runtime QC is needed to prevent quantification from failed standard runs, p
 from pathlib import Path
 import asyncio
 
-rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
-#rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
+# rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
+rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
 
 from summit_methane import logger
+
 
 async def check_load_pa_log(directory, path, sleeptime):
 
@@ -39,6 +40,7 @@ async def check_load_pa_log(directory, path, sleeptime):
 			continue
 
 		pa_file_contents = path.read_text().split('\n')[start_line:]
+		pa_file_contents[:] = [line for line in pa_file_contents if line != '']
 		start_line = len(pa_file_contents)
 
 		pa_lines = []
@@ -84,13 +86,29 @@ async def check_load_run_logs(directory, sleeptime):
 		runs = []
 		for file in files:
 			runs.append(read_log_file(file))
-			print(runs[-1])
 
+		ct = 0  # count runs added
+		for run in runs:
+			if run.date not in run_dates:
+				session.add(run)
+				logger.info(f'GcRun for {run.date} added.')
+				# print(run.date)
+				ct +=1
 
+		if ct == 0:
+			logger.info('No new GcRuns added.')
+		else:
+			session.commit()
+			logger.info(f'{ct} GcRuns added.')
+
+		session.close()
+		engine.dispose()
+		await asyncio.sleep(sleeptime)
 
 
 def main():
-	log_path = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor\CH4_test.LOG')
+	# log_path = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor\CH4_test.LOG')
+	log_path = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor\CH4_test.LOG')
 
 	loop = asyncio.get_event_loop()
 
