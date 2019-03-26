@@ -50,6 +50,6 @@ for i in numYears:
     ## Plotting
     plt.plot((ethaneDate/60/60/24),ethaneMethane,'.',alpha=0.5,label='%i'%i)
     plt.xlabel('Day of Year',fontdict=None,labelpad=None) # Plot Xlabel
-    plt.ylabel('Mixing Ratio [Parts per Billion]',fontdict=None,labelpad=None) # Plot Ylabel
+    plt.ylabel('Mixing Ratio',fontdict=None,labelpad=None) # Plot Ylabel
     plt.title('Summit Ethane / Methane from 2012-2018',fontdict=None,pad=None)
     plt.legend(bbox_to_anchor=(1.04,1),loc="upper left")
