@@ -53,6 +53,7 @@ Process:
 """
 
 ## TODO: Sample types are not persisted from files yet
+## TODO: Individual samples need dates that correspond to the time they were taken
 ## TODO: Samples need to be matched with peaks (or none)
 
 from pathlib import Path
@@ -74,16 +75,16 @@ rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_pro
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
 # retention times based on sample number
-sample_rts = {1: [2, 3],
-			  2: [8.3, 9.3],
-			  3: [14.65, 15.65],
-			  4: [21, 22],
-			  5: [27.3, 28.3],
-			  6: [33.65, 34.65],
-			  7: [40, 41],
-			  8: [46.4, 47.4],
-			  9: [52.75, 53.75],
-			  10: [59, 60]}
+sample_rts = {0: [2, 3],
+			  1: [8.3, 9.3],
+			  2: [14.65, 15.65],
+			  3: [21, 22],
+			  4: [27.3, 28.3],
+			  5: [33.65, 34.65],
+			  6: [40, 41],
+			  7: [46.4, 47.4],
+			  8: [52.75, 53.75],
+			  9: [59, 60]}
 
 
 class Peak(Base):
@@ -152,13 +153,17 @@ class Sample(Base):
 	pressure = Column(Float)
 	rh = Column(Float)
 	relax_p = Column(Float)
+	sample_type = Column(Integer)
+	sample_num = Column(Integer)
 
-	def __init__(self, run, flow, pressure, rh, relax_p):
+	def __init__(self, run, flow, pressure, rh, relax_p, sample_type, sample_num):
 		self.run = run
 		self.flow = flow
 		self.pressure = pressure
 		self.rh = rh
 		self.relax_p = relax_p
+		self.sample_type = sample_type
+		self.sample_num = sample_num
 
 
 class PaLine(Base):
@@ -378,23 +383,26 @@ def read_log_file(path):
 	# run information is contained in 23-line blocks with no delimiters, spanning (0-indexed) lines 17:-3
 	# each block of 23 will
 	run_blocks = contents[17:-2]
-	# run blocks come in sets of 23 lines with not particular delimiters
+	# run blocks come in sets of 23 lines with no particular delimiters
 	indices = [i*23 for i in range(int(len(run_blocks)/23))]
 
 	samples = []
-	for ind in indices:
+	for num, ind in enumerate(indices):
 		sample_info = run_blocks[ind:ind+23]
 		sample_dict = {}
 		sample_dict['flow'] = float(sample_info[0].split('\t')[1])
 		sample_dict['pressure'] = float(sample_info[1].split('\t')[1])
 		sample_dict['rh'] = float(sample_info[2].split('\t')[1])
 		sample_dict['relax_p'] = s.mean([float(sample_info[i].split('\t')[1]) for i in range(3, 23)])
+		sample_dict['sample_type'] = int(float(contents[6+num].split('\t')[1]))  # get sample type (int) from file
+		sample_dict['sample_num'] = num  # assign number of sample in the GC sequence
 
 		samples.append(Sample(run, **sample_dict))
 
 	run.samples = samples
 
 	return run
+
 
 def configure_logger(rundir):
 	"""
@@ -451,7 +459,7 @@ def list_files_recur(path):
 
 def get_all_data_files(path):
 	"""
-	Recursively search the given directory for .dat files.
+	Recursively search the given directory for .xxx files.
 
 	:param rundir_path:
 	:return: list, of file-like Path objects
@@ -524,7 +532,6 @@ def match_lines_to_runs(lines, runs):
 
 		[match, diff] = find_closest_date(line.date, run_dates)  # get matching date and it's difference
 
-
 		if abs(diff) < dt.timedelta(minutes=5):
 			# Valid matches *usually* have ~03:22 difference
 
@@ -532,6 +539,9 @@ def match_lines_to_runs(lines, runs):
 
 			line.status = 'married'
 			matched_run.status = 'married'
+
+			for peak in line.peaks:
+				peak.run = matched_run  # relate all peaks in pa line to the newly matched run
 
 			matched_run.pa_line = line
 			logger.info(f'PaLine {line.date} matched to GcRun for {matched_run.date}.')

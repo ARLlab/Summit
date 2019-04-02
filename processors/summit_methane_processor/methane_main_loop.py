@@ -111,7 +111,7 @@ async def check_load_run_logs(directory, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
-async def match_runs_to_peaks(directory, sleeptime):
+async def match_runs_to_lines(directory, sleeptime):
 	while True:
 		logger.info('Running match_runs_to_peaks()')
 		from summit_methane import connect_to_db, GcRun, PaLine, match_lines_to_runs
@@ -126,12 +126,51 @@ async def match_runs_to_peaks(directory, sleeptime):
 		lines, runs, count = match_lines_to_runs(unmatched_lines, unmatched_runs)
 
 		session.commit()
-		logger.info(f'{count} GcRuns matched with PaLines.')
 
-		"""
-		Next, match peaks to samples, based on retention times.
-		"""
+		if count is not 0:
+			logger.info(f'{count} GcRuns matched with PaLines.')
+		else:
+			logger.info('No new GcRun-PaLine pairs matched.')
 
+		await asyncio.sleep(sleeptime)
+
+
+async def match_peaks_to_samples(directory, sleeptime):
+
+	while True:
+		from summit_methane import connect_to_db, Peak, Sample, PaLine, GcRun
+		from summit_methane import sample_rts
+		from operator import attrgetter
+		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+
+		unmatched_samples = session.query(Sample).filter(Sample.peak_id == None, Sample.run_id != None).all()
+
+		runs_w_unmatched_samples = (session.query(GcRun)
+									.filter(GcRun.id.in_({s.run_id for s in unmatched_samples}))
+									.all())  # create set of runs that require processing
+
+		for run in runs_w_unmatched_samples:
+			# loop through runs containing samples that haven't been matched with peaks
+			samples = session.query(Sample).filter(Sample.run_id == run.id).all()
+			peaks = session.query(Peak).filter(Peak.pa_line_id == run.pa_line_id)
+
+			for sample in samples:
+				sn = sample.sample_num
+				potential_peaks = peaks.filter(Peak.rt.between(sample_rts[sn][0], sample_rts[sn][1])).all()
+				# filter for peaks in this gc run between the expected retention times given in sample_rts
+
+				if len(potential_peaks) > 0:
+					peak = max(potential_peaks, key=attrgetter('pa'))
+					if peak is not None:
+						sample.peak = peak
+						session.merge(sample)
+
+				else:
+					continue
+
+		session.commit()
+		session.close()
+		engine.dispose()
 		await asyncio.sleep(sleeptime)
 
 
@@ -143,7 +182,8 @@ def main():
 
 	loop.create_task(check_load_pa_log(rundir, log_path, 10))
 	loop.create_task(check_load_run_logs(rundir, 10))
-	loop.create_task(match_runs_to_peaks(rundir, 10))
+	loop.create_task(match_runs_to_lines(rundir, 10))
+	loop.create_task(match_peaks_to_samples(rundir, 10))
 
 	loop.run_forever()
 
