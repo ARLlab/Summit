@@ -1,0 +1,33 @@
+Title: Methane, Carbon Monoxide, Carbon Dioxide, and Volatile Organic Compounds
+  at GEOSummit in Greenland
+
+    This site presents preliminary results of atmospheric near-real time monitoring
+    at GEOSummit in Greenland. The monitoring is conducted by researchers at the
+    Institute of Arctic and Alpine Research (INSTAAR) at the University of Colorado.
+    Atmospheric data is gathered from a Picarro instrument and from a GC-FID instrument.
+
+Methane (CH4) During the Past Three Days
+
+  Methane is a potent greenhouse gas. It has an atmospheric lifetime of about a decade
+  and is distributed globally. Methane emissions in this region mainly come from ...
+
+  This graph presents methane amounts gathered from both the Picarro instrument
+  and the GC-FID instrument. Each instruments data is displayed separately, and
+  then overlayed on the same graph. The times are reported in Mountain Standard
+  Time (MST). Data during Daylight Savings Time (March-November) will have to be
+  corrected by adding one hour.
+
+  Methane data is monitored by loop injection of 10 ml samples and gas chromatography
+  with flame ionization detection from the GC-FID instrument. The samples are collected
+  at 20-minute intervals. The Picarro instrument ...
+
+Selected Volatile Organic Compounds (VOCs) During the Past Three Days
+
+  The VOC's are monitored by preconcentration of 500 ml-samples onto a micro-adsorbent trap,
+  with subsequent thermal desorption, capillary column gas chromatography separation,
+  and flame ionization detection. Samples are collected at 2-hour intervals.
+
+  Ethane / Propane
+  Butane Isomers, Acetylene
+  Pentane Isomers
+  Benzene / Toluene
