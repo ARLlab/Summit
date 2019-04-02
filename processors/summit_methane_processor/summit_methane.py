@@ -41,8 +41,6 @@ Process:
 4) Create Samples in GcRun method, pass rt window dict to find correct peaks
 	Now, the log information has been processed completely
 
-
-
 	##############################
 	NEW
 
@@ -51,10 +49,6 @@ Process:
 	Then peaks gets queried per GcRun for within a date range
 
 """
-
-## TODO: Sample types are not persisted from files yet
-## TODO: Individual samples need dates that correspond to the time they were taken
-## TODO: Samples need to be matched with peaks (or none)
 
 from pathlib import Path
 import logging, json, os
@@ -87,6 +81,24 @@ sample_rts = {0: [2, 3],
 			  9: [59, 60]}
 
 
+class Standard(Base):
+
+	__tablename__ = 'standards'
+	name = Column(String)
+	mr = Column(Float)
+	date_st = Column(DateTime)
+	date_en = Column(DateTime)
+
+	# TODO
+	# relate to samples
+
+	def __init__(self, name, mr, date_st, date_en):
+		self.name = name
+		self.mr = mr
+		self.date_st = date_st
+		self.date_en = date_en
+
+
 class Peak(Base):
 	"""
 	A peak is just that, a signal peak in PeakSimple, Agilent, or another chromatography software.
@@ -110,7 +122,6 @@ class Peak(Base):
 	rt = Column(Float)
 	rev = Column(Integer)
 	qc = Column(Integer)
-	gc_sequence_num = Column(Integer)
 
 	run = relationship('GcRun', back_populates='peaks')
 	run_id = Column(Integer, ForeignKey('runs.id'))
@@ -148,6 +159,8 @@ class Sample(Base):
 
 	run = relationship('GcRun', back_populates='samples')
 	run_id = Column(Integer, ForeignKey( 'runs.id'))
+
+	quantifier = relationship('Sample', remote_side=[id])  # relate a sample to it's quantifying sample if applicable
 
 	flow = Column(Float)
 	pressure = Column(Float)
@@ -201,6 +214,7 @@ class GcRun(Base):
 	samples = relationship('Sample', back_populates='run')
 	pa_line = relationship('PaLine', back_populates='run')
 	pa_line_id = Column(Integer, ForeignKey('palines.id'))
+	median = Column(Float)
 
 	_logfile = Column(String)
 	date = Column(DateTime)
@@ -552,3 +566,19 @@ def match_lines_to_runs(lines, runs):
 	return (lines, runs, match_count)
 
 
+def calc_sample_date(run, sample, peak):
+	"""
+	This takes the matched run, sample, and peak combination and creates an estimate for the sample collection of this
+	individual sample based on the retention time of the peak, start of the chromatogram, and expected injeciton time.
+
+	sample_time = run_start_time + retention_time_in_minutes - 1_minute (sample concentration/equilibration before inject)
+
+	:param run:
+	:param sample:
+	:param peak:
+	:return:
+	"""
+
+
+
+	return run, sample, peak

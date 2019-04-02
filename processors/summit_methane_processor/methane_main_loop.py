@@ -9,6 +9,8 @@ Some runtime QC is needed to prevent quantification from failed standard runs, p
 """
 
 from pathlib import Path
+from datetime import datetime
+import datetime as dt
 import asyncio
 
 # rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
@@ -138,9 +140,11 @@ async def match_runs_to_lines(directory, sleeptime):
 async def match_peaks_to_samples(directory, sleeptime):
 
 	while True:
+		logger.info('Running match_peaks_to_samples()')
 		from summit_methane import connect_to_db, Peak, Sample, PaLine, GcRun
 		from summit_methane import sample_rts
 		from operator import attrgetter
+		import datetime as dt
 		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
 
 		unmatched_samples = session.query(Sample).filter(Sample.peak_id == None, Sample.run_id != None).all()
@@ -160,15 +164,83 @@ async def match_peaks_to_samples(directory, sleeptime):
 				# filter for peaks in this gc run between the expected retention times given in sample_rts
 
 				if len(potential_peaks) > 0:
+					# currently, the criteria for "this is the real peak" is "this is the biggest peak"
 					peak = max(potential_peaks, key=attrgetter('pa'))
 					if peak is not None:
 						sample.peak = peak
+						peak.name = 'CH4_' + str(sample.sample_num)
+						sample.date = run.pa_line.date + dt.timedelta(minutes=peak.rt - 1)
 						session.merge(sample)
 
 				else:
 					continue
 
 		session.commit()
+		session.close()
+		engine.dispose()
+		await asyncio.sleep(sleeptime)
+
+
+async def quantify_samples(directory, sleeptime):
+	"""
+	On a per-run basis, use std1 to calc samples 1-5 (~3) and std2 to calculate samples 6-10 (~8)
+
+	TODO: Need a dict of timeframes and standard values for those times
+
+
+
+	:param directory:
+	:param sleeptime:
+	:return:
+	"""
+
+	while True:
+		from summit_methane import connect_to_db, GcRun, Sample, Peak, Standard
+		from summit_methane import search_for_attr_value
+
+		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+
+		unquantified_runs = session.query(GcRun).filter(GcRun.median == None).all()
+
+		for run in unquantified_runs:
+			samples = unquantified_runs.samples
+
+			ambients = [sample for sample in samples if sample.sample_type == 3]
+			standard1 = search_for_attr_value(samples, 'sample_num', 2)
+			standard2 = search_for_attr_value(samples, 'sample_num', 7)
+
+			if (standard1 is None) and (standard2 is None):
+				logger.warning(f'No valid standard found in GcRun for {run.date}.')
+			elif standard1 is None:
+				#use std2 for all ambient quantifications
+				# TODO
+				pass
+			elif standard2 is None:
+				# use std1 for all ambient quantifications
+				# TODO
+				pass
+			else:
+				# use std1 for ambients 0-4 and std2 for ambients 5-9
+				for amb in ambients:
+					standard = (session.query(Standard)
+								.filter(Standard.date.between(datetime(2019, 1, 1), datetime(2019, 6, 1)))
+								.all())
+
+					if standard is not None:
+						if amb.sample_num < 5:
+
+							amb.quantifier = standard1
+							amb.mr = (amb.peak.pa / amb.quantifier.peak.pa) * standard.mr
+							amb.standard = standard
+
+						else:
+							# TODO
+							pass
+					else:
+						logger.warning(f'Standard not retrieved for GcRun at {run.date}.')
+
+
+
 		session.close()
 		engine.dispose()
 		await asyncio.sleep(sleeptime)
