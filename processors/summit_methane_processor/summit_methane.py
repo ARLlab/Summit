@@ -63,8 +63,8 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
-# rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
-rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
+rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
+# rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
 
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
@@ -220,6 +220,8 @@ class GcRun(Base):
 	pa_line = relationship('PaLine', back_populates='run')
 	pa_line_id = Column(Integer, ForeignKey('palines.id'))
 	median = Column(Float)
+	rsd = Column(Float)  # relative standard deviation (stdev/median) * 100
+	standard_rsd = Column(Float)
 
 	_logfile = Column(String)
 	date = Column(DateTime)
@@ -247,7 +249,7 @@ class GcRun(Base):
 		self.date = date
 		self.status = 'single'
 
-	@property  # logfile is a property that lets logfile be stored as String, but returns Path object
+	@property  # lets logfile be stored as String, but returns Path object
 	def logfile(self):
 		return Path(self._logfile)
 
@@ -589,9 +591,16 @@ def calc_sample_date(run, sample, peak):
 	return run, sample, peak
 
 
-def calc_ch4_mr(ambient, quantifier, standard):
-	ambient.quantifier = quantifier
-	ambient.peak.mr = (ambient.peak.pa / ambient.quantifier.peak.pa) * standard.mr
-	ambient.standard = standard
+def calc_ch4_mr(sample, quantifier, standard):
+	sample.quantifier = quantifier
+	sample.peak.mr = (sample.peak.pa / sample.quantifier.peak.pa) * standard.mr
+	sample.standard = standard
 
-	return ambient
+	return sample
+
+
+def valid_sample(sample):
+	if sample is None or sample.peak is None or sample.peak.pa is None:
+		return False
+	else:
+		return True

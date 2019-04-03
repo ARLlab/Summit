@@ -14,8 +14,8 @@ import statistics as s
 import datetime as dt
 import asyncio
 
-# rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
-rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
+rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
+# rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
 
 from summit_methane import logger
 
@@ -214,83 +214,88 @@ async def quantify_samples(directory, sleeptime):
 	"""
 
 	while True:
+		logger.info('Running quantify_samples()')
 		from summit_methane import connect_to_db, GcRun, Sample, Peak, Standard
-		from summit_methane import search_for_attr_value, calc_ch4_mr
-		from sqlalchemy.orm.exc import NoResultFound
+		from summit_methane import search_for_attr_value, calc_ch4_mr, valid_sample
 
 		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
 
 		unquantified_runs = session.query(GcRun).filter(GcRun.median == None).all()
 
+		ct = 0
 		for run in unquantified_runs:
 			samples = run.samples
 
-			try:
-				standard = (session.query(Standard)
-							.filter(Standard.date_st <= run.date, Standard.date_en < run.date)
-							.one())
-			except NoResultFound:
-				logger.warning(f'No working standard was found for GcRun on {run.date}')
-				continue
-
+			standard = (session.query(Standard)
+						.filter(run.date >= Standard.date_st, run.date < Standard.date_en)
+						.one_or_none())
 
 			if standard is not None:
-				ambients = [sample for sample in samples if sample.sample_type == 3]
+				ambients = [sample for sample in samples if (sample.sample_type == 3 and valid_sample(sample))]
 				standard1 = search_for_attr_value(samples, 'sample_num', 2)
 				standard2 = search_for_attr_value(samples, 'sample_num', 7)
 
-				if standard1 is None and standard2 is None:
+				if len(ambients) is 0:
+					logger.warning(f'No ambient samples were quantifiable in GcRun for {run.date}')
+					continue
+
+				if (not valid_sample(standard1)) and (not valid_sample(standard2)):
 					logger.warning(f'No valid standard samples found in GcRun for {run.date}.')
 					continue
 
-				elif standard1 is None:
-					#use std2 for all ambient quantifications
+				elif not valid_sample(standard1):
+					# use std2 for all ambient quantifications
+					logger.info(f'Only one standard used for samples in GcRun for {run.date}')
 					for amb in ambients:
 						amb = calc_ch4_mr(amb, standard2, standard)
-						# session.merge(amb)
 
-				elif standard2 is None:
+				elif not valid_sample(standard2):
 					# use std1 for all ambient quantifications
+					logger.info(f'Only one standard used for samples in GcRun for {run.date}')
 					for amb in ambients:
 						amb = calc_ch4_mr(amb, standard1, standard)
-						# session.merge(amb)
+
 				else:
 					# use std1 for ambients 0-4 and std2 for ambients 5-9
 					for amb in ambients:
 						if amb.sample_num < 5:
 							amb = calc_ch4_mr(amb, standard1, standard)
-							# session.merge(amb)
 						else:
 							amb = calc_ch4_mr(amb, standard2, standard)
-							# session.merge(amb)
 
-						amb.peak.mr = (amb.peak.pa / amb.quantifier.peak.pa) * standard.mr
-						amb.standard = standard
-						# session.merge(amb)
+					run.standard_rsd = (s.stdev([standard1.peak.pa, standard2.peak.pa]) /
+										s.median([standard1.peak.pa, standard2.peak.pa])
+										* 100)
 
-				run.median = s.median([amb.mr for amb in ambients])
+				all_run_mrs = [amb.peak.mr for amb in ambients]
+
+				run.median = s.median(all_run_mrs)
+				run.rsd = s.stdev(all_run_mrs) / run.median * 100
+
 				session.merge(run)
+				ct += 1
 
 			else:
 				logger.warning(f'No standard value found for GcRun at {run.date}.')
 
 		session.commit()
+		logger.info(f'{ct} GcRuns were successfully quantified.')
 		session.close()
 		engine.dispose()
 		await asyncio.sleep(sleeptime)
 
 
 def main():
-	# log_path = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor\CH4_test.LOG')
-	log_path = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor\CH4_test.LOG')
+	log_path = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor\CH4_test.LOG')
+	# log_path = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor\CH4_test.LOG')
 
 	loop = asyncio.get_event_loop()
 
-	# loop.create_task(check_load_pa_log(rundir, log_path, 10))
-	# loop.create_task(check_load_run_logs(rundir, 10))
-	# loop.create_task(match_runs_to_lines(rundir, 10))
-	# loop.create_task(match_peaks_to_samples(rundir, 10))
-	# loop.create_task(add_one_standard(rundir, 120))
+	loop.create_task(check_load_pa_log(rundir, log_path, 10))
+	loop.create_task(check_load_run_logs(rundir, 10))
+	loop.create_task(match_runs_to_lines(rundir, 10))
+	loop.create_task(match_peaks_to_samples(rundir, 10))
+	loop.create_task(add_one_standard(rundir, 120))
 	loop.create_task(quantify_samples(rundir, 10))
 
 	loop.run_forever()
