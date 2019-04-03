@@ -84,13 +84,14 @@ sample_rts = {0: [2, 3],
 class Standard(Base):
 
 	__tablename__ = 'standards'
+
+	id = Column(Integer, primary_key=True)
 	name = Column(String)
 	mr = Column(Float)
 	date_st = Column(DateTime)
 	date_en = Column(DateTime)
 
 	sample = relationship('Sample', back_populates='standard')
-
 
 	def __init__(self, name, mr, date_st, date_en):
 		self.name = name
@@ -164,6 +165,7 @@ class Sample(Base):
 	standard_id = Column(Integer, ForeignKey('standards.id'))
 
 	quantifier = relationship('Sample', remote_side=[id])  # relate a sample to it's quantifying sample if applicable
+	quantifier_id = Column(Integer, ForeignKey('samples.id'))
 
 	flow = Column(Float)
 	pressure = Column(Float)
@@ -585,3 +587,11 @@ def calc_sample_date(run, sample, peak):
 
 
 	return run, sample, peak
+
+
+def calc_ch4_mr(ambient, quantifier, standard):
+	ambient.quantifier = quantifier
+	ambient.peak.mr = (ambient.peak.pa / ambient.quantifier.peak.pa) * standard.mr
+	ambient.standard = standard
+
+	return ambient

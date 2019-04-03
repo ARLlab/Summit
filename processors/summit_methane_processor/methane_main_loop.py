@@ -10,6 +10,7 @@ Some runtime QC is needed to prevent quantification from failed standard runs, p
 
 from pathlib import Path
 from datetime import datetime
+import statistics as s
 import datetime as dt
 import asyncio
 
@@ -181,13 +182,31 @@ async def match_peaks_to_samples(directory, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
+async def add_one_standard(directory, sleeptime):
+	"""
+	Add a single standard (the current working one), so that quantifications are possible.
+
+	:param directory:
+	:param sleeptime:
+	:return:
+	"""
+	while True:
+		from summit_methane import Standard, connect_to_db
+
+		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+
+		my_only_standard = Standard('ws_2019', 2067.16, datetime(2019, 1, 1), datetime(2019, 6, 1))
+		session.merge(my_only_standard)
+		session.commit()
+
+		session.close()
+		engine.dispose()
+		await asyncio.sleep(sleeptime)
+
+
 async def quantify_samples(directory, sleeptime):
 	"""
 	On a per-run basis, use std1 to calc samples 1-5 (~3) and std2 to calculate samples 6-10 (~8)
-
-	TODO: Need a dict of timeframes and standard values for those times
-
-
 
 	:param directory:
 	:param sleeptime:
@@ -196,54 +215,66 @@ async def quantify_samples(directory, sleeptime):
 
 	while True:
 		from summit_methane import connect_to_db, GcRun, Sample, Peak, Standard
-		from summit_methane import search_for_attr_value
+		from summit_methane import search_for_attr_value, calc_ch4_mr
+		from sqlalchemy.orm.exc import NoResultFound
 
 		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
 
 		unquantified_runs = session.query(GcRun).filter(GcRun.median == None).all()
 
 		for run in unquantified_runs:
-			samples = unquantified_runs.samples
+			samples = run.samples
 
-			ambients = [sample for sample in samples if sample.sample_type == 3]
-			standard1 = search_for_attr_value(samples, 'sample_num', 2)
-			standard2 = search_for_attr_value(samples, 'sample_num', 7)
+			try:
+				standard = (session.query(Standard)
+							.filter(Standard.date_st <= run.date, Standard.date_en < run.date)
+							.one())
+			except NoResultFound:
+				logger.warning(f'No working standard was found for GcRun on {run.date}')
+				continue
 
-			if (standard1 is None) and (standard2 is None):
-				logger.warning(f'No valid standard found in GcRun for {run.date}.')
-			elif standard1 is None:
-				#use std2 for all ambient quantifications
 
-				amb.peak.mr = (amb.peak.pa / amb.quantifier.peak.pa) * standard.mr
-				amb.standard = standard
-				# TODO
-				pass
-			elif standard2 is None:
-				# use std1 for all ambient quantifications
-				# TODO
-				pass
-			else:
-				# use std1 for ambients 0-4 and std2 for ambients 5-9
-				for amb in ambients:
-					standard = (session.query(Standard)
-								.filter(Standard.date.between(datetime(2019, 1, 1), datetime(2019, 6, 1)))
-								.one())
+			if standard is not None:
+				ambients = [sample for sample in samples if sample.sample_type == 3]
+				standard1 = search_for_attr_value(samples, 'sample_num', 2)
+				standard2 = search_for_attr_value(samples, 'sample_num', 7)
 
-					if standard is not None:
+				if standard1 is None and standard2 is None:
+					logger.warning(f'No valid standard samples found in GcRun for {run.date}.')
+					continue
+
+				elif standard1 is None:
+					#use std2 for all ambient quantifications
+					for amb in ambients:
+						amb = calc_ch4_mr(amb, standard2, standard)
+						# session.merge(amb)
+
+				elif standard2 is None:
+					# use std1 for all ambient quantifications
+					for amb in ambients:
+						amb = calc_ch4_mr(amb, standard1, standard)
+						# session.merge(amb)
+				else:
+					# use std1 for ambients 0-4 and std2 for ambients 5-9
+					for amb in ambients:
 						if amb.sample_num < 5:
-							amb.quantifier = standard1
-
+							amb = calc_ch4_mr(amb, standard1, standard)
+							# session.merge(amb)
 						else:
-							amb.quantifier = standard2
+							amb = calc_ch4_mr(amb, standard2, standard)
+							# session.merge(amb)
 
 						amb.peak.mr = (amb.peak.pa / amb.quantifier.peak.pa) * standard.mr
 						amb.standard = standard
+						# session.merge(amb)
 
-					else:
-						logger.warning(f'Standard not retrieved for GcRun at {run.date}.')
+				run.median = s.median([amb.mr for amb in ambients])
+				session.merge(run)
 
+			else:
+				logger.warning(f'No standard value found for GcRun at {run.date}.')
 
-
+		session.commit()
 		session.close()
 		engine.dispose()
 		await asyncio.sleep(sleeptime)
@@ -255,10 +286,12 @@ def main():
 
 	loop = asyncio.get_event_loop()
 
-	loop.create_task(check_load_pa_log(rundir, log_path, 10))
-	loop.create_task(check_load_run_logs(rundir, 10))
-	loop.create_task(match_runs_to_lines(rundir, 10))
-	loop.create_task(match_peaks_to_samples(rundir, 10))
+	# loop.create_task(check_load_pa_log(rundir, log_path, 10))
+	# loop.create_task(check_load_run_logs(rundir, 10))
+	# loop.create_task(match_runs_to_lines(rundir, 10))
+	# loop.create_task(match_peaks_to_samples(rundir, 10))
+	# loop.create_task(add_one_standard(rundir, 120))
+	loop.create_task(quantify_samples(rundir, 10))
 
 	loop.run_forever()
 
