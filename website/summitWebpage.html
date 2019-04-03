@@ -1,46 +1,79 @@
-<!-- This file is to learn HTML by replicating the reservoir page feature by feature -->
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
+<html lang="en">
+  <head>
 
-<html>
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>Summit GC - INSTAAR</title>
+  <meta name="description" content="INSTAAR Summit GC">
+  <meta name="author" content="Jashan Chopra">
 
-<head>
-  <meta name="description" content="INSTAAR Summit GC"> <!-- Metadata description -->
-  <link href="iceberg.css" rel="stylesheet" type="text/css" /> <!-- CSS Stylesheet from Boulder Res -->
+   <!-- <meta name="robots" content="all" /> -->
 
-  <!-- This is the little picture that shows in the tab bar-->
-  <link rel="shortcut icon" href="http://instaar.colorado.edu/arl/pictures/data/summit/summit1.jpg">
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Summit GC - INSTAAR</title> <!-- This title displays in the tab bar -->
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
 
-  <!--
-    Specific Style Modifications from Boulder Reservoir Page
-    Is this sort of like creating smaller functions to use with multiple sections later?
-  -->
-  <style type="text/css">
-    .auto-style4 {color: #000000;}
-  </style>
-  <style type="text/css">
-    .auto-style1 {text-align: center;}
-    .auto-style2 {font-size: xx-small;}
-    .auto-style10 {text-align: left;}
-    .auto-style11 {color: #FFFFFF;}
-    .auto-style15 {text-decoration: underline;}
-    a {color: #000000}
-    .auto-style16 {font-size: x-large;}
-    .auto-style17 {font-size: 18pt;}
-  </style>
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="css/summit.css">
 
-</head>
+  <!-- Scripts
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="js/site.js"></script>
 
-<body id="body">
-  <h1>Methane and Volatile Organic Compounds from Summit GC</h1>
-  <p>This site presents preliminary results of atmopsheric near-real time monitoring
-    at the Greeland Environmental Observatory in Greenland </p>
-  <img src="http://instaar.colorado.edu/arl/pictures/data/summit/dsc03928.jpg"
-      alt="Image: GEOSummit Big House">
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="icon" type="image/png" href="http://instaar.colorado.edu/arl/pictures/data/summit/summit1.jpg">
+
+  </head>
+
+  <body>
+
+    <div class="container"> <!-- Everything inside main container -->
+
+      <section class="header"> <!-- Title / Header -->
+        <h2 class="title">Methane, Carbon Monoxide, Carbon Dioxide, and Volatile Organic Compounds at GEOSummit in Greenland</h2>
+        <a class="button button-primary" href="http://instaar.colorado.edu/arl/index.html" >ARL Homepage</a>
+      </section>
+
+      <div class="navbar-spacer"></div> <!-- Navigation Bar -->
+      <nav class="navbar">
+        <div class="container">
+          <ul class="navbar-list">
+            <li class="navbar-item">
+              <a class="navbar-link" href="#ch4">Methane</a>
+            </li>
+            <li class="navbar-item">
+              <a class="navbar-link" href="#" data-popover="#indexNavPopover">Index</a>
+              <div id="indexNavPopover" class="popover">
+                <ul class="popover-list">
+                  <li class="popover-item">
+                    <a class="popover-link" href="#ch4">Methane Results</a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- First Section -->
+      <div class="docs-section" id="ch4">
+          <h4 class="docs-header">Methane Results between Piccaro & GCFID</h4>
+          <p>Here we see a comparison of methane in the atmospheric data gathered from both the Piccaro Analyzer and the GCFID, from the past four days. The data is plotted on the same graph to compare the values. </p>
+      </div>
 
 
-</body>
 
+    </div>
+  </body>
 </html>
