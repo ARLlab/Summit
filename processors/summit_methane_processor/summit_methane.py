@@ -89,8 +89,8 @@ class Standard(Base):
 	date_st = Column(DateTime)
 	date_en = Column(DateTime)
 
-	# TODO
-	# relate to samples
+	sample = relationship('Sample', back_populates='standard')
+
 
 	def __init__(self, name, mr, date_st, date_en):
 		self.name = name
@@ -109,8 +109,8 @@ class Peak(Base):
 	rt: float, retention time in minutes of the peak as integrated
 	rev: int, represents the # of changes made to this peak's value
 	qc: int, 0 = unreviewed, ...,  1 = final
-	flag: int, ADD TODO ::
-	int_notes, ADD TODO ::
+	flag: int, ADD
+	int_notes, ADD
 	"""
 
 	__tablename__ = 'peaks'
@@ -158,7 +158,10 @@ class Sample(Base):
 	peak_id = Column(Integer, ForeignKey('peaks.id'))
 
 	run = relationship('GcRun', back_populates='samples')
-	run_id = Column(Integer, ForeignKey( 'runs.id'))
+	run_id = Column(Integer, ForeignKey('runs.id'))
+
+	standard = relationship('Standard', back_populates='sample')
+	standard_id = Column(Integer, ForeignKey('standards.id'))
 
 	quantifier = relationship('Sample', remote_side=[id])  # relate a sample to it's quantifying sample if applicable
 

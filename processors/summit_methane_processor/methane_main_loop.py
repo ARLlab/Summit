@@ -213,6 +213,9 @@ async def quantify_samples(directory, sleeptime):
 				logger.warning(f'No valid standard found in GcRun for {run.date}.')
 			elif standard1 is None:
 				#use std2 for all ambient quantifications
+
+				amb.peak.mr = (amb.peak.pa / amb.quantifier.peak.pa) * standard.mr
+				amb.standard = standard
 				# TODO
 				pass
 			elif standard2 is None:
@@ -224,18 +227,18 @@ async def quantify_samples(directory, sleeptime):
 				for amb in ambients:
 					standard = (session.query(Standard)
 								.filter(Standard.date.between(datetime(2019, 1, 1), datetime(2019, 6, 1)))
-								.all())
+								.one())
 
 					if standard is not None:
 						if amb.sample_num < 5:
-
 							amb.quantifier = standard1
-							amb.mr = (amb.peak.pa / amb.quantifier.peak.pa) * standard.mr
-							amb.standard = standard
 
 						else:
-							# TODO
-							pass
+							amb.quantifier = standard2
+
+						amb.peak.mr = (amb.peak.pa / amb.quantifier.peak.pa) * standard.mr
+						amb.standard = standard
+
 					else:
 						logger.warning(f'Standard not retrieved for GcRun at {run.date}.')
 
