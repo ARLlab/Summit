@@ -28,3 +28,15 @@ for yrs in years:
 # gathers and seperates chrom files, puts in matrix
 source = r'C:\Users\ARL\Desktop\test'
 files = [file for file in os.scandir(source) if '.chr' in file.name]
+
+from isleapyear import isleapyear
+
+for f in files:                     # iterate over all the files
+    for yr in years:                # iterate over years
+        for mo in months:           # iterate over months
+            if f[:4] == '%i'%yr:    # if first four letters indicate yr
+                if isleapyear(yr):
+                    if f[5:7] >= 1 && f[5:7] <= 31:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
+                        shutil.move(f,dest)     # move the files
+                else:
