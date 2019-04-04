@@ -24,3 +24,10 @@ for yrs in years:
     for mo in months:
         path = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yrs,mo)
         os.mkdir(path)
+
+# gathers and seperates chrom and log files, puts in matrix
+source = r'C:\Users\ARL\Desktop\test'
+files = [file for file in os.scandir(source)]
+
+chromFiles = [file for file in os.scandir(source) if '.chr' in file.name]
+logFiles = [file for file in os.scandir(source) if '.txt' in file.name]
