@@ -12,42 +12,6 @@ the retention time of the peak is roughly 1 minute after the retention time of t
 change, but the rough formula will be:
 
 sample_time = run_start_time + retention_time_in_minutes - 1_minute (sample concentration/equilibration before inject)
-
-####################################
-Class Structure:
-
-This one's annoying...
-
-GcRun - A whole run, contains 10 Samples
-Sample - One injection of either ambient air, or standard - attached to one peak (this is almost a wrapper on Peak, but
-	has lots of associated log info.)
-Peak - A peak in the chromatogram, related one-one with a Sample
-
-Process:
-
-
-1) Create a GcRun, which is just a shell for the data along with some log parameters
-	This requires the log information to come in as a dict, but no samples/peaks
-
-2) Push peaks into the GcRun
-
-3) Create Samples
-	This requires the per-sample log information, which is then parsed to create the incomplete sample
-
-	Peaks will be id'd with rough retention windows and given a sequence #, and take the largest within it above a limit
-	None is okay, even likely given the GC
-	These will be correctable later from the real integration sheet
-
-4) Create Samples in GcRun method, pass rt window dict to find correct peaks
-	Now, the log information has been processed completely
-
-	##############################
-	NEW
-
-	Peaks get a date
-	All peaks get committed from new lines in the pa file (distinguish by date)
-	Then peaks gets queried per GcRun for within a date range
-
 """
 
 from pathlib import Path
@@ -63,8 +27,8 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
-rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
-# rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
+# rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
+rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
 
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
@@ -153,7 +117,7 @@ class Sample(Base):
 	__tablename__ = 'samples'
 
 	id = Column(Integer, primary_key=True)
-	date = Column(DateTime)
+	date = Column(DateTime, unique=True)
 
 	peak = relationship('Peak', uselist=False, back_populates='sample')
 	peak_id = Column(Integer, ForeignKey('peaks.id'))
@@ -191,7 +155,7 @@ class PaLine(Base):
 	id = Column(Integer, primary_key=True)
 	peaks = relationship('Peak', back_populates='pa_line')
 	run = relationship('GcRun', back_populates='pa_line')
-	date = Column(DateTime)
+	date = Column(DateTime, unique=True)
 	status = Column(String)
 
 	def __init__(self, date, peaks):
@@ -224,7 +188,7 @@ class GcRun(Base):
 	standard_rsd = Column(Float)
 
 	_logfile = Column(String)
-	date = Column(DateTime)
+	date = Column(DateTime, unique=True)
 	carrier_flow = Column(Float)
 	sample_flow = Column(Float)
 	sample_time = Column(Float)
@@ -370,10 +334,10 @@ def read_pa_line(line):
 def read_log_file(path):
 	"""
 	A single log file actually accounts for a whole run, which includes 10 samples. There is information that is
-	run-only, then sample-specific data. These need to be parsed at separate levels.
+	run-only, then sample-specific data. These are parsed into a GcRun containing 10 Samples.
 
-	:param path:
-	:return:
+	:param path: pathlib Path to file
+	:return: GcRun, containing 10 samples and metadata
 	"""
 
 	contents = path.read_text().split('\n')
@@ -432,6 +396,7 @@ def configure_logger(rundir):
 	:param rundir: path to create log sub-path in
 	:return: logger object
 	"""
+
 	logfile = Path(rundir) / 'processor_logs/summit_methane.log'
 	logger = logging.getLogger('summit_voc')
 	logger.setLevel(logging.DEBUG)
@@ -467,8 +432,7 @@ def check_filesize(filepath):
 
 def list_files_recur(path):
 	"""
-
-	:param path: Path object
+	:param path: pathlib Path object
 	:return: list, of file-like Path objects
 	"""
 	files = []
@@ -478,7 +442,7 @@ def list_files_recur(path):
 	return files
 
 
-def get_all_data_files(path):
+def get_all_data_files(path, filetype):
 	"""
 	Recursively search the given directory for .xxx files.
 
@@ -486,7 +450,7 @@ def get_all_data_files(path):
 	:return: list, of file-like Path objects
 	"""
 	files = list_files_recur(path)
-	files[:] = [file for file in files if '.txt' in file.name]
+	files[:] = [file for file in files if filetype in file.name]
 
 	return files
 
@@ -573,25 +537,16 @@ def match_lines_to_runs(lines, runs):
 	return (lines, runs, match_count)
 
 
-def calc_sample_date(run, sample, peak):
-	"""
-	This takes the matched run, sample, and peak combination and creates an estimate for the sample collection of this
-	individual sample based on the retention time of the peak, start of the chromatogram, and expected injeciton time.
-
-	sample_time = run_start_time + retention_time_in_minutes - 1_minute (sample concentration/equilibration before inject)
-
-	:param run:
-	:param sample:
-	:param peak:
-	:return:
-	"""
-
-
-
-	return run, sample, peak
-
-
 def calc_ch4_mr(sample, quantifier, standard):
+	"""
+	Calculate mixing ratio of a sample when provided with the sample to quantify it against, and the Standard that was
+	run in the quantifier.
+
+	:param sample: Sample, a valid sample (use valid_sample(Sample) to verify)
+	:param quantifier: Sample, a valid sample ("") that will be used to quantify the provided sample
+	:param standard: Standard, the standard that was run.
+	:return: Sample, the same object but returned with it's peak given a mixing ratio
+	"""
 	sample.quantifier = quantifier
 	sample.peak.mr = (sample.peak.pa / sample.quantifier.peak.pa) * standard.mr
 	sample.standard = standard
@@ -600,7 +555,109 @@ def calc_ch4_mr(sample, quantifier, standard):
 
 
 def valid_sample(sample):
+	"""
+	Check if sample will allow quantification. First check not None, then it has a peak and the peak is not None.
+	:param sample: Sample, to check for validity
+	:return: Bool, True if the sample is valid
+	"""
 	if sample is None or sample.peak is None or sample.peak.pa is None:
 		return False
 	else:
 		return True
+
+def plottable_sample(sample):
+	"""
+	Check sample for validity, then check for a mixing ratio between reasonable bounds.
+
+	:param sample: Sample, to check if it should appear in plots
+	:return: Boolean, True if sample should be plotted
+	"""
+	if not valid_sample(sample):
+		return False
+	else:
+		if sample.peak.mr is None or not (1750 > sample.peak.mr > 2200):
+			return False
+		else:
+			return True
+
+
+def summit_methane_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None, unit_string = 'ppbv'):
+	"""
+	:param dates: list, of Python datetimes; if set, this applies to all compounds.
+		If None, each compound supplies its own date values
+	:param compound_dict: dict, {'compound_name':[dates, mrs]}
+		keys: str, the name to be plotted and put into filename
+		values: list, len(list) == 2, two parallel lists that are...
+			dates: list, of Python datetimes. If None, dates come from dates input parameter (for all compounds)
+			mrs: list, of [int/float/None]s; these are the mixing ratios to be plotted
+	:param limits: dict, optional dictionary of limits including ['top','bottom','right','left']
+	:param minor_ticks: list, of major tick marks
+	:param major_ticks: list, of minor tick marks
+	:param unit_string: string, will be displayed in y-axis label as f'Mixing Ratio ({unit_string})'
+	:return: None
+
+	This plots stuff.
+
+	Example with all dates supplied:
+		plot_last_week((None, {'Ethane':[[date, date, date], [1, 2, 3]],
+								'Propane':[[date, date, date], [.5, 1, 1.5]]}))
+
+	Example with single date list supplied:
+		plot_last_week([date, date, date], {'ethane':[None, [1, 2, 3]],
+								'propane':[None, [.5, 1, 1.5]]})
+	"""
+
+	import matplotlib.pyplot as plt
+	from matplotlib.dates import DateFormatter
+	from pandas.plotting import register_matplotlib_converters
+	register_matplotlib_converters()
+
+	f1 = plt.figure()
+	ax = f1.gca()
+
+	if dates is None:  # dates supplied by individual compounds
+		for compound, val_list in compound_dict.items():
+			assert val_list[0] is not None, 'A supplied date list was None'
+			assert (len(val_list[0]) > 0 and len(val_list[0]) == len(val_list[1]),
+					'Supplied dates were empty or lengths did not match')
+			ax.plot(val_list[0], val_list[1], '-o')
+
+	else:
+		for compound, val_list in compound_dict.items():
+			ax.plot(dates, val_list[1], '-o')
+
+	compounds_safe = []
+	for k, _ in compound_dict.items():
+		"""Create a filename-safe list using the given legend items"""
+		compounds_safe.append(k.replace('-', '_').replace('/', '_').lower())
+
+	comp_list = ', '.join(compound_dict.keys())  # use real names for plot title
+	fn_list = '_'.join(compounds_safe)  # use 'safe' names for filename
+
+	if limits is not None:
+		ax.set_xlim(right=limits.get('right'))
+		ax.set_xlim(left=limits.get('left'))
+		ax.set_ylim(top=limits.get('top'))
+		ax.set_ylim(bottom=limits.get('bottom'))
+
+	if major_ticks is not None:
+		ax.set_xticks(major_ticks, minor=False)
+	if minor_ticks is not None:
+		ax.set_xticks(minor_ticks, minor=True)
+
+	date_form = DateFormatter("%Y-%m-%d")
+	ax.xaxis.set_major_formatter(date_form)
+
+	[i.set_linewidth(2) for i in ax.spines.values()]
+	ax.tick_params(axis='x', labelrotation=30)
+	ax.tick_params(axis='both', which='major', size=8, width=2, labelsize=15)
+	f1.set_size_inches(11.11, 7.406)
+
+	ax.set_ylabel(f'Mixing Ratio ({unit_string})', fontsize=20)
+	ax.set_title(f'{comp_list}', fontsize=24, y= 1.02)
+	ax.legend(compound_dict.keys())
+
+	f1.subplots_adjust(bottom=.20)
+
+	f1.savefig(f'{fn_list}_last_week.png', dpi=150)
+	plt.close(f1)

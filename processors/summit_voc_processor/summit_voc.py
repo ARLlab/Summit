@@ -904,9 +904,10 @@ def get_dates_peak_info(session, compound, info, date_start=None, date_end=None)
 
 	elif date_end is None:
 		try:
-			peak_info = (session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
-						 .join(NmhcLine).join(GcRun).join(LogFile)
-						 .filter(LogFile.date > date_start).order_by(LogFile.date))
+			peak_info = (session.query(peak_info, LogFile.date)
+						 		.filter(Peak.name == compound, GcRun.type == 'ambient')
+								.join(NmhcLine).join(GcRun).join(LogFile)
+								.filter(LogFile.date > date_start).order_by(LogFile.date))
 			info, dates = zip(*peak_info.all()) # get only after the start date given
 		except ValueError:
 			info = None

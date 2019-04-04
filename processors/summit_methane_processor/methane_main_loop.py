@@ -14,8 +14,8 @@ import statistics as s
 import datetime as dt
 import asyncio
 
-rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
-# rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
+# rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
+rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
 
 from summit_methane import logger
 
@@ -86,7 +86,7 @@ async def check_load_run_logs(directory, sleeptime):
 
 		run_dates = [r.date for r in runs_in_db]
 
-		files = get_all_data_files(directory / 'data')
+		files = get_all_data_files(directory / 'data', '.txt')
 
 		runs = []
 		for file in files:
@@ -184,7 +184,7 @@ async def match_peaks_to_samples(directory, sleeptime):
 
 async def add_one_standard(directory, sleeptime):
 	"""
-	Add a single standard (the current working one), so that quantifications are possible.
+	Add a single standard (the current working one), so that quantifications are possible. VERY TEMPORARY.
 
 	:param directory:
 	:param sleeptime:
@@ -273,21 +273,64 @@ async def quantify_samples(directory, sleeptime):
 				run.rsd = s.stdev(all_run_mrs) / run.median * 100
 
 				session.merge(run)
+				# merge only the run, it contains and cascades samples, palines and peaks that were changed
 				ct += 1
 
 			else:
 				logger.warning(f'No standard value found for GcRun at {run.date}.')
 
 		session.commit()
-		logger.info(f'{ct} GcRuns were successfully quantified.')
+
+		if ct > 0:
+			logger.info(f'{ct} GcRuns were successfully quantified.')
+		else:
+			logger.info('No GcRuns quantified.')
+
 		session.close()
 		engine.dispose()
 		await asyncio.sleep(sleeptime)
 
 
+async def plot_new_data(directory, sleeptime):
+
+	data_len = 0  # always default to run when initialized
+
+	while True:
+		logger.info('Running plot_new_data()')
+		from summit_methane import connect_to_db, Sample, plottable_sample, summit_methane_plot
+
+		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+
+		ambient_samples = (session.query(Sample)
+						   .filter(Sample.date.between(datetime(2019,1,1), datetime(2019,6,1)))
+						   .filter(Sample.sample_type == 3)
+						   .all())
+
+		ambient_samples[:] = [sample for sample in ambient_samples if plottable_sample(sample)]
+		# remove gross outliers and non-valid samples
+
+		if len(ambient_samples) > data_len:
+			ambient_dates = [amb.date for amb in ambient_samples]
+			ambient_mrs = [amb.peak.mr for amb in ambient_samples]
+
+			summit_methane_plot(ambient_dates, {'methane': [None, ambient_mrs]},
+								limits={'bottom': 1800, 'top': 2150})
+			logger.info('New data plots created.')
+		else:
+			logger.info('No new data found to be plotted.')
+
+		data_len = len(ambient_samples)
+
+		session.close()
+		engine.dispose()
+		await asyncio.sleep(sleeptime)
+
+
+
+
 def main():
-	log_path = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor\CH4_test.LOG')
-	# log_path = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor\CH4_test.LOG')
+	# log_path = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor\CH4_test.LOG')
+	log_path = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor\CH4_smooth.LOG')
 
 	loop = asyncio.get_event_loop()
 
