@@ -17,6 +17,34 @@ Base = declarative_base()  # needed to subclass for sqlalchemy objects
 global_list = ['brbl4762@colorado.edu']
 
 
+def configure_logger(rundir):
+	"""
+	Create the project-specific logger. DEBUG and up is saved to the log, INFO and up appears in the console.
+
+	:param rundir: path to create log sub-path in
+	:return: logger object
+	"""
+
+	logfile = Path(rundir) / 'processor_logs/summit_errors.log'
+	logger = logging.getLogger('summit_errors')
+	logger.setLevel(logging.DEBUG)
+	fh = logging.FileHandler(logfile)
+	fh.setLevel(logging.DEBUG)
+
+	ch = logging.StreamHandler()
+	ch.setLevel(logging.INFO)
+
+	formatter = logging.Formatter('%(asctime)s -%(levelname)s- %(message)s')
+
+	[H.setFormatter(formatter) for H in [ch, fh]]
+	[logger.addHandler(H) for H in [ch, fh]]
+
+	return logger
+
+
+logger = configure_logger(rundir)
+
+
 class Error(Base):
 	"""
 	Errors are activatable states that trigger logging, and usually emails.
@@ -36,7 +64,7 @@ class Error(Base):
 		pass
 
 
-def send_email(send_from, send_to, subject, body, attachments=None, server='smtp.gmail.com'):
+def send_email(send_from, send_to, subject, body, user, passw, attach=None, server='smtp.gmail.com'):
 	import smtplib, json
 	from os.path import basename
 	from email.mime.application import MIMEApplication
@@ -44,11 +72,45 @@ def send_email(send_from, send_to, subject, body, attachments=None, server='smtp
 	from email.mime.text import MIMEText
 	from email.utils import COMMASPACE, formatdate
 
-	with (rundir / 'email_auth.txt').read_text() as filedata:
-		userdata = json.loads(filedata)
+	msg = MIMEMultipart()
+	msg['From'] = send_from
+	msg['To'] = COMMASPACE.join(send_to)
+	msg['Date'] = formatdate(localtime=True)
+	msg['Subject'] = subject
 
-	server = smtplib.SMTP_SSL(server, 465)
-	server.ehlo()
-	server.login(userdata.get('gmail_username'), userdata.get('gmail_password'))
+	msg.attach(MIMEText(body))
 
-	pass
+	for f in attach or []:
+		with open(f, 'rb') as file:
+			part = MIMEApplication(file.read(), Name=basename(f))
+
+		part['Content-Disposition'] = f'attachment; filename={basename(f)}'
+		msg.attach(part)
+
+	smtp = smtplib.SMTP_SSL(server, 465)
+
+	try:
+		smtp.ehlo_or_helo_if_needed()
+		smtp.login(user, passw)
+		smtp.sendmail(send_from, send_to, msg.as_string())
+		smtp.close()
+	except (smtplib.SMTPHeloError, smtplib.SMTPAuthenticationError, smtplib.SMTPException):
+		logger.critical('An email failed to send due to failed server connection.')
+
+
+def main(directory):
+	import json
+	import os
+	filedata = (rundir / 'email_auth.txt').read_text()
+	userdata = json.loads(filedata)
+
+	file_to_attach = directory / 'processor_logs/summit_errors.log'
+
+	send_email('arl.lab.cu@gmail.com', global_list, 'Error Test!',
+			   'This has been a scheduled test of the Summit Error Handling System.\n The entire log is attached.',
+			   userdata.get('gmail_username'), userdata.get('gmail_password'),
+			   attach=[file_to_attach])
+
+
+if __name__ == '__main__':
+	main(rundir)
