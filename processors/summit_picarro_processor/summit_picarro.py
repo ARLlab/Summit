@@ -373,7 +373,7 @@ def configure_logger(rundir):
 	:return: logger object
 	"""
 	logfile = Path(rundir) / 'processor_logs/summit_picarro.log'
-	logger = logging.getLogger('summit_voc')
+	logger = logging.getLogger('summit_picarro')
 	logger.setLevel(logging.DEBUG)
 	fh = logging.FileHandler(logfile)
 	fh.setLevel(logging.DEBUG)

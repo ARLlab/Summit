@@ -275,6 +275,7 @@ async def plot_new_data(directory, plotdir, sleeptime):
 		engine, session, Base = connect_to_summit_db('sqlite:///summit_vocs.sqlite', directory)
 		Base.metadata.create_all(engine)
 
+		# TODO Rework the below with create_daily_ticks() from summit_methane.py
 		now = datetime.now()  # save 'now' as the start of making plots
 		date_ago = now - dt.timedelta(
 			days=days_to_plot + 1)  # set a static for retrieving data at beginning of plot cycle

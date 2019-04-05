@@ -294,10 +294,11 @@ async def quantify_samples(directory, sleeptime):
 async def plot_new_data(directory, sleeptime):
 
 	data_len = 0  # always default to run when initialized
+	days_to_plot = 7
 
 	while True:
 		logger.info('Running plot_new_data()')
-		from summit_methane import connect_to_db, Sample, plottable_sample, summit_methane_plot
+		from summit_methane import connect_to_db, Sample, plottable_sample, summit_methane_plot, create_daily_ticks
 
 		engine, session, Base = connect_to_db('sqlite:///summit_methane.sqlite', directory)
 
@@ -309,12 +310,18 @@ async def plot_new_data(directory, sleeptime):
 		ambient_samples[:] = [sample for sample in ambient_samples if plottable_sample(sample)]
 		# remove gross outliers and non-valid samples
 
+		date_limits, major_ticks, minor_ticks = create_daily_ticks(days_to_plot)
+
 		if len(ambient_samples) > data_len:
 			ambient_dates = [amb.date for amb in ambient_samples]
 			ambient_mrs = [amb.peak.mr for amb in ambient_samples]
 
-			summit_methane_plot(ambient_dates, {'methane': [None, ambient_mrs]},
-								limits={'bottom': 1800, 'top': 2150})
+			summit_methane_plot(None, {'Methane': [ambient_dates, ambient_mrs]},
+								limits={'bottom': 1800, 'top': 2150,
+										'right': date_limits.get('right', None),
+										'left': date_limits.get('left', None)},
+								major_ticks=major_ticks,
+								minor_ticks=minor_ticks)
 			logger.info('New data plots created.')
 		else:
 			logger.info('No new data found to be plotted.')
@@ -324,8 +331,6 @@ async def plot_new_data(directory, sleeptime):
 		session.close()
 		engine.dispose()
 		await asyncio.sleep(sleeptime)
-
-
 
 
 def main():
@@ -340,6 +345,7 @@ def main():
 	loop.create_task(match_peaks_to_samples(rundir, 10))
 	loop.create_task(add_one_standard(rundir, 120))
 	loop.create_task(quantify_samples(rundir, 10))
+	loop.create_task(plot_new_data(rundir, 120))
 
 	loop.run_forever()
 

@@ -398,7 +398,7 @@ def configure_logger(rundir):
 	"""
 
 	logfile = Path(rundir) / 'processor_logs/summit_methane.log'
-	logger = logging.getLogger('summit_voc')
+	logger = logging.getLogger('summit_methane')
 	logger.setLevel(logging.DEBUG)
 	fh = logging.FileHandler(logfile)
 	fh.setLevel(logging.DEBUG)
@@ -575,10 +575,31 @@ def plottable_sample(sample):
 	if not valid_sample(sample):
 		return False
 	else:
-		if sample.peak.mr is None or not (1750 > sample.peak.mr > 2200):
+		if sample.peak.mr is None or not (1750 < sample.peak.mr < 2200):
 			return False
 		else:
 			return True
+
+
+def create_daily_ticks(days_in_plot):
+	"""
+	Takes a number of days to plot back, and creates major (1 day) and minor (6 hour) ticks.
+
+	:param days_in_plot: number of days to be displayed on the plot
+	:return: date_limits, major_ticks, minor_ticks
+	"""
+	from datetime import datetime
+	import datetime as dt
+
+	date_limits = dict()
+	date_limits['right'] = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + dt.timedelta(
+		days=1)  # end of day
+	date_limits['left'] = date_limits['right'] - dt.timedelta(days=days_in_plot)
+
+	major_ticks = [date_limits['right'] - dt.timedelta(days=x) for x in range(0, days_in_plot + 1)]
+	minor_ticks = [date_limits['right'] - dt.timedelta(hours=x * 6) for x in range(0, days_in_plot * 4 + 1)]
+
+	return date_limits, major_ticks, minor_ticks
 
 
 def summit_methane_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None, unit_string = 'ppbv'):
@@ -618,8 +639,9 @@ def summit_methane_plot(dates, compound_dict, limits=None, minor_ticks=None, maj
 	if dates is None:  # dates supplied by individual compounds
 		for compound, val_list in compound_dict.items():
 			assert val_list[0] is not None, 'A supplied date list was None'
-			assert (len(val_list[0]) > 0 and len(val_list[0]) == len(val_list[1]),
-					'Supplied dates were empty or lengths did not match')
+			assert ((len(val_list[0]) > 0) and (len(val_list[0]) == len(val_list[1]))), \
+				'Supplied dates were empty or lengths did not match'
+
 			ax.plot(val_list[0], val_list[1], '-o')
 
 	else:
@@ -659,5 +681,5 @@ def summit_methane_plot(dates, compound_dict, limits=None, minor_ticks=None, maj
 
 	f1.subplots_adjust(bottom=.20)
 
-	f1.savefig(f'{fn_list}_last_week.png', dpi=150)
+	f1.savefig(f'plots/{fn_list}_last_week.png', dpi=150)
 	plt.close(f1)
