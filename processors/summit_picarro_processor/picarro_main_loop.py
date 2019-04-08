@@ -3,7 +3,10 @@ import datetime as dt
 
 import pandas as pd
 
-from summit_picarro import logger, rundir
+from summit_core import configure_logger
+from summit_picarro import rundir
+
+logger = configure_logger(rundir, __name__)
 
 
 async def fake_move_data(directory, sleeptime):
@@ -17,11 +20,11 @@ async def fake_move_data(directory, sleeptime):
 	:return: None
 	"""
 	while True:
-		from summit_picarro import get_all_data_files
+		from summit_core import get_all_data_files
 		from shutil import copy2
 
-		local_files = get_all_data_files(directory / 'data')
-		remote_files = get_all_data_files(directory / 'test_data')
+		local_files = get_all_data_files(directory / 'data', '.dat')
+		remote_files = get_all_data_files(directory / 'test_data', '.dat')
 
 		local_filenames = [f.name for f in local_files]
 		remote_filenames = [f.name for f in remote_files]
@@ -46,9 +49,10 @@ async def check_load_new_data(directory, sleeptime):
 
 	while True:
 		logger.info('Running check_load_new_data()')
-		from summit_picarro import connect_to_db, get_all_data_files, DataFile, Datum, check_filesize
+		from summit_core import connect_to_db, get_all_data_files, check_filesize
+		from summit_picarro import Base, DataFile, Datum
 
-		engine, session, Base = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
 		Base.metadata.create_all(engine)
 
 		db_files = session.query(DataFile)
@@ -57,7 +61,7 @@ async def check_load_new_data(directory, sleeptime):
 		db_filenames = [d.name for d in db_files.all()]
 		db_dates = [d.date for d in db_data.all()]
 
-		all_available_files = get_all_data_files(directory / 'data')
+		all_available_files = get_all_data_files(directory / 'data', '.dat')
 
 		files_to_process = session.query(DataFile).filter(DataFile.processed == False).all()
 		# start with list of unprocessed files
@@ -122,10 +126,11 @@ async def find_cal_events(directory, sleeptime):
 	"""
 	while True:
 		logger.info('Running find_cal_events()')
-		from summit_picarro import connect_to_db, Datum, CalEvent, mpv_converter, find_cal_indices
+		from summit_core import connect_to_db
+		from summit_picarro import Base, Datum, CalEvent, mpv_converter, find_cal_indices
 		from summit_picarro import log_event_quantification
 
-		engine, session, Base = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
 		Base.metadata.create_all(engine)
 
 		standard_data = {}
@@ -194,9 +199,10 @@ async def create_mastercals(directory, sleeptime):
 	:return: None
 	"""
 	while True:
-		from summit_picarro import connect_to_db, MasterCal, CalEvent, match_cals_by_min
+		from summit_core import connect_to_db
+		from summit_picarro import Base, MasterCal, CalEvent, match_cals_by_min
 
-		engine, session, Base = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
 
 		# Get cals by standard, but only if they're not in another MasterCal already
 		lowcals = (session.query(CalEvent)
@@ -252,11 +258,12 @@ async def plot_new_data(directory, sleeptime):
 
 	while True:
 		logger.info('Running plot_new_data()')
-		from summit_picarro import summit_picarro_plot, connect_to_db, Datum, TempDir
+		from summit_core import create_daily_ticks, connect_to_db, TempDir
+		from summit_picarro import Base, Datum, summit_picarro_plot
 
 		plotdir = rundir / 'plots'
 
-		engine, session, Base = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_picarro.sqlite', directory)
 		Base.metadata.create_all(engine)
 
 		newest_data_point = (session.query(Datum.date)
@@ -274,12 +281,7 @@ async def plot_new_data(directory, sleeptime):
 		date_ago = now - dt.timedelta(days=days_to_plot + 1)
 		# set a static for retrieving data at beginning of plot cycle
 
-		date_limits = dict()
-		date_limits['right'] = now.replace(hour=0, minute=0, second=0, microsecond=0) + dt.timedelta(days=1)
-		date_limits['left'] = date_limits['right'] - dt.timedelta(days=days_to_plot)
-
-		major_ticks = [date_limits['right'] - dt.timedelta(days=x) for x in range(0, days_to_plot + 1)]
-		minor_ticks = [date_limits['right'] - dt.timedelta(hours=x * 6) for x in range(0, days_to_plot * 4 + 1)]
+		date_limits, major_ticks, minor_ticks = create_daily_ticks(days_to_plot)
 
 		all_data = session.query(Datum.date, Datum.co, Datum.co2, Datum.ch4).filter(Datum.mpv_position == 1).all()
 		# get only ambient data

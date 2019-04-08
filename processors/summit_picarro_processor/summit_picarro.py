@@ -26,6 +26,8 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
+from summit_core import JDict, JList, TempDir
+
 Base = declarative_base()
 
 rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_picarro_processor')
@@ -56,58 +58,58 @@ Curve = namedtuple('Point', 'm intercept')
 # low_limit_dict = {'CH4': (1820, 1850, 1838.5),'CO2': (375, 395, 390.24),'CO': (60, 90, 69.6)}
 
 
-class JDict(TypeDecorator):
-	"""
-	Serializes a dictionary for SQLAlchemy storage.
-	"""
-	impl = VARCHAR
+# class JDict(TypeDecorator):
+# 	"""
+# 	Serializes a dictionary for SQLAlchemy storage.
+# 	"""
+# 	impl = VARCHAR
+#
+# 	def process_bind_param(self, value, dialect):
+# 		if value is not None:
+# 			value = json.dumps(value)
+# 		return value
+#
+# 	def process_result_value(self, value, dialect):
+# 		if value is not None:
+# 			value = json.loads(value)
+# 		return value
+#
+#
+# class JList(TypeDecorator):
+# 	"""
+# 	Serializes a list for SQLAlchemy storage.
+# 	"""
+# 	impl = VARCHAR
+#
+# 	def process_bind_param(self, value, dialect):
+# 		value = json.dumps(value)
+# 		return value
+#
+# 	def process_result_value(self, value, dialect):
+# 		value = json.loads(value)
+# 		return value
+#
+#
+# MutableList.associate_with(JList)
+# MutableDict.associate_with(JDict)
 
-	def process_bind_param(self, value, dialect):
-		if value is not None:
-			value = json.dumps(value)
-		return value
 
-	def process_result_value(self, value, dialect):
-		if value is not None:
-			value = json.loads(value)
-		return value
-
-
-class JList(TypeDecorator):
-	"""
-	Serializes a list for SQLAlchemy storage.
-	"""
-	impl = VARCHAR
-
-	def process_bind_param(self, value, dialect):
-		value = json.dumps(value)
-		return value
-
-	def process_result_value(self, value, dialect):
-		value = json.loads(value)
-		return value
-
-
-MutableList.associate_with(JList)
-MutableDict.associate_with(JDict)
-
-
-class TempDir():
-	"""
-	Context manager for working in a directory.
-	Pulled from: (https://pythonadventures.wordpress.com/2013/12/15/chdir-
-					a-context-manager-for-switching-working-directories/)
-	"""
-
-	def __init__(self, path):
-		self.old_dir = os.getcwd()
-		self.new_dir = path
-
-	def __enter__(self):
-		os.chdir(self.new_dir)
-
-	def __exit__(self, *args):
-		os.chdir(self.old_dir)
+# class TempDir():
+# 	"""
+# 	Context manager for working in a directory.
+# 	Pulled from: (https://pythonadventures.wordpress.com/2013/12/15/chdir-
+# 					a-context-manager-for-switching-working-directories/)
+# 	"""
+#
+# 	def __init__(self, path):
+# 		self.old_dir = os.getcwd()
+# 		self.new_dir = path
+#
+# 	def __enter__(self):
+# 		os.chdir(self.new_dir)
+#
+# 	def __exit__(self, *args):
+# 		os.chdir(self.old_dir)
 
 
 class DataFile(Base):
@@ -340,95 +342,95 @@ def find_cal_by_type(standards, std_type):
 	return next((ce for ce in standards if ce.standard_used == std_type), None)
 
 
-def connect_to_db(engine_str, directory):
-	"""
-	Takes string name of the database to create/connect to, and the directory it should be in.
-
-	:param engine_str: connection string for the database
-	:param directory: directory the database should in (created?) in
-	:return: engine, session, Base
-
-	Example:
-	engine, session, Base = connect_to_db('sqlite:///reservoir.sqlite', dir)
-	"""
-
-	from summit_picarro import Base, TempDir
-
-	from sqlalchemy import create_engine
-	from sqlalchemy.orm import sessionmaker
-
-	with TempDir(directory):
-		engine = create_engine(engine_str)
-	Session = sessionmaker(bind=engine)
-	sess = Session()
-
-	return engine, sess, Base
-
-
-def configure_logger(rundir):
-	"""
-	Create the project-specific logger. DEBUG and up is saved to the log, INFO and up appears in the console.
-
-	:param rundir: path to create log sub-path in
-	:return: logger object
-	"""
-	logfile = Path(rundir) / 'processor_logs/summit_picarro.log'
-	logger = logging.getLogger('summit_picarro')
-	logger.setLevel(logging.DEBUG)
-	fh = logging.FileHandler(logfile)
-	fh.setLevel(logging.DEBUG)
-
-	ch = logging.StreamHandler()
-	ch.setLevel(logging.INFO)
-
-	formatter = logging.Formatter('%(asctime)s -%(levelname)s- %(message)s')
-
-	[H.setFormatter(formatter) for H in [ch, fh]]
-	[logger.addHandler(H) for H in [ch, fh]]
-
-	return logger
-
-
-logger = configure_logger(rundir)
-
-
-def check_filesize(filepath):
-	"""
-	Returns the filesize in bytes.
-	:param filepath: file-like object
-	:return: int, filesize in bytes
-	"""
-	if Path.is_file(filepath):
-		return Path.stat(filepath).st_size
-	else:
-		logger.warning(f'File {filepath.name} not found.')
-		return
+# def connect_to_db(engine_str, directory):
+# 	"""
+# 	Takes string name of the database to create/connect to, and the directory it should be in.
+#
+# 	:param engine_str: connection string for the database
+# 	:param directory: directory the database should in (created?) in
+# 	:return: engine, session, Base
+#
+# 	Example:
+# 	engine, session, Base = connect_to_db('sqlite:///reservoir.sqlite', dir)
+# 	"""
+#
+# 	from summit_picarro import Base, TempDir
+#
+# 	from sqlalchemy import create_engine
+# 	from sqlalchemy.orm import sessionmaker
+#
+# 	with TempDir(directory):
+# 		engine = create_engine(engine_str)
+# 	Session = sessionmaker(bind=engine)
+# 	sess = Session()
+#
+# 	return engine, sess, Base
+#
+#
+# def configure_logger(rundir):
+# 	"""
+# 	Create the project-specific logger. DEBUG and up is saved to the log, INFO and up appears in the console.
+#
+# 	:param rundir: path to create log sub-path in
+# 	:return: logger object
+# 	"""
+# 	logfile = Path(rundir) / 'processor_logs/summit_picarro.log'
+# 	logger = logging.getLogger('summit_picarro')
+# 	logger.setLevel(logging.DEBUG)
+# 	fh = logging.FileHandler(logfile)
+# 	fh.setLevel(logging.DEBUG)
+#
+# 	ch = logging.StreamHandler()
+# 	ch.setLevel(logging.INFO)
+#
+# 	formatter = logging.Formatter('%(asctime)s -%(levelname)s- %(message)s')
+#
+# 	[H.setFormatter(formatter) for H in [ch, fh]]
+# 	[logger.addHandler(H) for H in [ch, fh]]
+#
+# 	return logger
+#
+#
+# logger = configure_logger(rundir)
 
 
-def list_files_recur(path):
-	"""
-
-	:param path: Path object
-	:return: list, of file-like Path objects
-	"""
-	files = []
-	for file in path.rglob('*'):
-		files.append(file)
-
-	return files
-
-
-def get_all_data_files(path):
-	"""
-	Recursively search the given directory for .dat files.
-
-	:param rundir_path:
-	:return: list, of file-like Path objects
-	"""
-	files = list_files_recur(path)
-	files[:] = [file for file in files if '.dat' in file.name]
-
-	return files
+# def check_filesize(filepath):
+# 	"""
+# 	Returns the filesize in bytes.
+# 	:param filepath: file-like object
+# 	:return: int, filesize in bytes
+# 	"""
+# 	if Path.is_file(filepath):
+# 		return Path.stat(filepath).st_size
+# 	else:
+# 		logger.warning(f'File {filepath.name} not found.')
+# 		return
+#
+#
+# def list_files_recur(path):
+# 	"""
+#
+# 	:param path: Path object
+# 	:return: list, of file-like Path objects
+# 	"""
+# 	files = []
+# 	for file in path.rglob('*'):
+# 		files.append(file)
+#
+# 	return files
+#
+#
+# def get_all_data_files(path):
+# 	"""
+# 	Recursively search the given directory for .dat files.
+#
+# 	:param rundir_path:
+# 	:return: list, of file-like Path objects
+# 	"""
+# 	files = list_files_recur(path)
+# 	files[:] = [file for file in files if '.dat' in file.name]
+#
+# 	return files
 
 
 def find_cal_indices(datetimes):
@@ -546,33 +548,33 @@ def summit_picarro_plot(dates, compound_dict, limits=None, minor_ticks=None, maj
 	plt.close(f1)
 
 
-def find_closest_date(date, list_of_dates):
-	"""
-	This is a helper function that works on Python datetimes. It returns the closest date value,
-	and the timedelta from the provided date.
-	:param date: datetime
-	:param list_of_dates: list, of datetimes
-	:return: match, delta: the matching date from the list, and it's difference to the original as a timedelta
-
-	"""
-
-	match = min(list_of_dates, key = lambda x: abs(x - date))
-	delta = match - date
-
-	return match, delta
-
-
-def search_for_attr_value(obj_list, attr, value):
-	"""
-	Finds the first (not necesarilly the only) object in a list, where its
-	attribute 'attr' is equal to 'value', returns None if none is found.
-	:param obj_list: list, of objects to search
-	:param attr: string, attribute to search for
-	:param value: mixed types, value that should be searched for
-	:return: obj, from obj_list, where attribute attr matches value
-		**** warning: returns the *first* obj, not necessarily the only
-	"""
-	return next((obj for obj in obj_list if getattr(obj,attr, None) == value), None)
+# def find_closest_date(date, list_of_dates):
+# 	"""
+# 	This is a helper function that works on Python datetimes. It returns the closest date value,
+# 	and the timedelta from the provided date.
+# 	:param date: datetime
+# 	:param list_of_dates: list, of datetimes
+# 	:return: match, delta: the matching date from the list, and it's difference to the original as a timedelta
+#
+# 	"""
+#
+# 	match = min(list_of_dates, key = lambda x: abs(x - date))
+# 	delta = match - date
+#
+# 	return match, delta
+#
+#
+# def search_for_attr_value(obj_list, attr, value):
+# 	"""
+# 	Finds the first (not necesarilly the only) object in a list, where its
+# 	attribute 'attr' is equal to 'value', returns None if none is found.
+# 	:param obj_list: list, of objects to search
+# 	:param attr: string, attribute to search for
+# 	:param value: mixed types, value that should be searched for
+# 	:return: obj, from obj_list, where attribute attr matches value
+# 		**** warning: returns the *first* obj, not necessarily the only
+# 	"""
+# 	return next((obj for obj in obj_list if getattr(obj,attr, None) == value), None)
 
 
 def match_cals_by_min(cal, cals, minutes=4):
@@ -582,6 +584,8 @@ def match_cals_by_min(cal, cals, minutes=4):
 	:param minutes: int, minutes difference to tolerate ## MAY CHANGE TO upper/lower limits
 	:return: cal from the list cals, or None
 	"""
+	from summit_core import find_closest_date, search_for_attr_value
+
 	cal_dates = [c.date for c in cals]
 
 	[match, diff] = find_closest_date(cal.date, cal_dates)

@@ -122,7 +122,7 @@ def check_filesize(filepath):
 	"""
 	import logging
 
-	logger = logging.get_logger(__name__)
+	logger = logging.getLogger(__name__)
 
 	if Path.is_file(filepath):
 		return Path.stat(filepath).st_size
