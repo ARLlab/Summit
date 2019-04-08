@@ -12,70 +12,72 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
+from summit_core import JDict, JList
+
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
 
-def configure_logger(rundir):
-	"""
-	Create the project-specific logger. DEBUG and up is saved to the log, INFO and up appears in the console.
-
-	:param rundir: path to create log sub-path in
-	:return: logger object
-	"""
-	logfile = rundir / 'processor_logs/summit_voc.log'
-	logger = logging.getLogger('summit_voc')
-	logger.setLevel(logging.DEBUG)
-	fh = logging.FileHandler(logfile)
-	fh.setLevel(logging.DEBUG)
-
-	ch = logging.StreamHandler()
-	ch.setLevel(logging.INFO)
-
-	formatter = logging.Formatter('%(asctime)s -%(levelname)s- %(message)s')
-
-	[H.setFormatter(formatter) for H in [ch, fh]]
-	[logger.addHandler(H) for H in [ch, fh]]
-
-	return logger
-
-
-logger = configure_logger()
-
-
-class JDict(TypeDecorator):
-	"""
-	Serializes a dictionary for SQLAlchemy storage.
-	"""
-	impl = VARCHAR
-
-	def process_bind_param(self, value, dialect):
-		if value is not None:
-			value = json.dumps(value)
-		return value
-
-	def process_result_value(self, value, dialect):
-		if value is not None:
-			value = json.loads(value)
-		return value
+# def configure_logger(rundir):
+# 	"""
+# 	Create the project-specific logger. DEBUG and up is saved to the log, INFO and up appears in the console.
+#
+# 	:param rundir: path to create log sub-path in
+# 	:return: logger object
+# 	"""
+# 	logfile = rundir / 'processor_logs/summit_voc.log'
+# 	logger = logging.getLogger('summit_voc')
+# 	logger.setLevel(logging.DEBUG)
+# 	fh = logging.FileHandler(logfile)
+# 	fh.setLevel(logging.DEBUG)
+#
+# 	ch = logging.StreamHandler()
+# 	ch.setLevel(logging.INFO)
+#
+# 	formatter = logging.Formatter('%(asctime)s -%(levelname)s- %(message)s')
+#
+# 	[H.setFormatter(formatter) for H in [ch, fh]]
+# 	[logger.addHandler(H) for H in [ch, fh]]
+#
+# 	return logger
+#
+#
+# logger = configure_logger()
 
 
-class JList(TypeDecorator):
-	"""
-	Serializes a list for SQLAlchemy storage.
-	"""
-	impl = VARCHAR
-
-	def process_bind_param(self, value, dialect):
-		value = json.dumps(value)
-		return value
-
-	def process_result_value(self, value, dialect):
-		value = json.loads(value)
-		return value
-
-
-MutableList.associate_with(JList)
-MutableDict.associate_with(JDict)
+# class JDict(TypeDecorator):
+# 	"""
+# 	Serializes a dictionary for SQLAlchemy storage.
+# 	"""
+# 	impl = VARCHAR
+#
+# 	def process_bind_param(self, value, dialect):
+# 		if value is not None:
+# 			value = json.dumps(value)
+# 		return value
+#
+# 	def process_result_value(self, value, dialect):
+# 		if value is not None:
+# 			value = json.loads(value)
+# 		return value
+#
+#
+# class JList(TypeDecorator):
+# 	"""
+# 	Serializes a list for SQLAlchemy storage.
+# 	"""
+# 	impl = VARCHAR
+#
+# 	def process_bind_param(self, value, dialect):
+# 		value = json.dumps(value)
+# 		return value
+#
+# 	def process_result_value(self, value, dialect):
+# 		value = json.loads(value)
+# 		return value
+#
+#
+# MutableList.associate_with(JList)
+# MutableDict.associate_with(JDict)
 
 log_params_list = (['filename', 'date', 'sampletime', 'sampleflow1', 'sampleflow2',
 					'sampletype', 'backflushtime', 'desorbtemp', 'flashheattime',
@@ -158,6 +160,7 @@ class Crf(Base):
 
 	def __repr__(self):
 		return f'<crf {self.standard} for {self.date_start} to {self.date_end}>'
+
 
 class Peak(Base):
 	"""
@@ -646,6 +649,8 @@ def read_log_file(filename):
 	:param filename: string, filename to be read
 	:return: LogFile, or None
 	"""
+	logger = logging.getLogger(__name__)
+
 	with open(filename) as file:
 		contents = file.readlines()
 
@@ -747,31 +752,31 @@ def read_pa_line(line):
 	return this_line
 
 
-def find_closest_date(date, list_of_dates):
-	"""
-	This is a helper function that works on Python datetimes. It returns the closest date value,
-	and the timedelta from the provided date.
-	:param date: datetime
-	:param list_of_dates: list, of datetimes
-	:return: match, delta: the matching date from the list, and it's difference to the original as a timedelta
-	"""
-	match = min(list_of_dates, key = lambda x: abs(x - date))
-	delta = match - date
-
-	return match, delta
-
-
-def search_for_attr_value(obj_list, attr, value):
-	"""
-	Finds the first (not necesarilly the only) object in a list, where its
-	attribute 'attr' is equal to 'value', returns None if none is found.
-	:param obj_list: list, of objects to search
-	:param attr: string, attribute to search for
-	:param value: mixed types, value that should be searched for
-	:return: obj, from obj_list, where attribute attr matches value
-		**** warning: returns the *first* obj, not necessarily the only
-	"""
-	return next((obj for obj in obj_list if getattr(obj,attr, None) == value), None)
+# def find_closest_date(date, list_of_dates):
+# 	"""
+# 	This is a helper function that works on Python datetimes. It returns the closest date value,
+# 	and the timedelta from the provided date.
+# 	:param date: datetime
+# 	:param list_of_dates: list, of datetimes
+# 	:return: match, delta: the matching date from the list, and it's difference to the original as a timedelta
+# 	"""
+# 	match = min(list_of_dates, key = lambda x: abs(x - date))
+# 	delta = match - date
+#
+# 	return match, delta
+#
+#
+# def search_for_attr_value(obj_list, attr, value):
+# 	"""
+# 	Finds the first (not necesarilly the only) object in a list, where its
+# 	attribute 'attr' is equal to 'value', returns None if none is found.
+# 	:param obj_list: list, of objects to search
+# 	:param attr: string, attribute to search for
+# 	:param value: mixed types, value that should be searched for
+# 	:return: obj, from obj_list, where attribute attr matches value
+# 		**** warning: returns the *first* obj, not necessarily the only
+# 	"""
+# 	return next((obj for obj in obj_list if getattr(obj,attr, None) == value), None)
 
 
 def match_log_to_pa(LogFiles, NmhcLines):
@@ -783,6 +788,8 @@ def match_log_to_pa(LogFiles, NmhcLines):
 	:param NmhcLines: list, of NmhcLine objects that are unmatched
 	:return: list, of GcRun objects created by matched LogFile/NmhcLine pairs
 	"""
+
+	from summit_core import find_closest_date, search_for_attr_value
 
 	runs = []
 	for log in LogFiles:
@@ -807,59 +814,59 @@ def match_log_to_pa(LogFiles, NmhcLines):
 	return runs
 
 
-def connect_to_summit_db(engine_str, directory):
-	"""
-	Takes string name of the database to create/connect to, and the directory it should be in.
-
-	:param engine_str: connection string for the database
-	:param directory: directory the database should in (created?) in
-	:return: engine, session, Base
-
-	Example:
-	engine, session, Base = connect_to_db('sqlite:///reservoir.sqlite', dir)
-	"""
-
-	from summit_voc import Base, TempDir
-
-	from sqlalchemy import create_engine
-	from sqlalchemy.orm import sessionmaker
-
-	with TempDir(directory):
-		engine = create_engine(engine_str)
-	Session = sessionmaker(bind=engine)
-	sess = Session()
-
-	return engine, sess, Base
-
-
-def check_filesize(filename):
-	"""
-	Returns the filesize in bytes.
-	:param filepath: file-like object
-	:return: int, filesize in bytes
-	"""
-	if os.path.isfile(filename):
-		return os.path.getsize(filename)
-	else:
-		print(f'File {filename} not found.')
-		return
+# def connect_to_summit_db(engine_str, directory):
+# 	"""
+# 	Takes string name of the database to create/connect to, and the directory it should be in.
+#
+# 	:param engine_str: connection string for the database
+# 	:param directory: directory the database should in (created?) in
+# 	:return: engine, session, Base
+#
+# 	Example:
+# 	engine, session, Base = connect_to_db('sqlite:///reservoir.sqlite', dir)
+# 	"""
+#
+# 	from summit_voc import Base, TempDir
+#
+# 	from sqlalchemy import create_engine
+# 	from sqlalchemy.orm import sessionmaker
+#
+# 	with TempDir(directory):
+# 		engine = create_engine(engine_str)
+# 	Session = sessionmaker(bind=engine)
+# 	sess = Session()
+#
+# 	return engine, sess, Base
 
 
-class TempDir():
-	"""
-	Context manager for working in a directory.
-	Pulled from: (https://pythonadventures.wordpress.com/2013/12/15/chdir-
-					a-context-manager-for-switching-working-directories/)
-	"""
-	def __init__(self, path):
-		self.old_dir = os.getcwd()
-		self.new_dir = path
-
-	def __enter__(self):
-		os.chdir(self.new_dir)
-
-	def __exit__(self, *args):
-		os.chdir(self.old_dir)
+# def check_filesize(filename):
+# 	"""
+# 	Returns the filesize in bytes.
+# 	:param filepath: file-like object
+# 	:return: int, filesize in bytes
+# 	"""
+# 	if os.path.isfile(filename):
+# 		return os.path.getsize(filename)
+# 	else:
+# 		print(f'File {filename} not found.')
+# 		return
+#
+#
+# class TempDir():
+# 	"""
+# 	Context manager for working in a directory.
+# 	Pulled from: (https://pythonadventures.wordpress.com/2013/12/15/chdir-
+# 					a-context-manager-for-switching-working-directories/)
+# 	"""
+# 	def __init__(self, path):
+# 		self.old_dir = os.getcwd()
+# 		self.new_dir = path
+#
+# 	def __enter__(self):
+# 		os.chdir(self.new_dir)
+#
+# 	def __exit__(self, *args):
+# 		os.chdir(self.old_dir)
 
 
 def get_dates_peak_info(session, compound, info, date_start=None, date_end=None):
@@ -1027,6 +1034,8 @@ def name_summit_peaks(nmhcline):
 	:param nmhcline: NmhcLine object
 	:return: NmhcLine object, with named peaks
 	"""
+
+	from summit_core import search_for_attr_value
 
 	compound_pools = dict()
 
