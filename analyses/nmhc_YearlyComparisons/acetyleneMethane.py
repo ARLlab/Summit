@@ -1,133 +1,60 @@
 """
-Created on Thursday, April 4th, 2019.
+Created on Tuesday, March 21st, 2019.
 
-This is a learning script. It was developed for the purpose of categorizing
-methane chroms and log files into distinct yearly and monthly folders. It
-handles only this specific goal and is not adaptable.
+This script is nearly the same as ratios2.py but plots the ratio of
+acetylene / methane.
 
-Created in Spyder 3.3.2 in Anaconda Distribution, Python 3.7
+This code was written in Spyder via Anaconda Distribution [Python 3.7]
 
 """
+
+
 ## Import Libraries
-import os
-import shutil
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
 
-years = [2016, 2017, 2018]
-months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+from matplotlib.pyplot import figure
+figure(num=None, figsize=(8, 6), dpi=160, facecolor='w', edgecolor='k')
 
-# create initial folders
-for yrs in years:
-    path = r'C:\Users\ARL\Desktop\pastch4\%i'%yrs
-    os.mkdir(path)
-    for mo in months:
-        path = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yrs,mo)
-        os.mkdir(path)
-        path = r'C:\Users\ARL\Desktop\pastch4\%i\%s\log.txt'%(yrs,mo)
+## Import Data Sets
+from fileInput import fileLoad
+nmhcData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.XLSX")
+methaneData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\Methane.XLSX")
 
-# move files into respective folders
-source = r'C:\Users\ARL\Desktop\pastch4BUP'
-files = [file for file in os.listdir(source) if '.chr' in file]
+nmhcDate = nmhcData.loc[:,'DecYear'] # Variable describing the decimal Year
+ch4Date = methaneData.loc[:,'DecYear']
+hrs3 = 3 * 60 * 60 # three hours in seconds
+daytosec = 24 * 60 * 60 # convert days to seconds
 
 from isleapyear import isleapyear
+for i in np.linspace(2012,2018,num=((2018 - 2012)+1)):
 
-for f in files:                     # iterate over all the files
-    for yr in years:                # iterate over years
-            if f[:4] == '%i'%yr:    # if first four letters indicate yr
-                if isleapyear(yr):  # leap year julian dates are different than normal
-                    if int(f[4:7]) >= 1 and int(f[4:7]) <= 31:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[0])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 32 and int(f[4:7]) <= 60:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[1])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 61 and int(f[4:7]) <= 91:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[2])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 92 and int(f[4:7]) <= 121:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[3])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 122 and int(f[4:7]) <= 152:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[4])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 153 and int(f[4:7]) <= 182:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[5])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 183 and int(f[4:7]) <= 213:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[6])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 214 and int(f[4:7]) <= 244:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[7])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 245 and int(f[4:7]) <= 274:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[8])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 275 and int(f[4:7]) <= 305:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[9])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 306 and int(f[4:7]) <= 335:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[10])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    else:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[11])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                else:
-                    if int(f[4:7]) >= 1 and int(f[4:7]) <= 31:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[0])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 32 and int(f[4:7]) <= 59:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[1])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 60 and int(f[4:7]) <= 90:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[2])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 91 and int(f[4:7]) <= 120:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[3])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 121 and int(f[4:7]) <= 151:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[4])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 152 and int(f[4:7]) <= 181:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[5])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 182 and int(f[4:7]) <= 212:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[6])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 213 and int(f[4:7]) <= 243:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[7])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 244 and int(f[4:7]) <= 273:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[8])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 274 and int(f[4:7]) <= 304:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[9])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    elif int(f[4:7]) >= 305 and int(f[4:7]) <= 334:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[10])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
-                    else:
-                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,months[11])
-                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
-                        shutil.copy2(f,dest)     # move the files
+    ## Define date variables for given year
+    aceDate = nmhcData.loc[(nmhcDate >= i) & (nmhcDate < (i+1)),'DecYear'].values # Past 2012
+    aceDate = (aceDate - i) * (365 + isleapyear(i)) * daytosec # Convert to seconds
+
+    methaneDate= methaneData.loc[(ch4Date >= i) & (ch4Date < (i+1)),'DecYear'].values
+    methaneDate = (methaneDate - i) * (365 + isleapyear(i))* daytosec
+
+    ## Define other variables
+    ace = nmhcData.loc[(nmhcDate >= i) & (nmhcDate < (i+1)),'acetylene'].values
+    methane = methaneData.loc[(ch4Date >= i) & (ch4Date < (i+1)),'MR'].values
+
+    aceMethane = np.zeros(np.size(ace)) # Preallocate ethaneMethane matrix
+
+    ## Iterate over each value in ethane
+    for j,value in np.ndenumerate(ace):
+        high = aceDate[j] + hrs3 # Current Ethane timestep in seconds + 3 hours
+        low = aceDate[j] - hrs3 # current ethane timestep in seconds - 3 hours
+        # Get the average of all methane values between high and low
+        methaneAverage = np.mean(methane[(methaneDate[:] <= high) & (methaneDate[:] >= low)])
+        aceMethane[j] = value / methaneAverage # Puts ratios in matrix for plotting
+
+    ## Plotting
+    figure(1)
+    plt.plot((aceDate / daytosec),aceMethane,'.',alpha=0.5,label='%i'%i)
+    plt.xlabel('Day of Year',fontdict=None,labelpad=None) # Plot Xlabel
+    plt.ylabel('Mixing Ratio [Parts per Billion]',fontdict=None,labelpad=None) # Plot Ylabel
+    plt.title('Summit Acetylene / Methane from 2012-2018',fontdict=None,pad=None)
+    plt.legend(bbox_to_anchor=(1.04,1),loc="upper left")
