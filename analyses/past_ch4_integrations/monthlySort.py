@@ -82,3 +82,52 @@ for f in files:                     # iterate over all the files
                         dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
                         f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
                         shutil.move(f,dest)     # move the files
+                else:
+                    if int(f[5:7]) >= 1 and int(f[5:7]) <= 31:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
+                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
+                        shutil.move(f,dest)     # move the files
+                    elif int(f[5:7]) >= 32 and int(f[5:7]) <= 59:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
+                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
+                        shutil.move(f,dest)     # move the files
+                    elif int(f[5:7]) >= 60 and int(f[5:7]) <= 90:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
+                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
+                        shutil.move(f,dest)     # move the files
+                    elif int(f[5:7]) >= 91 and int(f[5:7]) <= 120:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
+                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
+                        shutil.move(f,dest)     # move the files
+                    elif int(f[5:7]) >= 121 and int(f[5:7]) <= 151:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
+                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
+                        shutil.move(f,dest)     # move the files
+                    elif int(f[5:7]) >= 152 and int(f[5:7]) <= 181:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
+                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
+                        shutil.move(f,dest)     # move the files
+                    elif int(f[5:7]) >= 182 and int(f[5:7]) <= 212:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
+                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
+                        shutil.move(f,dest)     # move the files
+                    elif int(f[5:7]) >= 213 and int(f[5:7]) <= 243:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
+                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
+                        shutil.move(f,dest)     # move the files
+                    elif int(f[5:7]) >= 244 and int(f[5:7]) <= 273:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
+                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
+                        shutil.move(f,dest)     # move the files
+                    elif int(f[5:7]) >= 274 and int(f[5:7]) <= 304:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
+                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
+                        shutil.move(f,dest)     # move the files
+                    elif int(f[5:7]) >= 305 and int(f[5:7]) <= 334:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
+                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
+                        shutil.move(f,dest)     # move the files
+                    else:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yr,mo)
+                        f = r'C:\Users\ARL\Desktop\pastch4BUP\%s'%(f)
+                        shutil.move(f,dest)     # move the files
