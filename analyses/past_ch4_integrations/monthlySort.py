@@ -25,7 +25,7 @@ for yrs in years:
         path = r'C:\Users\ARL\Desktop\pastch4\%i\%s'%(yrs,mo)
         os.mkdir(path)
 
-# gathers and seperates chrom files, puts in matrix
+# move files into respective folders
 source = r'C:\Users\ARL\Desktop\test'
 files = [file for file in os.scandir(source) if '.chr' in file.name]
 
@@ -35,8 +35,42 @@ for f in files:                     # iterate over all the files
     for yr in years:                # iterate over years
         for mo in months:           # iterate over months
             if f[:4] == '%i'%yr:    # if first four letters indicate yr
-                if isleapyear(yr):
+                if isleapyear(yr):  # leap year julian dates are different than normal
+
                     if f[5:7] >= 1 && f[5:7] <= 31:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
+                        shutil.move(f,dest)     # move the files
+                    elif: f[5:7] >= 32 && f[5:7] <= 60:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
+                        shutil.move(f,dest)     # move the files
+                    elif: f[5:7] >= 61 && f[5:7] <= 91:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
+                        shutil.move(f,dest)     # move the files
+                    elif: f[5:7] >= 92 && f[5:7] <= 121:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
+                        shutil.move(f,dest)     # move the files
+                    elif: f[5:7] >= 122 && f[5:7] <= 152:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
+                        shutil.move(f,dest)     # move the files
+                    elif: f[5:7] >= 153 && f[5:7] <= 182:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
+                        shutil.move(f,dest)     # move the files
+                    elif: f[5:7] >= 183 && f[5:7] <= 213:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
+                        shutil.move(f,dest)     # move the files
+                    elif: f[5:7] >= 214 && f[5:7] <= 244:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
+                        shutil.move(f,dest)     # move the files
+                    elif: f[5:7] >= 245 && f[5:7] <= 274:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
+                        shutil.move(f,dest)     # move the files
+                    elif: f[5:7] >= 275 && f[5:7] <= 305:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
+                        shutil.move(f,dest)     # move the files
+                    elif: f[5:7] >= 306 && f[5:7] <= 335:
+                        dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
+                        shutil.move(f,dest)     # move the files
+                    else: f[5:7] >= 336 && f[5:7] <= 366:
                         dest = r'C:\Users\ARL\Desktop\pastch4\%i'%yr
                         shutil.move(f,dest)     # move the files
                 else:
