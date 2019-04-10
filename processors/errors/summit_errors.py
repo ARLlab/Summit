@@ -102,7 +102,8 @@ class NewDataEmail(EmailTemplate):
 
 	def __init__(self, send_from, processor_name, last_data_time, attachments=()):
 		subject = f'No New Data for {processor_name}'
-		body = f'There has been no new data for the {processor_name} in {datetime.now() - last_data_time}.'
+		body = (f'There has been no new data for the {processor_name} in {datetime.now() - last_data_time}.\n' +
+				'This is the ONLY email that will be recieved for this error unless it is resolved.')
 		send_to_list = processor_email_list
 
 
@@ -208,7 +209,7 @@ def main():
 	# send_basic_w_attachement(rundir)  # works
 	# basic_template_test()  # works
 	# processor_template_test()  # works
-	error_and_resolution_test()  # works
+	# error_and_resolution_test()  # works
 
 	pass
 
