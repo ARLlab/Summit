@@ -27,7 +27,7 @@ async def check_load_logs(logpath, homedir, sleeptime):
 		from summit_core import connect_to_db, TempDir
 		from summit_voc import LogFile, read_log_file, Base
 
-		engine, session = connect_to_db('sqlite:///summit_vocs.sqlite', homedir)
+		engine, session = connect_to_db('sqlite:///summit_voc.sqlite', homedir)
 		Base.metadata.create_all(engine)
 
 		LogFiles = session.query(LogFile).order_by(LogFile.id).all()  # list of all present log objects
@@ -83,7 +83,7 @@ async def check_load_pas(filename, directory, sleeptime):
 		from summit_core import connect_to_db, TempDir
 		from summit_voc import Base, NmhcLine, read_pa_line, name_summit_peaks
 
-		engine, session= connect_to_db('sqlite:///summit_vocs.sqlite', directory)
+		engine, session= connect_to_db('sqlite:///summit_voc.sqlite', directory)
 		Base.metadata.create_all(engine)
 
 		NmhcLines = session.query(NmhcLine).order_by(NmhcLine.id).all()
@@ -150,7 +150,7 @@ async def load_crfs(directory, sleeptime):
 		from summit_core import connect_to_db, TempDir
 		from summit_voc import Base, Crf, read_crf_data
 
-		engine, session = connect_to_db('sqlite:///summit_vocs.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_voc.sqlite', directory)
 		Base.metadata.create_all(engine)
 
 		with TempDir(rundir):
@@ -179,7 +179,7 @@ async def create_gc_runs(directory, sleeptime):
 		from summit_voc import Base, LogFile, NmhcLine, GcRun
 		from summit_voc import match_log_to_pa
 
-		engine, session = connect_to_db('sqlite:///summit_vocs.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_voc.sqlite', directory)
 		Base.metadata.create_all(engine)
 
 		NmhcLines = (session.query(NmhcLine)
@@ -222,7 +222,7 @@ async def integrate_runs(directory, sleeptime):
 		from summit_voc import find_crf
 		from summit_voc import Base, GcRun, Datum, Crf
 
-		engine, session = connect_to_db('sqlite:///summit_vocs.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_voc.sqlite', directory)
 		Base.metadata.create_all(engine)
 
 		GcRuns = (session.query(GcRun)
@@ -269,7 +269,7 @@ async def plot_new_data(directory, plotdir, sleeptime):
 		from datetime import datetime
 		import datetime as dt
 
-		engine, session = connect_to_db('sqlite:///summit_vocs.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_voc.sqlite', directory)
 		Base.metadata.create_all(engine)
 
 		date_ago = datetime.now() - dt.timedelta(
