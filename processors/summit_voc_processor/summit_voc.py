@@ -79,7 +79,7 @@ Base = declarative_base()  # needed to subclass for sqlalchemy objects
 # MutableList.associate_with(JList)
 # MutableDict.associate_with(JDict)
 
-log_params_list = (['filename', 'date', 'sampletime', 'sampleflow1', 'sampleflow2',
+log_params_list = (['filename', 'sampletime', 'sampleflow1', 'sampleflow2',
 					'sampletype', 'backflushtime', 'desorbtemp', 'flashheattime',
 					'injecttime', 'bakeouttemp', 'bakeouttime', 'carrierflow',
 					'samplenum', 'WTinuse', 'adsTinuse', 'samplepressure1',
@@ -470,6 +470,7 @@ class GcRun(Base):
 
 	id = Column(Integer, primary_key = True)
 	type = Column(String)
+	date = Column(DateTime)
 
 	nmhcline_id = Column(Integer, ForeignKey('nmhclines.id'))
 	nmhc_con = relationship('NmhcLine', uselist = False, foreign_keys=[nmhcline_id], back_populates='run_con')
@@ -496,6 +497,9 @@ class GcRun(Base):
 		self.data_con = None
 		self.crfs = None # begins with no crf, will be found later
 		self.type = sample_types.get(self.sampletype, None)
+
+		self.date = self.log_con.date + (self.nmhc_con.date - self.log_con.date)/2
+		# date of GcRun is the average of the log date and paline date
 
 	def __str__(self):
 		return f'<matched gc run at {self.date_end}>'

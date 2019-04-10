@@ -2,8 +2,8 @@ from pathlib import Path
 import os, asyncio
 
 from summit_core import configure_logger
+from summit_core import voc_dir as rundir
 
-rundir = Path(os.getcwd())
 locallogdir = rundir / 'logs'  # folder containing log files
 plotdir = rundir / '../summit_master/summit_master/static/img/coding'  # local flask static folder
 
@@ -13,14 +13,14 @@ logger = configure_logger(rundir, __name__)
 
 
 async def check_load_logs(logpath, homedir, sleeptime):
-	'''
+	"""
 	Checks the directory against the database for new log files. Loads and commits
 	to db if there are any new files.
 
 	Basic format: Connect to the db, check for new log files. If new file
 	exists, load and commit them to the db. In all cases, sleep for (n) seconds before
 	looping back.
-	'''
+	"""
 
 	while True:
 		import os
