@@ -55,6 +55,6 @@ for i in np.linspace(2012,2018,num=((2018 - 2012)+1)):
     figure(1)
     plt.plot((aceDate / daytosec),aceMethane,'.',alpha=0.5,label='%i'%i)
     plt.xlabel('Day of Year',fontdict=None,labelpad=None) # Plot Xlabel
-    plt.ylabel('Mixing Ratio',fontdict=None,labelpad=None) # Plot Ylabel
+    plt.ylabel('Mixing Ratio [Parts per Billion]',fontdict=None,labelpad=None) # Plot Ylabel
     plt.title('Summit Acetylene / Methane from 2012-2018',fontdict=None,pad=None)
     plt.legend(bbox_to_anchor=(1.04,1),loc="upper left")
