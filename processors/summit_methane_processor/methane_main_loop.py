@@ -12,10 +12,10 @@ from pathlib import Path
 from datetime import datetime
 import statistics as s
 import datetime as dt
-import asyncio
+import asyncio, os
 from summit_core import configure_logger
-# rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
-rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
+
+from summit_core import methane_dir as rundir
 
 logger = configure_logger(rundir, __name__)
 
@@ -234,7 +234,7 @@ async def quantify_samples(directory, sleeptime):
 
 			standard = (session.query(Standard)
 						.filter(run.date >= Standard.date_st, run.date < Standard.date_en)
-						.one_or_none())
+						.first())  # TODO; Set unique constraints on standards, revert to one_or_none()
 
 			if standard is not None:
 				ambients = [sample for sample in samples if (sample.sample_type == 3 and valid_sample(sample))]

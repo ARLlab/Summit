@@ -27,9 +27,6 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
-# rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor')
-rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor')
-
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
 # retention times based on sample number

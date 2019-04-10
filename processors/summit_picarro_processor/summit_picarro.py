@@ -30,10 +30,6 @@ from summit_core import JDict, JList, TempDir
 
 Base = declarative_base()
 
-rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_picarro_processor')
-# rundir = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_picarro_processor')
-# rundir = Path(os.getcwd())
-
 column_names = ['alarm_status', 'instrument_status', 'cavity_pressure', 'cavity_temp', 'das_temp', 'etalon_temp',
 				'warmbox_temp', 'mpv_position', 'outlet_valve', 'co', 'co2_wet', 'co2', 'ch4_wet', 'ch4', 'h2o']
 
@@ -503,8 +499,8 @@ def summit_picarro_plot(dates, compound_dict, limits=None, minor_ticks=None, maj
 	if dates is None:  # dates supplied by individual compounds
 		for compound, val_list in compound_dict.items():
 			assert val_list[0] is not None, 'A supplied date list was None'
-			assert (len(val_list[0]) > 0 and len(val_list[0]) == len(val_list[1]),
-					'Supplied dates were empty or lengths did not match')
+			assert (len(val_list[0]) > 0 and len(val_list[0]) == len(val_list[1])), \
+					'Supplied dates were empty or lengths did not match'
 			ax.plot(val_list[0], val_list[1], '-o')
 
 	else:

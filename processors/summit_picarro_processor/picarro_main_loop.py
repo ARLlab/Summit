@@ -4,7 +4,7 @@ import datetime as dt
 import pandas as pd
 
 from summit_core import configure_logger
-from summit_picarro import rundir
+from summit_core import picarro_dir as rundir
 
 logger = configure_logger(rundir, __name__)
 
