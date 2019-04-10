@@ -11,8 +11,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 from summit_core import configure_logger
-
-rundir = Path(r'C:\Users\arl\Desktop\summit_master\processors\errors')
+from summit_core import error_dir as rundir
 
 auth_file = (rundir / 'email_auth.json')
 sender = 'arl.lab.cu@gmail.com'
@@ -30,7 +29,7 @@ class Error():
 
 	id = 0
 
-	def __init__(self, reason, resolution_function, resolution_value, email_template=None, expiration=None):
+	def __init__(self, reason, resolution_function, email_template, expiration=None):
 
 		self.id = Error.id
 		Error.id += 1  # create unique IDs from incrementing class variable
@@ -38,14 +37,13 @@ class Error():
 		self.email_template = email_template
 		self.expiration = expiration
 		self.resolution_function = resolution_function
-		self.resolution_value = resolution_value
 		self.reason = '[' + reason + ']'
 
 		logger.error(f'Error for {self.reason} intiated with error ID: {self.id}')
 		self.email_template.send()
 
-	def check_resolution(self):
-		if self.resolution_function(self.resolution_value):
+	def check_resolution(self, *args):
+		if self.resolution_function(*args):
 			self.resolve()
 			return True
 		else:
@@ -196,11 +194,11 @@ def main():
 				return False
 
 		template = ProccessorEmail('arl.lab.cu@gmail.com', 'Time Processor')
-		the_time = datetime.now() + dt.timedelta(seconds=30)
-		test_error = Error("it's not time yet", is_it_time_test, the_time, email_template=template)
+		another_time = datetime.now() + dt.timedelta(seconds=30)
+		test_error = Error("it's not time yet", is_it_time_test, email_template=template)
 
 		for i in range(8):
-			if test_error.check_resolution():
+			if test_error.check_resolution(another_time):
 				del test_error
 				break
 
@@ -210,7 +208,7 @@ def main():
 	# send_basic_w_attachement(rundir)  # works
 	# basic_template_test()  # works
 	# processor_template_test()  # works
-	# error_and_resolution_test()  # works
+	error_and_resolution_test()  # works
 
 	pass
 
