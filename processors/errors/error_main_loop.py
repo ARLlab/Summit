@@ -56,6 +56,14 @@ def get_last_processor_date(processor):
 
 
 def matching_error(error_list, reason, processor):
+	"""
+	There's a matching error if any error in the list has the same processor and reason associated with it.
+
+	:param error_list: list, of Error objects
+	:param reason: str, reason for the error
+	:param processor: str, in ['voc', 'methane', 'picarro']
+	:return: boolean, True if there's a matching error
+	"""
 	return next((True for err in error_list if
 				(err.email_template.processor == processor and err.reason == reason)), False)
 
@@ -72,13 +80,24 @@ async def check_for_new_data(directory, sleeptime):
 
 			if datetime.now() - last_data_time > time_limit:
 
-
-
-				active_errors.append(Error(reason, new_data_found(), NewDataEmail(sender, proc, last_data_time)))
-				pass
-			pass
+				if matching_error(active_errors, reason, proc):
+					continue
+				else:
+					active_errors.append(Error(reason, new_data_found, NewDataEmail(sender, proc, last_data_time)))
 
 		await asyncio.sleep(sleeptime)
+
+
+async def check_existing_errors(directory, sleeptime):
+	pass
+
+
+def main():
+	pass
+
+
+if __name__ == '__main__':
+	main()
 
 
 
