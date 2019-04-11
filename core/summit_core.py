@@ -1,8 +1,15 @@
 import os, json
+import asyncio
 from pathlib import Path
 
 from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import MutableDict, MutableList
+
+project_dir = Path(r'C:/Users/arl/Desktop/summit_master')
+voc_dir =  project_dir / 'processors/summit_voc_processor'
+picarro_dir =  project_dir / 'processors/summit_picarro_processor'
+methane_dir =  project_dir / 'processors/summit_methane_processor'
+error_dir = project_dir / 'processors/errors'
 
 
 class TempDir():

@@ -12,6 +12,12 @@ logger = configure_logger(rundir, __name__)
 
 
 def new_data_found(processor, last_data_time):
+	"""
+	Resolution function to be passed into Error objects.
+	:param processor: str, in ['voc', 'methane', 'picarro']
+	:param last_data_time: datetime, last datetime value for the given processor when the Error was initiated
+	:return: boolean, is there newer data in the database?
+	"""
 	if get_last_processor_date(processor) > last_data_time:
 		return True
 	else:
@@ -99,29 +105,12 @@ async def check_existing_errors(directory, sleeptime, active_errors):
 							   last_data_time = err.email_template.last_data_time):
 				active_errors[ind] = None
 		else:
-			pass
+			pass  # is_resolved() handles logging in both cases
 
 	active_errors = [err for err in active_errors if err is not None]
 
 	await asyncio.sleep(sleeptime)
 	await check_for_new_data(directory, sleeptime, active_errors)
-
-
-def main():
-	loop = asyncio.get_event_loop()
-
-	loop.create_task(check_for_new_data(rundir, 10))
-
-	loop.run_forever()
-
-
-if __name__ == '__main__':
-	main()
-
-
-
-
-
 
 
 def main():
