@@ -102,7 +102,7 @@ async def check_existing_errors(directory, sleeptime, active_errors):
 	for ind, err in enumerate(active_errors):
 		if err.reason is 'no new data':
 			if err.is_resolved(processor=err.email_template.processor,
-							   last_data_time = err.email_template.last_data_time):
+							   last_data_time=err.email_template.last_data_time):
 				active_errors[ind] = None
 		else:
 			pass  # is_resolved() handles logging in both cases
