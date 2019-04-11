@@ -5,7 +5,8 @@ from pathlib import Path
 from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 
-project_dir = Path(r'C:/Users/arl/Desktop/summit_master')
+project_dir = Path(r'C:\Users\brend\PycharmProjects\Summit')
+# project_dir = Path(r'C:/Users/arl/Desktop/summit_master')
 voc_dir =  project_dir / 'processors/summit_voc_processor'
 picarro_dir =  project_dir / 'processors/summit_picarro_processor'
 methane_dir =  project_dir / 'processors/summit_methane_processor'
@@ -86,7 +87,8 @@ def configure_logger(rundir, name):
 	formatter = logging.Formatter('%(asctime)s -%(levelname)s- %(message)s')
 
 	[H.setFormatter(formatter) for H in [ch, fh]]
-	[logger.addHandler(H) for H in [ch, fh]]
+	if not len(logger.handlers):
+		_ = [logger.addHandler(H) for H in [ch, fh]]
 
 	return logger
 
