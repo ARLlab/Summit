@@ -83,6 +83,10 @@
   left: 5px; }
 .navbar {
   display: none; }
+img.dataresize {
+  max-width:125%;
+  max-height:125%;
+}
 
 /* Larger than phone */
 @media (min-width: 550px) {
