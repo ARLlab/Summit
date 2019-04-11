@@ -37,12 +37,12 @@ class Error():
 		self.email_template = email_template
 		self.expiration = expiration
 		self.resolution_function = resolution_function
-		self.reason = '[' + reason + ']'
+		self.reason = reason
 
 		logger.error(f'Error for {self.reason} intiated with error ID: {self.id}')
 		self.email_template.send()
 
-	def check_resolution(self, *args):
+	def is_resolved(self, *args):
 		if self.resolution_function(*args):
 			self.resolve()
 			return True
@@ -101,12 +101,13 @@ class ProccessorEmail(EmailTemplate):
 class NewDataEmail(EmailTemplate):
 
 	def __init__(self, send_from, processor_name, last_data_time, attachments=()):
-		subject = f'No New Data for {processor_name}'
-		body = (f'There has been no new data for the {processor_name} in {datetime.now() - last_data_time}.\n' +
-				'This is the ONLY email that will be recieved for this error unless it is resolved.')
+		subject = f'No New Data for Summit {processor_name[0].upper() + processor_name[1:]}'
+		body = (f'There has been no new data for the {processor_name} processor in {datetime.now() - last_data_time}.\n'
+				+ 'This is the ONLY email that will be recieved for this error untill it is resolved.')
+
 		send_to_list = processor_email_list
-
-
+		self.send_from = send_from
+		self.processor = processor_name
 		self.last_data_time = last_data_time
 		super().__init__(send_from, send_to_list, body, subject=subject, attachments=attachments)
 
@@ -199,7 +200,7 @@ def main():
 		test_error = Error("it's not time yet", is_it_time_test, email_template=template)
 
 		for i in range(8):
-			if test_error.check_resolution(another_time):
+			if test_error.is_resolved(another_time):
 				del test_error
 				break
 

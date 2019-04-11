@@ -10,8 +10,6 @@ from summit_core import error_dir as rundir
 
 logger = configure_logger(rundir, __name__)
 
-active_errors = []  # Errors do not persist when loops are not running
-
 
 def new_data_found(processor, last_data_time):
 	if get_last_processor_date(processor) > last_data_time:
@@ -68,32 +66,53 @@ def matching_error(error_list, reason, processor):
 				(err.email_template.processor == processor and err.reason == reason)), False)
 
 
-async def check_for_new_data(directory, sleeptime):
+async def check_for_new_data(directory, sleeptime, active_errors = None):
 
 	reason = 'no new data'
 
-	while True:
-		# TODO : The time limits generated below are gross estimates
-		for proc, time_limit in zip(['voc', 'picarro', 'methane'], [dt.timedelta(hours=hr) for hr in [8,3,5]]):
+	if not active_errors:
+		active_errors = []
 
-			last_data_time = get_last_processor_date(proc)
+	logger.info('Running check_for_new_data()')
+	# TODO : The time limits generated below are gross estimates
+	for proc, time_limit in zip(['voc', 'picarro', 'methane'], [dt.timedelta(hours=hr) for hr in [8,3,5]]):
 
-			if datetime.now() - last_data_time > time_limit:
+		last_data_time = get_last_processor_date(proc)
 
-				if matching_error(active_errors, reason, proc):
-					continue
-				else:
-					active_errors.append(Error(reason, new_data_found, NewDataEmail(sender, proc, last_data_time)))
+		if datetime.now() - last_data_time > time_limit:
+			if matching_error(active_errors, reason, proc):
+				logger.error(f'Error for {reason} for the {proc} processor is already active and was ignored.')
+				continue
+			else:
+				active_errors.append(Error(reason, new_data_found, NewDataEmail(sender, proc, last_data_time)))
 
-		await asyncio.sleep(sleeptime)
+	await asyncio.sleep(sleeptime)
+	await check_existing_errors(directory, sleeptime, active_errors)
 
 
-async def check_existing_errors(directory, sleeptime):
-	pass
+async def check_existing_errors(directory, sleeptime, active_errors):
+
+	logger.info('Running check_existing_errors()')
+	for ind, err in enumerate(active_errors):
+		if err.reason is 'no new data':
+			if err.is_resolved(processor=err.email_template.processor,
+							   last_data_time = err.email_template.last_data_time):
+				active_errors[ind] = None
+		else:
+			pass
+
+	active_errors = [err for err in active_errors if err is not None]
+
+	await asyncio.sleep(sleeptime)
+	await check_for_new_data(directory, sleeptime, active_errors)
 
 
 def main():
-	pass
+	loop = asyncio.get_event_loop()
+
+	loop.create_task(check_for_new_data(rundir, 10))
+
+	loop.run_forever()
 
 
 if __name__ == '__main__':
@@ -107,7 +126,7 @@ if __name__ == '__main__':
 
 def main():
 	loop = asyncio.get_event_loop()
-	loop.create_task(check_for_new_voc_data(rundir, 10))
+	loop.create_task(check_for_new_data(rundir, 10))
 
 	loop.run_forever()
 
