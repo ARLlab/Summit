@@ -10,17 +10,24 @@
   margin-bottom: 4rem; }
 .docs-header {
   text-transform: uppercase;
-  font-size: 1.4rem;
+  font-size: 2.5rem;
+  letter-spacing: .1rem;
+  font-weight: 600;
+  color: #219ac6; }
+.docs-subheader {
+  font-size: 2rem;
   letter-spacing: .2rem;
-  font-weight: 600; }
+  font-weight: 400; }
 .docs-section {
-  border-top: 1px solid #eee;
+  border-top: 2px solid #ebecf0;
   padding: 4rem 0;
   margin-bottom: 0;}
 .value-img {
   display: block;
   text-align: center;
-  margin: 2.5rem auto 0; }
+  margin: 2.5rem auto 0;
+  max-width:110%;
+  max-height:110%}
 .example-grid .column,
 .example-grid .columns {
   background: #EEE;
