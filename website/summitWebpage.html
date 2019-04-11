@@ -86,6 +86,8 @@
           <li>Change Spacing between graphs</li>
           <li>Change graph sizes</li>
           <li>Customize CSS to match ARL sitewide text</li>
+          <li>Graph Images should be centered? Place in container?</li>
+          <li>Start filling out text</li>
       </div>
 
 
@@ -99,22 +101,33 @@
       <div class="docs-section" id="data">
           <h4> Near Real Time Data from Summit GC </h4>
           <h4 class="docs-header" id="ch4">Methane</h4>
-          <p> Methane is a greenhouse gas. Other background info. Live updated plot will go below </p>
-          <img alt="<Weekly Resolution Methane Plot>" src="http://instaar.colorado.edu/arl/res_parameters/summit_methane_plots/methane_last_week.png">
+          <p> Methane is a potent greenhouse gas. It has an atmospheric lifetime of about a decade and is distributed globally.
+            Methane emissions in our area mainly come from... </p>
+          <p> All times are reported in Mountain Standard Time (MST). Data during Daylight Savings Time (March-November)
+              will have to be corrected by adding one hour.</p>
+          <img class="dataresize" alt="<Weekly Resolution Methane Plot>" src="http://instaar.colorado.edu/arl/res_parameters/summit_methane_plots/methane_last_week.png">
 
           <h5 class="docs-header" id="voc">Selected Volatile Organic Compounds</h5>
           <h5>Ethane & Propane</h5>
           <img class="dataresize" alt="<Data not displaying: ethane & propane>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/ethane_propane_last_week.png">
+          <p>Ethane and propane have atmospheric lifetimes of about 2 months and about 2 weeks, respectively. They contribute to formation of ground-level ozone on a regional and continental scale. Oil and gas production and processing activities are the main source of ethane and propane.
+            Propane can also be released to the atmosphere from storage and distribution of liquified petroleum gas.</p>
           <h5>Butane(s) & Acetylene</h5>
-          <img alt="<Data not displaying: butane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_butane_n_butane_acetylene_last_week.png">
+          <img class="dataresize" alt="<Data not displaying: butane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_butane_n_butane_acetylene_last_week.png">
             <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data </a>
             <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data </a>
+          <p>Butanes and acetylene contribute to formation of ozone on local to regional scales. Butanes are emitted from gasoline vapors, vehicle exhaust, and oil and gas production.</p>
           <h5>Pentane(s)</h5>
-          <img alt="<Data not displaying: pentane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_pentane_n_pentane_last_week.png">
-          <h5>i-pentane and n-pentane Ratio</h5>
-          <img alt="<Data not displaying: ipentane/npentane ratio>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_n_pentane_ratio_last_week.png">
+          <p>Pentanes are also contributors to ozone formation on local to regional scales. Because i-pentane and n-pentane are released in different relative quantities by different sources, the i/n pentane ratio can be used to separate the influence of urban emissions from oil
+            and gas emissions (<a href="http://pubs.acs.org/doi/abs/10.1021/es304119a">Gilman, 2013</a>; <a href="https://www.elementascience.org/articles/10.12952/journal.elementa.000035/">Thompson, 2014</a>).
+            An i/n pentane ratio of 0.8 - 0.9 is typical of raw oil and gas emissions, whereas a ratio from 2-4 is characteristic of vehicle and urban emissions. </p>
+          <img class="dataresize" alt="<Data not displaying: pentane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_pentane_n_pentane_last_week.png">
+          <img class="dataresize" alt="<Data not displaying: ipentane/npentane ratio>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_n_pentane_ratio_last_week.png">
           <h5>Benzene and Toluene</h5>
-          <img alt="<Data not displaying: Benzene & Toluene>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/benzene_toluene_last_week.png">
+          <p> Benzene and toluene contribute to ozone formation and may be hazardous to health if breathed at high levels. Sources of toluene include paints, solvents, gasoline vapors and vehicle exhaust. Sources of benzene include gasoline vapors, vehicle exhaust, and oil and gas production activities.
+
+All times are reported in Mountain Standard Time (MST). Data during Daylight Savings Time (March-November) will have to be corrected by adding one hour.</p>
+          <img class="dataresize" alt="<Data not displaying: Benzene & Toluene>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/benzene_toluene_last_week.png">
       </div>
 
       <!-- Project Motivation -->
@@ -125,7 +138,11 @@
       <!-- Monitoring Methods -->
       <div class="docs-section" id="moni">
         <h4 class="docs-header" id="moni">Monitoring Methods</h4>
-        <p> Methane is monitored by loop injection... </p>
+        <p> Methane is monitored by loop injection of 10 ml samples and gas chromatography with flame ionization detection.
+          Samples are collected at 20-min intervals. </p>
+        <p> VOCs are monitored by preconcentration of 500 ml-samples onto a micro-adsorbent trap, with subsequent thermal desorption, capillary column gas chromatography separation, and flame ionization detection.
+          Samples are collected at 2-hour intervals. Currently quantified compounds include ethane, ethene, propane, propene, i-butane, acetylene, n-butane, i-pentane, n-pentane, hexane, isoprene,
+          benzene, toluene, ethyl-benzene, m,p-xylene, and o-xylene.</p>
       </div>
       <!-- Data Requests -->
       <div class="docs-section" id="dataR">
