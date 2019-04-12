@@ -1,4 +1,5 @@
 import os
+
 import pandas as pd
 import numpy as np
 
@@ -13,7 +14,7 @@ rts = rts.reindex(rts.index.drop(0)).reset_index(drop=True)
 
 rts[rts == 0] = np.nan
 
-rts = rts.loc[850:,:]  # optional slicing of data (get all data after change to current oven program and butane order)
+rts = rts.loc[850:, :]  # optional slicing of data (get all data after change to current oven program and butane order)
 
 # for col in rts.columns.tolist():
 # 	print(f"Compound {col} had a mean of {rts[col].mean():.03f}, median of {rts[col].median():.03f}, and stdev of {rts[col].std():.03f}.")
@@ -34,5 +35,5 @@ ax.plot(rts.index, rts['ibut_nbut_diff'], '-o')
 ax.legend(['acet - ibut', 'nbut - ibut'])
 
 # Shows that differences are stable within GC Oven program regimes. Currently, data is reliable with:
-	# Acet: .6 - .7 difference
-	# Nbut: .55 - .6 difference (but picks up co-eluted acet/nbut peak combos
+# Acet: .6 - .7 difference
+# Nbut: .55 - .6 difference (but picks up co-eluted acet/nbut peak combos

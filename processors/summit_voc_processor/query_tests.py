@@ -14,15 +14,15 @@ from summit_voc import name_summit_peaks
 new_lines = [name_summit_peaks(line) for line in lines]
 
 for item in new_lines:
-	for peak in item.peaklist:
-		session.merge(peak)
-	session.merge(item)
-	session.commit()
+    for peak in item.peaklist:
+        session.merge(peak)
+    session.merge(item)
+    session.commit()
 
 from summit_voc import get_dates_peak_info
 from datetime import datetime
 
-pas, dates = get_dates_peak_info(session, 'n-pentane', 'mr', date_start=datetime(2019,1,1))
+pas, dates = get_dates_peak_info(session, 'n-pentane', 'mr', date_start=datetime(2019, 1, 1))
 
 ## The Below is Working
 
