@@ -15,34 +15,41 @@ import datetime as dt
 import asyncio, os
 from summit_core import configure_logger
 
-from summit_core import methane_dir as rundir
 
-logger = configure_logger(rundir, __name__)
-
-async def check_load_pa_log(directory, path, sleeptime):
+async def check_load_pa_log(logger):
 
 	start_size = 0  #default to checking entire file on startup
 	start_line = 0
 
-	while True:
-		logger.info('Running check_load_pa_log()')
+	logger.info('Running check_load_pa_log()')
+
+	try:
 		from summit_core import connect_to_db, check_filesize
 		from summit_methane import Base, read_pa_line, PaLine
+		from summit_core import methane_dir as rundir
+		from pathlib import Path
+	except:
+		logger.error('ImportError occurred in check_load_pa_log()')
+		return False
 
-		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+	try:
+		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 		Base.metadata.create_all(engine)
+	except Exception as e:
+		logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
+		return False
 
+	try:
 		lines_in_db = session.query(PaLine).all()
 		dates_in_db = [l.date for l in lines_in_db]
 
-		if check_filesize(path) <= start_size:
-			logger.info('PA file did not change size.')
-			session.close()
-			engine.dispose()
-			await asyncio.sleep(sleeptime)
-			continue
+		pa_filepath = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor\CH4_smooth.LOG')
 
-		pa_file_contents = path.read_text().split('\n')[start_line:]
+		if check_filesize(pa_filepath) <= start_size:
+			logger.info('PA file did not change size.')
+			return False
+
+		pa_file_contents = pa_filepath.read_text().split('\n')[start_line:]
 		pa_file_contents[:] = [line for line in pa_file_contents if line != '']
 		start_line = len(pa_file_contents)
 
@@ -50,8 +57,9 @@ async def check_load_pa_log(directory, path, sleeptime):
 		for line in pa_file_contents:
 			pa_lines.append(read_pa_line(line))
 
-		if len(pa_lines) == 0:
+		if not pa_lines:
 			logger.info('No new PaLines found.')
+			return False
 
 		else:
 			ct = 0  # count committed logs
@@ -69,16 +77,19 @@ async def check_load_pa_log(directory, path, sleeptime):
 
 		session.close()
 		engine.dispose()
+		return True
 
-		await asyncio.sleep(sleeptime)
+	except Exception as e:
+		logger.error(f'Exception {e.args} occurred in check_load_pa_log()')
+		return False
 
 
-async def check_load_run_logs(directory, sleeptime):
+async def check_load_run_logs(logger):
 	while True:
 		from summit_core import get_all_data_files, connect_to_db
 		from summit_methane import Base, GcRun, Sample, read_log_file
 
-		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
 		runs_in_db = session.query(GcRun).all()
 		samples = session.query(Sample)
@@ -115,13 +126,13 @@ async def check_load_run_logs(directory, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
-async def match_runs_to_lines(directory, sleeptime):
+async def match_runs_to_lines(logger):
 	while True:
 		logger.info('Running match_runs_to_peaks()')
 		from summit_core import connect_to_db
 		from summit_methane import Base, GcRun, PaLine, match_lines_to_runs
 
-		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
 		unmatched_lines = session.query(PaLine).filter(PaLine.run == None).all()
 		unmatched_runs = session.query(GcRun).filter(GcRun.pa_line_id == None).all()
@@ -140,7 +151,7 @@ async def match_runs_to_lines(directory, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
-async def match_peaks_to_samples(directory, sleeptime):
+async def match_peaks_to_samples(logger):
 
 	while True:
 		logger.info('Running match_peaks_to_samples()')
@@ -150,7 +161,7 @@ async def match_peaks_to_samples(directory, sleeptime):
 		from operator import attrgetter
 		import datetime as dt
 
-		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
 		unmatched_samples = session.query(Sample).filter(Sample.peak_id == None, Sample.run_id != None).all()
 
@@ -186,7 +197,7 @@ async def match_peaks_to_samples(directory, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
-async def add_one_standard(directory, sleeptime):
+async def add_one_standard(logger):
 	"""
 	Add a single standard (the current working one), so that quantifications are possible. VERY TEMPORARY.
 
@@ -198,7 +209,7 @@ async def add_one_standard(directory, sleeptime):
 		from summit_core import connect_to_db
 		from summit_methane import Standard
 
-		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
 		my_only_standard = Standard('ws_2019', 2067.16, datetime(2019, 1, 1), datetime(2019, 6, 1))
 		session.merge(my_only_standard)
@@ -209,7 +220,7 @@ async def add_one_standard(directory, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
-async def quantify_samples(directory, sleeptime):
+async def quantify_samples(logger):
 	"""
 	On a per-run basis, use std1 to calc samples 1-5 (~3) and std2 to calculate samples 6-10 (~8)
 
@@ -224,7 +235,7 @@ async def quantify_samples(directory, sleeptime):
 		from summit_methane import Sample, Peak, Standard, GcRun
 		from summit_methane import calc_ch4_mr, valid_sample
 
-		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
 		unquantified_runs = session.query(GcRun).filter(GcRun.median == None).all()
 
@@ -297,7 +308,7 @@ async def quantify_samples(directory, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
-async def plot_new_data(directory, sleeptime):
+async def plot_new_data(logger):
 
 	data_len = 0  # always default to run when initialized
 	days_to_plot = 7
@@ -307,7 +318,7 @@ async def plot_new_data(directory, sleeptime):
 		from summit_core import connect_to_db, create_daily_ticks
 		from summit_methane import Base, Sample, plottable_sample, summit_methane_plot
 
-		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', directory)
+		engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
 		ambient_samples = (session.query(Sample)
 						   .filter(Sample.date.between(datetime(2019,1,1), datetime(2019,6,1)))
@@ -340,22 +351,29 @@ async def plot_new_data(directory, sleeptime):
 		await asyncio.sleep(sleeptime)
 
 
-def main():
-	# log_path = Path(r'C:\Users\brend\PycharmProjects\Summit\processors\summit_methane_processor\CH4_test.LOG')
-	log_path = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor\CH4_smooth.LOG')
+async def main():
+
+	try:
+		from summit_core import picarro_dir as rundir
+		from summit_core import configure_logger
+		logger = configure_logger(rundir, __name__)
+	except Exception as e:
+		print(f'Error {e.args} prevented logger configuration.')
+		return
 
 	loop = asyncio.get_event_loop()
 
-	loop.create_task(check_load_pa_log(rundir, log_path, 10))
-	loop.create_task(check_load_run_logs(rundir, 10))
-	loop.create_task(match_runs_to_lines(rundir, 10))
-	loop.create_task(match_peaks_to_samples(rundir, 10))
-	loop.create_task(add_one_standard(rundir, 120))
-	loop.create_task(quantify_samples(rundir, 10))
-	loop.create_task(plot_new_data(rundir, 120))
+	loop.create_task(check_load_pa_log(logger))
+	loop.create_task(check_load_run_logs(logger))
+	loop.create_task(match_runs_to_lines(logger))
+	loop.create_task(match_peaks_to_samples(logger))
+	loop.create_task(add_one_standard(logger))
+	loop.create_task(quantify_samples(logger))
+	loop.create_task(plot_new_data(logger))
 
 	loop.run_forever()
 
 
 if __name__ == '__main__':
-	main()
+	loop = asyncio.get_event_loop()
+	loop.run_until_complete(main())
