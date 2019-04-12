@@ -1,20 +1,6 @@
 import os
 import asyncio
 
-from summit_core import configure_logger
-
-PA_SLEEP = 1200
-
-
-async def exit_and_continue(next_, vars_, session=None, engine=None):
-    if session:
-        session.close()
-    if engine:
-        engine.dispose()
-
-    await next_(*vars_)
-    return
-
 
 async def check_load_logs(logger):
     """
@@ -184,6 +170,7 @@ async def load_crfs(logger):
         from summit_core import connect_to_db, TempDir
         from summit_voc import Base, Crf, read_crf_data
     except ImportError:
+        logger.error('ImportError occurred in load_crfs()')
         return False
 
     try:
