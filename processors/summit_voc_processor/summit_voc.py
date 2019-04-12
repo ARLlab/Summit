@@ -848,6 +848,8 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
 
     import matplotlib.pyplot as plt
     from matplotlib.dates import DateFormatter
+    from pandas.plotting import register_matplotlib_converters
+    register_matplotlib_converters()
 
     f1 = plt.figure()
     ax = f1.gca()
