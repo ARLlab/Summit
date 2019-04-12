@@ -25,8 +25,6 @@ async def check_load_logs(logger):
     exists, load and commit them to the db. In all cases, sleep for (n) seconds before
     looping back.
     """
-    next_process = check_load_pas
-    next_process_vars = [PA_SLEEP]
 
     try:
         import os
@@ -96,8 +94,6 @@ async def check_load_pas(logger):
 
     '''
 
-    next_process = load_crfs
-    next_process_vars = [PA_SLEEP]
     filename = 'VOC.LOG'
     pa_file_size = 0  # always assume all lines could be new when initialized
     start_line = 0
@@ -152,13 +148,19 @@ async def check_load_pas(logger):
                     # If list isn't empty, attempt to name all peaks
                     new_lines[:] = [name_summit_peaks(line) for line in new_lines]
 
+                ct = 0
                 for item in new_lines:
                     if item.date not in line_dates:  # prevents duplicates in db
                         line_dates.append(item.date)  # prevents duplicates in one load
                         session.merge(item)
                         logger.info(f'PA Line {item} added.')
+                        ct += 1
 
-                session.commit()
+                if ct:
+                    session.commit()
+                else:
+                    logger.info('No new pa lines were added.')
+                    return False
 
                 start_line = len(contents)
                 pa_file_size = new_file_size  # set filesize to current file size
@@ -176,8 +178,6 @@ async def check_load_pas(logger):
 
 
 async def load_crfs(logger):
-    next_process = create_gc_runs
-    next_process_vars = [PA_SLEEP]
 
     try:
         from summit_core import voc_dir as rundir
@@ -473,12 +473,16 @@ async def main():
         return
 
     try:
-        if await asyncio.create_task(check_load_logs(logger)):
-            if await asyncio.create_task(check_load_pas(logger)):
-                await asyncio.create_task(load_crfs(logger))
-                if await asyncio.create_task(create_gc_runs(logger)):
-                    if await asyncio.create_task(integrate_runs(logger)):
-                        await asyncio.create_task(plot_new_data(logger))
+        new_logs = await asyncio.create_task(check_load_logs(logger))
+        new_lines = await asyncio.create_task(check_load_pas(logger))
+
+        print(new_logs, new_lines)
+
+        if new_logs or new_lines:
+            await asyncio.create_task(load_crfs(logger))
+            if await asyncio.create_task(create_gc_runs(logger)):
+                if await asyncio.create_task(integrate_runs(logger)):
+                    await asyncio.create_task(plot_new_data(logger))
 
     except Exception as e:
         logger.critical(f'Exception {e.args} caused a complete failure of the VOC processing.')
