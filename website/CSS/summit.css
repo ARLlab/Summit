@@ -1,8 +1,13 @@
 .container {
-  max-width: 800px; }
+  max-width: 900px; }
 .header {
   margin-top: 6rem;
   text-align: center; }
+.title {
+  font-size: 4rem;
+  letter-spacing: .2rem;
+  font-weight: 500;
+  color: #219ac6 }
 .value-prop {
   margin-top: 1rem; }
 .value-props {
