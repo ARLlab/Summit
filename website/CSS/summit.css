@@ -1,8 +1,13 @@
 .container {
-  max-width: 800px; }
+  max-width: 900px; }
 .header {
   margin-top: 6rem;
   text-align: center; }
+.title {
+  font-size: 4rem;
+  letter-spacing: .2rem;
+  font-weight: 500;
+  color: #219ac6 }
 .value-prop {
   margin-top: 1rem; }
 .value-props {
@@ -10,17 +15,24 @@
   margin-bottom: 4rem; }
 .docs-header {
   text-transform: uppercase;
-  font-size: 1.4rem;
+  font-size: 2.5rem;
+  letter-spacing: .1rem;
+  font-weight: 600;
+  color: #219ac6; }
+.docs-subheader {
+  font-size: 2rem;
   letter-spacing: .2rem;
-  font-weight: 600; }
+  font-weight: 400; }
 .docs-section {
-  border-top: 1px solid #eee;
+  border-top: 2px solid #ebecf0;
   padding: 4rem 0;
   margin-bottom: 0;}
 .value-img {
   display: block;
   text-align: center;
-  margin: 2.5rem auto 0; }
+  margin: 2.5rem auto 0;
+  max-width:110%;
+  max-height:110%}
 .example-grid .column,
 .example-grid .columns {
   background: #EEE;
@@ -83,6 +95,10 @@
   left: 5px; }
 .navbar {
   display: none; }
+img.dataresize {
+  max-width:125%;
+  max-height:125%;
+}
 
 /* Larger than phone */
 @media (min-width: 550px) {

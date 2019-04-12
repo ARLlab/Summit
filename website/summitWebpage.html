@@ -45,39 +45,27 @@
         <a class="button button-primary" href="http://instaar.colorado.edu/arl/index.html" >ARL Homepage</a>
       </section>
 
-      <div class="navbar-spacer"></div> <!-- Navigation Bar -->
+      <!-- Navigation Bar -->
+      <div class="navbar-spacer"></div>
       <nav class="navbar">
         <div class="container">
           <ul class="navbar-list">
-            <li class="navbar-item">
-              <a class="navbar-link" href="#intro">Introduction</a>
-            </li>
-            <li class="navbar-item">
-              <a class="navbar-link" href="#" data-popover="#codeNavPopover">Index</a>
-              <div id="codeNavPopover" class="popover">
-                <ul class="popover-list">
-                  <li class="popover-item">
-                    <a class="popover-link" href="#data">Data</a>
-                  </li>
-                  <li class="popover-item">
-                    <a class="popover-link" href="#moni">Methods</a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="navbar-item">
-              <a class="navbar-link" href="#" data-popover="codeNavPopover">Specific Data</a>
-              <div id="codeNavPopover" class="popover">
-                <ul class="popover-list">
-                  <li class="popover-item">
-                    <a class="popover-link" href="ch4">Data</a>
-                  </li>
-                </ul>
-              </div>
-            </li>
+            <li class="navbar-item"><a class="navbar-link" href="#intro">Introduction</a></li>
+            <li class="navbar-item"><a class="navbar-link" href="#data">Data</a></li>
+            <li class="navbar-item"><a class="navbar-link" href="#motv">Motivation</a></li>
+            <li class="navbar-item"><a class="navbar-link" href="#moni">Methods</a></li>
           </ul>
         </div>
       </nav>
+
+        <!-- Delete this section before publish -->
+      <div class="docs-section" id="intro">
+          <h4> To-Do / Notes </h4>
+          <li>Customize CSS styling</li>
+          <li>Additional section text + proofread</li>
+          <li>Data section is maybe a little crowded?</li>
+      </div>
+
 
       <!-- Introduction -->
       <div class="docs-section" id="intro">
@@ -86,42 +74,67 @@
               Atmospheric data is gathered from a Picarro instrument and from a GC-FID instrument. </p>
       </div>
 
+      <!-- Main Data Section -->
       <div class="docs-section" id="data">
+
           <h4> Near Real Time Data from Summit GC </h4>
-          <h4 class="docs-header" id="ch4">Methane over the past 3 days</h4>
-          <p> Methane is a greenhouse gas. Other background info. Live updated plot will go below </p>
-          <img alt="Near-realtime data here" src="https://eoimages.gsfc.nasa.gov/images/imagerecords/91000/91564/methane_plot_2016.png">
+
+          <h4 class="docs-header" id="ch4">Methane</h4>
+          <p> Methane is a potent greenhouse gas. It has an atmospheric lifetime of about a decade and is distributed globally.
+            Methane emissions in our area mainly come from... </p>
+          <p> All times are reported in Mountain Standard Time (MST). Data during Daylight Savings Time (March-November)
+              will have to be corrected by adding one hour.</p>
+          <img class="value-img" alt="<Weekly Resolution Methane Plot>" src="http://instaar.colorado.edu/arl/res_parameters/summit_methane_plots/methane_last_week.png">
 
           <h5 class="docs-header" id="voc">Selected Volatile Organic Compounds</h5>
-          <p> There needs to be a bigger space between these headers. Other background info. Live updated plot will go below </p>
-          <img alt="<Near-realtime data here>" src="fakeimage">
-            <h5>Ethane & Propane</h5>
-            <p> Custom CSS will make these headers appropriate size eventually
-            <h5>Butane & Acetylene</h5>
-            <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data </a>
-            <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data </a>
 
-            <h5>Pentane</h5>
+          <h5 class="docs-subheader">Ethane & Propane</h5>
+          <img class="value-img" alt="<Data not displaying: ethane & propane>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/ethane_propane_last_week.png">
+          <p>Ethane and propane have atmospheric lifetimes of about 2 months and about 2 weeks, respectively. They contribute to formation of ground-level ozone on a regional and continental scale. Oil and gas production and processing activities are the main source of ethane and propane.
+            Propane can also be released to the atmosphere from storage and distribution of liquified petroleum gas.</p>
 
-          <h4 class="docs-header" id="other2">But wait theres more</h4>
-          <p> Other background info. Live updated plot will go below </p>
-          <img alt="<Near-realtime data here>" src="fakeimage">
+          <h5 class="docs-subheader">Butane(s) & Acetylene</h5>
+          <img class="value-img" alt="<Data not displaying: butane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_butane_n_butane_acetylene_last_week.png">
+          <p>Butanes and acetylene contribute to formation of ozone on local to regional scales. Butanes are emitted from gasoline vapors, vehicle exhaust, and oil and gas production.</p>
+          <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data [Need links]</a>
+          <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data </a>
+
+          <h5 class="docs-subheader">Pentane(s)</h5>
+          <p>Pentanes are also contributors to ozone formation on local to regional scales. Because i-pentane and n-pentane are released in different relative quantities by different sources, the i/n pentane ratio can be used to separate the influence of urban emissions from oil
+            and gas emissions (<a href="http://pubs.acs.org/doi/abs/10.1021/es304119a">Gilman, 2013</a>; <a href="https://www.elementascience.org/articles/10.12952/journal.elementa.000035/">Thompson, 2014</a>).
+            An i/n pentane ratio of 0.8 - 0.9 is typical of raw oil and gas emissions, whereas a ratio from 2-4 is characteristic of vehicle and urban emissions. </p>
+          <img class="value-img" alt="<Data not displaying: pentane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_pentane_n_pentane_last_week.png">
+          <img class="value-img" alt="<Data not displaying: ipentane/npentane ratio>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_n_pentane_ratio_last_week.png">
+
+          <h5 class="docs-subheader">Benzene and Toluene</h5>
+          <p> Benzene and toluene contribute to ozone formation and may be hazardous to health if breathed at high levels. Sources of toluene include paints, solvents, gasoline vapors and vehicle exhaust. Sources of benzene include gasoline vapors, vehicle exhaust, and oil and gas production activities.
+              All times are reported in Mountain Standard Time (MST). Data during Daylight Savings Time (March-November) will have to be corrected by adding one hour.</p>
+          <img class="value-img" alt="<Data not displaying: Benzene & Toluene>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/benzene_toluene_last_week.png">
+
       </div>
+
       <!-- Project Motivation -->
       <div class="docs-section" id="motv">
         <h4 class="docs-header" id="mov">Project Motivation</h4>
         <p> The project's main motivation is... </p>
       </div>
+
       <!-- Monitoring Methods -->
       <div class="docs-section" id="moni">
         <h4 class="docs-header" id="moni">Monitoring Methods</h4>
-        <p> Methane is monitored by loop injection... </p>
+        <p> Methane is monitored by loop injection of 10 ml samples and gas chromatography with flame ionization detection.
+          Samples are collected at 20-min intervals. </p>
+        <p> VOCs are monitored by preconcentration of 500 ml-samples onto a micro-adsorbent trap, with subsequent thermal desorption, capillary column gas chromatography separation, and flame ionization detection.
+          Samples are collected at 2-hour intervals. Currently quantified compounds include ethane, ethene, propane, propene, i-butane, acetylene, n-butane, i-pentane, n-pentane, hexane, isoprene,
+          benzene, toluene, ethyl-benzene, m,p-xylene, and o-xylene.</p>
       </div>
+
       <!-- Data Requests -->
       <div class="docs-section" id="dataR">
         <h4 class="docs-header" id="dataR">Data Requests</h4>
         <p> Data requests should be directed to INSTAAR </p>
       </div>
+
       <!-- Contacts -->
       <div class="docs-section" id="contact">
         <h4 class="docs-header" id="contact">Contacts</h4>
