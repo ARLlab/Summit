@@ -1,6 +1,7 @@
 from pathlib import Path
+
 import pandas as pd
-import numpy as np
+
 from summit_picarro import connect_to_db, Datum, CalEvent
 
 homedir = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_picarro_processor\tests')
@@ -23,10 +24,9 @@ querylist.append([getattr(Datum, attr) for attr in attr_list])
 
 cal_data = {}
 for MPV in [2, 3, 4]:
-	data = pd.DataFrame(session.query(*attr_list).filter(Datum.mpv_position == MPV).all())
-	data['date'] = pd.to_datetime(data['date'])
-	cal_data[mpv_converter[MPV]] = data.sort_values(by=['date']).reset_index(drop=True)
-
+    data = pd.DataFrame(session.query(*attr_list).filter(Datum.mpv_position == MPV).all())
+    data['date'] = pd.to_datetime(data['date'])
+    cal_data[mpv_converter[MPV]] = data.sort_values(by=['date']).reset_index(drop=True)
 
 from summit_picarro import find_cal_indices
 
@@ -38,13 +38,7 @@ prev_ind = 0
 
 cal_events = dict()
 for ind in cal_indices:
-	ids = low_data['id'].iloc[prev_ind:ind].values.tolist()
-	event_data = session.query(Datum).filter(Datum.id.in_(ids)).all()
-	cal_events[ind] = CalEvent(event_data, 'low')
-	prev_ind = ind+1
-
-
-
-
-
-
+    ids = low_data['id'].iloc[prev_ind:ind].values.tolist()
+    event_data = session.query(Datum).filter(Datum.id.in_(ids)).all()
+    cal_events[ind] = CalEvent(event_data, 'low')
+    prev_ind = ind + 1
