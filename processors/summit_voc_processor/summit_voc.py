@@ -16,69 +16,6 @@ from summit_core import JDict, JList
 
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
-
-# def configure_logger(rundir):
-# 	"""
-# 	Create the project-specific logger. DEBUG and up is saved to the log, INFO and up appears in the console.
-#
-# 	:param rundir: path to create log sub-path in
-# 	:return: logger object
-# 	"""
-# 	logfile = rundir / 'processor_logs/summit_voc.log'
-# 	logger = logging.getLogger('summit_voc')
-# 	logger.setLevel(logging.DEBUG)
-# 	fh = logging.FileHandler(logfile)
-# 	fh.setLevel(logging.DEBUG)
-#
-# 	ch = logging.StreamHandler()
-# 	ch.setLevel(logging.INFO)
-#
-# 	formatter = logging.Formatter('%(asctime)s -%(levelname)s- %(message)s')
-#
-# 	[H.setFormatter(formatter) for H in [ch, fh]]
-# 	[logger.addHandler(H) for H in [ch, fh]]
-#
-# 	return logger
-#
-#
-# logger = configure_logger()
-
-
-# class JDict(TypeDecorator):
-# 	"""
-# 	Serializes a dictionary for SQLAlchemy storage.
-# 	"""
-# 	impl = VARCHAR
-#
-# 	def process_bind_param(self, value, dialect):
-# 		if value is not None:
-# 			value = json.dumps(value)
-# 		return value
-#
-# 	def process_result_value(self, value, dialect):
-# 		if value is not None:
-# 			value = json.loads(value)
-# 		return value
-#
-#
-# class JList(TypeDecorator):
-# 	"""
-# 	Serializes a list for SQLAlchemy storage.
-# 	"""
-# 	impl = VARCHAR
-#
-# 	def process_bind_param(self, value, dialect):
-# 		value = json.dumps(value)
-# 		return value
-#
-# 	def process_result_value(self, value, dialect):
-# 		value = json.loads(value)
-# 		return value
-#
-#
-# MutableList.associate_with(JList)
-# MutableDict.associate_with(JDict)
-
 log_params_list = (['filename', 'sampletime', 'sampleflow1', 'sampleflow2',
 					'sampletype', 'backflushtime', 'desorbtemp', 'flashheattime',
 					'injecttime', 'bakeouttemp', 'bakeouttime', 'carrierflow',
@@ -816,61 +753,6 @@ def match_log_to_pa(LogFiles, NmhcLines):
 			continue
 
 	return runs
-
-
-# def connect_to_summit_db(engine_str, directory):
-# 	"""
-# 	Takes string name of the database to create/connect to, and the directory it should be in.
-#
-# 	:param engine_str: connection string for the database
-# 	:param directory: directory the database should in (created?) in
-# 	:return: engine, session, Base
-#
-# 	Example:
-# 	engine, session, Base = connect_to_db('sqlite:///reservoir.sqlite', dir)
-# 	"""
-#
-# 	from summit_voc import Base, TempDir
-#
-# 	from sqlalchemy import create_engine
-# 	from sqlalchemy.orm import sessionmaker
-#
-# 	with TempDir(directory):
-# 		engine = create_engine(engine_str)
-# 	Session = sessionmaker(bind=engine)
-# 	sess = Session()
-#
-# 	return engine, sess, Base
-
-
-# def check_filesize(filename):
-# 	"""
-# 	Returns the filesize in bytes.
-# 	:param filepath: file-like object
-# 	:return: int, filesize in bytes
-# 	"""
-# 	if os.path.isfile(filename):
-# 		return os.path.getsize(filename)
-# 	else:
-# 		print(f'File {filename} not found.')
-# 		return
-#
-#
-# class TempDir():
-# 	"""
-# 	Context manager for working in a directory.
-# 	Pulled from: (https://pythonadventures.wordpress.com/2013/12/15/chdir-
-# 					a-context-manager-for-switching-working-directories/)
-# 	"""
-# 	def __init__(self, path):
-# 		self.old_dir = os.getcwd()
-# 		self.new_dir = path
-#
-# 	def __enter__(self):
-# 		os.chdir(self.new_dir)
-#
-# 	def __exit__(self, *args):
-# 		os.chdir(self.old_dir)
 
 
 def get_dates_peak_info(session, compound, info, date_start=None, date_end=None):
