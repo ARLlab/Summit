@@ -96,43 +96,57 @@ async def check_load_run_logs(logger):
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
         return False
 
+    try:
+        runs_in_db = session.query(GcRun).all()
+        samples = session.query(Sample)
+        sample_count = samples.count()
 
-    runs_in_db = session.query(GcRun).all()
-    samples = session.query(Sample)
-    samples_in_db = samples.all()
-    sample_count = samples.count()
+        run_dates = [r.date for r in runs_in_db]
 
-    run_dates = [r.date for r in runs_in_db]
+        files = get_all_data_files(rundir / 'data', '.txt')
 
-    files = get_all_data_files(rundir / 'data', '.txt')
+        runs = []
+        for file in files:
+            runs.append(read_log_file(file))
 
-    runs = []
-    for file in files:
-        runs.append(read_log_file(file))
+        new_run_count = 0  # count runs added
+        for run in runs:
+            if run.date not in run_dates:
+                session.add(run)
+                logger.info(f'GcRun for {run.date} added.')
+                new_run_count += 1
 
-    new_run_count = 0  # count runs added
-    for run in runs:
-        if run.date not in run_dates:
-            session.add(run)
-            logger.info(f'GcRun for {run.date} added.')
-            new_run_count += 1
+        if not new_run_count:
+            logger.info('No new GcRuns added.')
+        else:
+            session.commit()
+            new_sample_count = session.query(Sample).count() - sample_count
+            logger.info(f'{new_run_count} GcRuns added, containing {new_sample_count} Samples.')
 
-    if new_run_count == 0:
-        logger.info('No new GcRuns added.')
-    else:
-        session.commit()
-        new_sample_count = session.query(Sample).count() - sample_count
-        logger.info(f'{new_run_count} GcRuns added, containing {new_sample_count} Samples.')
+            if new_run_count * 10 != new_sample_count:
+                logger.warning('There were not ten Samples per GcRun as expected.')
 
-        if new_run_count * 10 != new_sample_count:
-            logger.warning('There were not ten Samples per GcRun as expected.')
+        session.close()
+        engine.dispose()
+        return True
 
-    session.close()
-    engine.dispose()
-    await asyncio.sleep(sleeptime)
+    except Exception as e:
+        session.close()
+        engine.dispose()
+
+        logger.error(f'Exception {e.args} occurred in check_load_pa_log()')
+        return False
 
 
 async def match_runs_to_lines(logger):
+
+    try:
+        from summit_core import methane_dir as rundir
+        from summit_core import connect_to_db
+        from summit_methane import GcRun, PaLine, match_lines_to_runs, Base
+    except ImportError as e:
+        logger.error('ImportError occured in match_runs_to_lines()')
+        return False
 
     try:
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
@@ -141,31 +155,44 @@ async def match_runs_to_lines(logger):
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
         return False
 
-    while True:
+    try:
         logger.info('Running match_runs_to_peaks()')
-        from summit_core import connect_to_db
-        from summit_methane import GcRun, PaLine, match_lines_to_runs
 
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
         unmatched_lines = session.query(PaLine).filter(PaLine.run == None).all()
         unmatched_runs = session.query(GcRun).filter(GcRun.pa_line_id == None).all()
 
-        married_runs_count = session.query(GcRun).filter(GcRun.status == 'married').count()
+        # married_runs_count = session.query(GcRun).filter(GcRun.status == 'married').count()
 
         lines, runs, count = match_lines_to_runs(unmatched_lines, unmatched_runs)
 
         session.commit()
 
-        if count is not 0:
+        if count:
             logger.info(f'{count} GcRuns matched with PaLines.')
+            return True
         else:
             logger.info('No new GcRun-PaLine pairs matched.')
+            return False
 
-        await asyncio.sleep(sleeptime)
+
+    except Exception as e:
+        logger.error('Exception {e.args} occurred in match_runs_to_lines()')
+        return False
 
 
 async def match_peaks_to_samples(logger):
+
+    try:
+        from summit_core import methane_dir as rundir
+        from summit_core import connect_to_db
+        from summit_methane import Peak, Sample, GcRun, Base, sample_rts
+        from operator import attrgetter
+        import datetime as dt
+    except ImportError as e:
+        logger.error(f'ImportError occurred in match_peaks_to_samples()')
+        return False
 
     try:
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
@@ -174,15 +201,14 @@ async def match_peaks_to_samples(logger):
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
         return False
 
-    while True:
-        logger.info('Running match_peaks_to_samples()')
-        from summit_core import connect_to_db
-        from summit_methane import Peak, Sample, GcRun
-        from summit_methane import sample_rts
-        from operator import attrgetter
-        import datetime as dt
-
+    try:
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
+    except Exception as e:
+        logger.error(f'Exception {e.args} prevented connection to the database.')
+        return False
+
+    try:
+        logger.info('Running match_peaks_to_samples()')
 
         unmatched_samples = session.query(Sample).filter(Sample.peak_id == None, Sample.run_id != None).all()
 
@@ -200,22 +226,23 @@ async def match_peaks_to_samples(logger):
                 potential_peaks = peaks.filter(Peak.rt.between(sample_rts[sn][0], sample_rts[sn][1])).all()
                 # filter for peaks in this gc run between the expected retention times given in sample_rts
 
-                if len(potential_peaks) > 0:
+                if len(potential_peaks):
                     # currently, the criteria for "this is the real peak" is "this is the biggest peak"
                     peak = max(potential_peaks, key=attrgetter('pa'))
-                    if peak is not None:
+                    if peak:
                         sample.peak = peak
                         peak.name = 'CH4_' + str(sample.sample_num)
                         sample.date = run.pa_line.date + dt.timedelta(minutes=peak.rt - 1)
                         session.merge(sample)
 
-                else:
-                    continue
-
         session.commit()
         session.close()
         engine.dispose()
-        await asyncio.sleep(sleeptime)
+        return True
+
+    except Exception as e:
+        logger.error(f'Excetion {e.args} occurred in match_peaks_to_samples()')
+        return False
 
 
 async def add_one_standard(logger):
@@ -228,25 +255,38 @@ async def add_one_standard(logger):
     """
 
     try:
+        from summit_core import methane_dir as rundir
+        from summit_core import connect_to_db
+        from summit_methane import Standard, Base
+    except ImportError as e:
+        logger.error('ImportError occurred in add_one_standard()')
+        return False
+
+    try:
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
         return False
 
-    while True:
-        from summit_core import connect_to_db
-        from summit_methane import Standard
-
+    try:
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
+        current_standard_dates = [S.date_st for S in session.query(Standard).all()]
+
         my_only_standard = Standard('ws_2019', 2067.16, datetime(2019, 1, 1), datetime(2019, 6, 1))
-        session.merge(my_only_standard)
-        session.commit()
+
+        if my_only_standard.date_st not in current_standard_dates:
+            session.merge(my_only_standard)
+            session.commit()
 
         session.close()
         engine.dispose()
-        await asyncio.sleep(sleeptime)
+        return True
+
+    except Exception as e:
+        logger.error('Exception {e.args} occurred in add_one_standard()')
+        return False
 
 
 async def quantify_samples(logger):
@@ -259,20 +299,23 @@ async def quantify_samples(logger):
     """
 
     try:
+        from summit_core import methane_dir as rundir
+        from summit_core import connect_to_db, search_for_attr_value
+        from summit_methane import Standard, GcRun, Base
+        from summit_methane import calc_ch4_mr, valid_sample
+    except Exception as e:
+        logger.error('ImportError occurred in qunatify_samples()')
+        return False
+
+    try:
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
         return False
 
-
-    while True:
+    try:
         logger.info('Running quantify_samples()')
-        from summit_core import connect_to_db, search_for_attr_value
-        from summit_methane import Standard, GcRun
-        from summit_methane import calc_ch4_mr, valid_sample
-
-        engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
         unquantified_runs = session.query(GcRun).filter(GcRun.median == None).all()
 
@@ -335,19 +378,33 @@ async def quantify_samples(logger):
 
         session.commit()
 
-        if ct > 0:
+        if ct:
             logger.info(f'{ct} GcRuns were successfully quantified.')
+            session.close()
+            engine.dispose()
+            return True
         else:
             logger.info('No GcRuns quantified.')
+            session.close()
+            engine.dispose()
+            return False
 
-        session.close()
-        engine.dispose()
-        await asyncio.sleep(sleeptime)
+    except Exception as e:
+        logger.error('Exception {e.args} occurred in quantify_samples()')
+        return False
 
 
 async def plot_new_data(logger):
     data_len = 0  # always default to run when initialized
     days_to_plot = 7
+
+    try:
+        from summit_core import methane_dir as rundir
+        from summit_core import connect_to_db, create_daily_ticks
+        from summit_methane import Sample, Base, plottable_sample, summit_methane_plot
+    except ImportError as e:
+        logger.error('ImportError occurred in plot_new_data()')
+        return False
 
     try:
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
@@ -356,10 +413,8 @@ async def plot_new_data(logger):
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
         return False
 
-    while True:
+    try:
         logger.info('Running plot_new_data()')
-        from summit_core import connect_to_db, create_daily_ticks
-        from summit_methane import Sample, plottable_sample, summit_methane_plot
 
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
@@ -391,7 +446,12 @@ async def plot_new_data(logger):
 
         session.close()
         engine.dispose()
-        await asyncio.sleep(sleeptime)
+
+    except Exception as e:
+        logger.error('Exception {e.args} occurred in quantify_samples()')
+        session.close()
+        engine.dispose()
+        return False
 
 
 async def main():
@@ -403,17 +463,12 @@ async def main():
         print(f'Error {e.args} prevented logger configuration.')
         return
 
-    loop = asyncio.get_event_loop()
-
-    loop.create_task(check_load_pa_log(logger))
-    loop.create_task(check_load_run_logs(logger))
-    loop.create_task(match_runs_to_lines(logger))
-    loop.create_task(match_peaks_to_samples(logger))
-    loop.create_task(add_one_standard(logger))
-    loop.create_task(quantify_samples(logger))
-    loop.create_task(plot_new_data(logger))
-
-    loop.run_forever()
+    if await asyncio.create_task(check_load_pa_log(logger)) and await asyncio.create_task(check_load_run_logs(logger)):
+        if await asyncio.create_task(match_runs_to_lines(logger)):
+            if await asyncio.create_task(match_peaks_to_samples(logger)):
+                await asyncio.create_task(add_one_standard(logger))
+                if await asyncio.create_task(quantify_samples(logger)):
+                    await asyncio.create_task(plot_new_data(logger))
 
 
 if __name__ == '__main__':
