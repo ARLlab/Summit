@@ -84,9 +84,11 @@ class EmailTemplate():
 
 class ProccessorEmail(EmailTemplate):
 
-    def __init__(self, send_from, processor_name, attachments=()):
+    def __init__(self, send_from, processor_name, trace='', attachments=()):
         subject = f'{processor_name} Error'
-        body = f'The {processor_name} failed to run properly at {datetime.now().isoformat(" ")}.'
+        body = ('The {processor_name} failed to run properly at {datetime.now().isoformat(" ")}\n.'
+                + f'The full traceback is:\n{trace}')
+
         send_to_list = processor_email_list
 
         super().__init__(send_from, send_to_list, body, subject=subject, attachments=attachments)
