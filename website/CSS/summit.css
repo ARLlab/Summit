@@ -4,10 +4,19 @@
   margin-top: 6rem;
   text-align: center; }
 .title {
-  font-size: 4rem;
+  font-size: 3.5rem;
   letter-spacing: .2rem;
   font-weight: 500;
-  color: #219ac6 }
+  color: #27b5ea }
+.value-bar {
+  margin-top: 1rem; }
+.value-bars {
+  margin-top: 3rem;
+  margin-bottom: 3rem; }
+.value-image {
+    display: block;
+    text-align: center;
+    margin: 2rem auto 0; }
 .value-prop {
   margin-top: 1rem; }
 .value-props {
@@ -36,9 +45,9 @@
 .header-img {
     display: block;
     text-align: center;
-    margin: 2.5rem auto 0;
-    max-width:90%;
-    max-height:90%}
+    margin: 1rem auto 0;
+    max-width:100%;
+    max-height:100%}
 .example-grid .column,
 .example-grid .columns {
   background: #EEE;
