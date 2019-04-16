@@ -33,6 +33,12 @@
   margin: 2.5rem auto 0;
   max-width:110%;
   max-height:110%}
+.header-img {
+    display: block;
+    text-align: center;
+    margin: 2.5rem auto 0;
+    max-width:90%;
+    max-height:90%}
 .example-grid .column,
 .example-grid .columns {
   background: #EEE;
