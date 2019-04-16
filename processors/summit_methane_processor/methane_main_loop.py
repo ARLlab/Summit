@@ -463,7 +463,10 @@ async def main():
         print(f'Error {e.args} prevented logger configuration.')
         return
 
-    if await asyncio.create_task(check_load_pa_log(logger)) and await asyncio.create_task(check_load_run_logs(logger)):
+    new_pas = await asyncio.create_task(check_load_pa_log(logger))
+    new_logs = await asyncio.create_task(check_load_run_logs(logger))
+
+    if new_pas or new_logs:
         if await asyncio.create_task(match_runs_to_lines(logger)):
             if await asyncio.create_task(match_peaks_to_samples(logger)):
                 await asyncio.create_task(add_one_standard(logger))
