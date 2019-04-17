@@ -2,32 +2,31 @@ from datetime import datetime
 import datetime as dt
 import asyncio
 
-from summit_errors import Error, NewDataEmail, sender
-from summit_core import configure_logger
-from summit_core import error_dir as rundir
+from summit_errors import Error, NewDataEmail, sender, send_processor_email
 
-logger = configure_logger(rundir, __name__)
+PROC = 'Error Processor'
 
 
-def new_data_found(processor, last_data_time):
+def new_data_found(processor, last_data_time, logger):
     """
     Resolution function to be passed into Error objects.
     :param processor: str, in ['voc', 'methane', 'picarro']
     :param last_data_time: datetime, last datetime value for the given processor when the Error was initiated
+    :param logger: logging logger
     :return: boolean, is there newer data in the database?
     """
-    if get_last_processor_date(processor) > last_data_time:
+    if get_last_processor_date(processor, logger) > last_data_time:
         return True
     else:
         return False
 
 
-def get_last_processor_date(processor):
+def get_last_processor_date(processor, logger):
     """
     Retrieves the latest high-level date for the specified processor. It looks at GcRuns for VOCs (complete runs),
     5-second Datums for the Picarro, and matched GcRuns for methane.
     :param processor: str, in ['voc', 'picarro', 'methane']
-    :param directory:
+    :param logger: logging logger
     :return: datetime, date of last data point for the specified processor
     """
 
@@ -69,51 +68,78 @@ def matching_error(error_list, reason, processor):
                  (err.email_template.processor == processor and err.reason == reason)), False)
 
 
-async def check_for_new_data(directory, sleeptime, active_errors=None):
+async def check_for_new_data(logger, active_errors=None):
     reason = 'no new data'
 
-    if not active_errors:
-        active_errors = []
+    try:
+        if not active_errors:
+            active_errors = []
 
-    logger.info('Running check_for_new_data()')
-    # TODO : The time limits generated below are gross estimates
-    for proc, time_limit in zip(['voc', 'picarro', 'methane'], [dt.timedelta(hours=hr) for hr in [8, 3, 5]]):
+        logger.info('Running check_for_new_data()')
+        # TODO : The time limits generated below are gross estimates
+        for proc, time_limit in zip(['voc', 'picarro', 'methane'], [dt.timedelta(hours=hr) for hr in [8, 3, 5]]):
 
-        last_data_time = get_last_processor_date(proc)
+            last_data_time = get_last_processor_date(proc, logger)
 
-        if datetime.now() - last_data_time > time_limit:
-            if matching_error(active_errors, reason, proc):
-                logger.error(f'Error for {reason} for the {proc} processor is already active and was ignored.')
-                continue
-            else:
-                active_errors.append(Error(reason, new_data_found, NewDataEmail(sender, proc, last_data_time)))
+            if datetime.now() - last_data_time > time_limit:
+                if matching_error(active_errors, reason, proc):
+                    logger.error(f'Error for {reason} for the {proc} processor is already active and was ignored.')
+                    continue
+                else:
+                    active_errors.append(Error(reason, new_data_found, NewDataEmail(sender, proc, last_data_time)))
 
-    await asyncio.sleep(sleeptime)
-    await check_existing_errors(directory, sleeptime, active_errors)
+        return active_errors
+    except Exception as e:
+        logger.error(f'Exception {e.args} occurred in check_for_new_data()')
+        send_processor_email(PROC, exception=e)
+        return False
 
 
-async def check_existing_errors(directory, sleeptime, active_errors):
+async def check_existing_errors(logger, active_errors=None):
     logger.info('Running check_existing_errors()')
-    for ind, err in enumerate(active_errors):
-        if err.reason is 'no new data':
-            if err.is_resolved(processor=err.email_template.processor,
-                               last_data_time=err.email_template.last_data_time):
-                active_errors[ind] = None
-        else:
-            pass  # is_resolved() handles logging in both cases
 
-    active_errors = [err for err in active_errors if err is not None]
+    try:
+        if not active_errors:
+            logger.info('Check_existing_errors() called without any active errors.')
+            return False
 
-    await asyncio.sleep(sleeptime)
-    await check_for_new_data(directory, sleeptime, active_errors)
+        for ind, err in enumerate(active_errors):
+            if err.reason is 'no new data':
+                if err.is_resolved(processor=err.email_template.processor,
+                                   last_data_time=err.email_template.last_data_time, logger=logger):
+                    active_errors[ind] = None
+            else:
+                pass  # is_resolved() handles logging in both cases
+
+        active_errors = [err for err in active_errors if err is not None]
+
+        return active_errors
+
+    except Exception as e:
+        logger.error(f'Exception {e.args} occurred in check_existing_errors()')
+        send_processor_email(PROC, exception=e)
+        return False
 
 
-def main():
-    loop = asyncio.get_event_loop()
-    loop.create_task(check_for_new_data(rundir, 10))
+async def main():
 
-    loop.run_forever()
+    try:
+        from summit_core import configure_logger
+        from summit_core import error_dir as rundir
+        logger = configure_logger(rundir, __name__)
+    except Exception as e:
+        print('Error logger could not be configured')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    errors = []
+
+    errors = await asyncio.create_task(check_for_new_data(logger, active_errors=errors))
+    await asyncio.create_task(check_existing_errors(logger, active_errors=errors))
+
+    return True
 
 
 if __name__ == '__main__':
-    main()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
