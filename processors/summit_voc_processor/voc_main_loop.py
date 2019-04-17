@@ -1,5 +1,8 @@
 import os
 import asyncio
+from summit_errors import send_processor_email
+
+PROC = 'VOC Processor'
 
 
 async def check_load_logs(logger):
@@ -18,8 +21,9 @@ async def check_load_logs(logger):
         from summit_core import connect_to_db, TempDir
         from summit_voc import LogFile, read_log_file, Base
 
-    except ImportError:
+    except ImportError as e:
         logger.error('Import in check_load_logs() failed.')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -27,17 +31,18 @@ async def check_load_logs(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error('Connection to VOC database failed in check_load_logs()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
         logger.info('Running check_load_logs()')
-        LogFiles = session.query(LogFile).order_by(LogFile.id).all()  # list of all present log objects
+        log_files = session.query(LogFile).order_by(LogFile.id).all()  # list of all present log objects
 
         logpath = rundir / 'logs'  # folder containing log files
         logfns = [file.name for file in os.scandir(logpath) if 'l.txt' in file.name]
 
         if logfns:
-            logs_in_db = [log.filename for log in LogFiles]  # log names
+            logs_in_db = [log.filename for log in log_files]  # log names
 
             logs_to_load = []
             for log in logfns:
@@ -69,6 +74,7 @@ async def check_load_logs(logger):
 
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in check_load_logs().')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -90,8 +96,9 @@ async def check_load_pas(logger):
         from summit_core import voc_dir as rundir
         from summit_core import connect_to_db, TempDir
         from summit_voc import Base, NmhcLine, read_pa_line, name_summit_peaks
-    except ImportError:
+    except ImportError as e:
         logger.error('Imports failed in check_load_logs()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -99,11 +106,12 @@ async def check_load_pas(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Error {e.args} connecting to database in check_load_pas()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
-        NmhcLines = session.query(NmhcLine).order_by(NmhcLine.id).all()
-        line_dates = [line.date for line in NmhcLines]
+        nmhc_lines = session.query(NmhcLine).order_by(NmhcLine.id).all()
+        line_dates = [line.date for line in nmhc_lines]
 
         from pathlib import Path
 
@@ -116,6 +124,8 @@ async def check_load_pas(logger):
             if new_file_size > pa_file_size:
                 with TempDir(rundir):
                     contents = pa_path.read_text().split('\n')
+
+                contents[:] = [c for c in contents if c]  # keep only lines with information
 
                 new_lines = []
                 for line in contents[start_line:]:
@@ -159,7 +169,9 @@ async def check_load_pas(logger):
         else:
             logger.critical('VOC.LOG does not exist.')
             return False
-    except:
+    except Exception as e:
+        logger.error(f'Exception {e.args} occurred in check_load_pas()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -169,25 +181,28 @@ async def load_crfs(logger):
         from summit_core import voc_dir as rundir
         from summit_core import connect_to_db, TempDir
         from summit_voc import Base, Crf, read_crf_data
-    except ImportError:
+    except ImportError as e:
         logger.error('ImportError occurred in load_crfs()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
         engine, session = connect_to_db('sqlite:///summit_voc.sqlite', rundir)
         Base.metadata.create_all(engine)
-    except:
+    except Exception as e:
+        logger.error(f'Exception {e.args} prevented connection to the database in load_crfs()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
         logger.info('Running load_crfs()')
         with TempDir(rundir):
-            Crfs = read_crf_data('summit_CRFs.txt')
+            crfs = read_crf_data('summit_CRFs.txt')
 
-        Crfs_in_db = session.query(Crf).order_by(Crf.id).all()
-        crf_dates = [rf.date_start for rf in Crfs_in_db]
+        crfs_in_db = session.query(Crf).order_by(Crf.id).all()
+        crf_dates = [rf.date_start for rf in crfs_in_db]
 
-        for rf in Crfs:
+        for rf in crfs:
             if rf.date_start not in crf_dates:  # prevent duplicates in db
                 crf_dates.append(rf.date_start)  # prevent duplicates in this load
                 session.merge(rf)
@@ -198,6 +213,7 @@ async def load_crfs(logger):
 
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in load_crfs()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -207,8 +223,9 @@ async def create_gc_runs(logger):
         from summit_core import connect_to_db
         from summit_voc import Base, LogFile, NmhcLine, GcRun
         from summit_voc import match_log_to_pa
-    except ImportError:
+    except ImportError as e:
         logger.error('Import error in create_gc_runs()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -216,36 +233,37 @@ async def create_gc_runs(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Error {e.args} prevented connecting to the database in create_gc_runs()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
         logger.info('Running create_gc_runs()')
-        NmhcLines = (session.query(NmhcLine)
+        nmhc_lines = (session.query(NmhcLine)
                      .filter(NmhcLine.status == 'single')
                      .order_by(NmhcLine.id).all())
 
-        LogFiles = (session.query(LogFile)
+        log_files = (session.query(LogFile)
                     .filter(LogFile.status == 'single')
                     .order_by(LogFile.id).all())
 
-        if not len(LogFiles) or not len(NmhcLines):
+        if not len(log_files) or not len(nmhc_lines):
             logger.info('No new logs or pa lines matched.')
             session.close()
             engine.dispose()
             return False
 
-        GcRuns = session.query(GcRun).order_by(GcRun.id).all()
-        run_dates = [run.date_end for run in GcRuns]
+        gc_runs = session.query(GcRun).order_by(GcRun.id).all()
+        run_dates = [run.date_end for run in gc_runs]
 
-        GcRuns = match_log_to_pa(LogFiles, NmhcLines)
+        gc_runs = match_log_to_pa(log_files, nmhc_lines)
 
-        if not GcRuns:
+        if not gc_runs:
             logger.info('No new logs or pa lines matched.')
             session.close()
             engine.dispose()
             return False
         else:
-            for run in GcRuns:
+            for run in gc_runs:
                 if run.date_end not in run_dates:
                     run_dates.append(run.date_end)
                     session.merge(run)
@@ -258,6 +276,7 @@ async def create_gc_runs(logger):
         return True
     except Exception as e:
         logger.error(f'Error {e.args} occurred in create_gc_runs()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -267,8 +286,9 @@ async def integrate_runs(logger):
         from summit_core import connect_to_db
         from summit_voc import find_crf
         from summit_voc import Base, GcRun, Datum, Crf
-    except ImportError:
+    except ImportError as e:
         logger.error(f'ImportError occurred in integrate_runs()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -276,19 +296,20 @@ async def integrate_runs(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Error {e.args} prevented connecting to the database in integrate_runs()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
         logger.info('Running integrate_runs()')
-        GcRuns = (session.query(GcRun)
+        gc_runs = (session.query(GcRun)
                   .filter(GcRun.data_id == None)
                   .order_by(GcRun.id).all())  # get all un-integrated runs
 
-        Crfs = session.query(Crf).order_by(Crf.id).all()  # get all crfs
+        crfs = session.query(Crf).order_by(Crf.id).all()  # get all crfs
 
         data = []  # Match all runs with available CRFs
-        for run in GcRuns:
-            run.crfs = find_crf(Crfs, run.date_end)
+        for run in gc_runs:
+            run.crfs = find_crf(crfs, run.date_end)
             session.commit()  # commit changes to crfs?
             data.append(run.integrate())
 
@@ -314,6 +335,7 @@ async def integrate_runs(logger):
 
     except Exception as e:
         logger.error('Exception {e.args} occurred in integrate_runs()')
+        send_processor_email(PROC, exception=e)
         session.close()
         engine.dispose()
         return False
@@ -330,8 +352,9 @@ async def plot_new_data(logger):
         from datetime import datetime
         import datetime as dt
         plotdir = rundir / '../summit_master/summit_master/static/img/coding'  # local flask static folder
-    except ImportError:
+    except ImportError as e:
         logger.error('Import error occurred in plot_new_data()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -339,6 +362,7 @@ async def plot_new_data(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Error {e.args} prevented connecting to the database in plot_new_data()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -395,9 +419,9 @@ async def plot_new_data(logger):
 
                 if ipent_mrs is not None and npent_mrs is not None:
                     for i, n in zip(ipent_mrs, npent_mrs):
-                        if n == 0 or n == None:
+                        if not n:
                             inpent_ratio.append(None)
-                        elif i == None:
+                        elif not i:
                             inpent_ratio.append(None)
                         else:
                             inpent_ratio.append(i / n)
@@ -447,6 +471,7 @@ async def plot_new_data(logger):
 
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in plot_new_data()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -457,13 +482,12 @@ async def main():
         logger = configure_logger(rundir, __name__)
     except Exception as e:
         print(f'Error {e.args} prevented logger configuration.')
+        send_processor_email(PROC, exception=e)
         return
 
     try:
         new_logs = await asyncio.create_task(check_load_logs(logger))
         new_lines = await asyncio.create_task(check_load_pas(logger))
-
-        print(new_logs, new_lines)
 
         if new_logs or new_lines:
             await asyncio.create_task(load_crfs(logger))
@@ -473,6 +497,7 @@ async def main():
 
     except Exception as e:
         logger.critical(f'Exception {e.args} caused a complete failure of the VOC processing.')
+        send_processor_email(PROC, exception=e)
         return False
 
     return True
