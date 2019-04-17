@@ -7,10 +7,12 @@ The per-run logs contain sample pressures, etc; those are associated with pairs 
 
 Some runtime QC is needed to prevent quantification from failed standard runs, poor integrations, etc.
 """
-
+from summit_errors import send_processor_email
 from datetime import datetime
 import statistics as s
 import asyncio
+
+PROC = 'Methane Processor'
 
 
 async def check_load_pa_log(logger):
@@ -24,8 +26,9 @@ async def check_load_pa_log(logger):
         from summit_methane import Base, read_pa_line, PaLine
         from summit_core import methane_dir as rundir
         from pathlib import Path
-    except:
+    except ImportError as e:
         logger.error('ImportError occurred in check_load_pa_log()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -33,6 +36,7 @@ async def check_load_pa_log(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -77,6 +81,7 @@ async def check_load_pa_log(logger):
 
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in check_load_pa_log()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -85,8 +90,9 @@ async def check_load_run_logs(logger):
         from summit_core import methane_dir as rundir
         from summit_core import get_all_data_files, connect_to_db
         from summit_methane import Base, GcRun, Sample, read_log_file
-    except ImportError:
+    except ImportError as e:
         logger.error('ImportError occurred in check_load_run_logs()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -94,6 +100,7 @@ async def check_load_run_logs(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -135,6 +142,7 @@ async def check_load_run_logs(logger):
         engine.dispose()
 
         logger.error(f'Exception {e.args} occurred in check_load_pa_log()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -145,6 +153,7 @@ async def match_runs_to_lines(logger):
         from summit_core import connect_to_db
         from summit_methane import GcRun, PaLine, match_lines_to_runs, Base
     except ImportError as e:
+        send_processor_email(PROC, exception=e)
         logger.error('ImportError occured in match_runs_to_lines()')
         return False
 
@@ -153,6 +162,7 @@ async def match_runs_to_lines(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -179,6 +189,7 @@ async def match_runs_to_lines(logger):
 
     except Exception as e:
         logger.error('Exception {e.args} occurred in match_runs_to_lines()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -192,6 +203,7 @@ async def match_peaks_to_samples(logger):
         import datetime as dt
     except ImportError as e:
         logger.error(f'ImportError occurred in match_peaks_to_samples()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -199,12 +211,14 @@ async def match_peaks_to_samples(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
     except Exception as e:
         logger.error(f'Exception {e.args} prevented connection to the database.')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -242,6 +256,7 @@ async def match_peaks_to_samples(logger):
 
     except Exception as e:
         logger.error(f'Excetion {e.args} occurred in match_peaks_to_samples()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -260,6 +275,7 @@ async def add_one_standard(logger):
         from summit_methane import Standard, Base
     except ImportError as e:
         logger.error('ImportError occurred in add_one_standard()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -267,6 +283,7 @@ async def add_one_standard(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -286,6 +303,7 @@ async def add_one_standard(logger):
 
     except Exception as e:
         logger.error('Exception {e.args} occurred in add_one_standard()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -305,6 +323,7 @@ async def quantify_samples(logger):
         from summit_methane import calc_ch4_mr, valid_sample
     except Exception as e:
         logger.error('ImportError occurred in qunatify_samples()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -312,6 +331,7 @@ async def quantify_samples(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -391,6 +411,7 @@ async def quantify_samples(logger):
 
     except Exception as e:
         logger.error('Exception {e.args} occurred in quantify_samples()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -404,6 +425,7 @@ async def plot_new_data(logger):
         from summit_methane import Sample, Base, plottable_sample, summit_methane_plot
     except ImportError as e:
         logger.error('ImportError occurred in plot_new_data()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -411,6 +433,7 @@ async def plot_new_data(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -449,6 +472,7 @@ async def plot_new_data(logger):
 
     except Exception as e:
         logger.error('Exception {e.args} occurred in quantify_samples()')
+        send_processor_email(PROC, exception=e)
         session.close()
         engine.dispose()
         return False
@@ -461,6 +485,7 @@ async def main():
         logger = configure_logger(rundir, __name__)
     except Exception as e:
         print(f'Error {e.args} prevented logger configuration.')
+        send_processor_email(PROC, exception=e)
         return
 
     new_pas = await asyncio.create_task(check_load_pa_log(logger))
