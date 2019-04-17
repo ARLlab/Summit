@@ -84,10 +84,21 @@ class EmailTemplate():
 
 class ProccessorEmail(EmailTemplate):
 
-    def __init__(self, send_from, processor_name, trace='', attachments=()):
+    def __init__(self, send_from, processor_name, exception=None, trace='', attachments=()):
+
         subject = f'{processor_name} Error'
-        body = ('The {processor_name} failed to run properly at {datetime.now().isoformat(" ")}\n.'
-                + f'The full traceback is:\n{trace}')
+
+        if exception and trace:
+            body = (f'The {processor_name} failed to run properly at {datetime.now().isoformat(" ")}.\n'
+                    + f'Exception {exception.args} caused the failure. The full traceback is:\n{trace}')
+        elif exception:
+            body = (f'The {processor_name} failed to run properly at {datetime.now().isoformat(" ")}.\n'
+                    + f'Exception {exception.args} caused the failure.')
+        elif trace:
+            body = (f'The {processor_name} failed to run properly at {datetime.now().isoformat(" ")}.\n'
+                    + f'The full traceback is:\n{trace}')
+        else:
+            body = f'The {processor_name} failed to run properly at {datetime.now().isoformat(" ")}.\n'
 
         send_to_list = processor_email_list
 
@@ -153,6 +164,18 @@ def send_email(send_from, send_to, subject, body, user, passw, attach=None, serv
         smtp.close()
     except (smtplib.SMTPHeloError, smtplib.SMTPAuthenticationError, smtplib.SMTPException):
         logger.critical('An email failed to send due to failed server connection.')
+
+
+def send_processor_email(name, exception=None):
+    """
+    Wrapper on processor emails to create a one-off and send it.
+    :param exception: Exception, the exception that occurred to trigger the email
+    :return:
+    """
+    import traceback
+
+    template = ProccessorEmail(sender, name, exception=exception, trace=traceback.format_exc())
+    template.send()
 
 
 def send_basic_w_attachement(directory):
