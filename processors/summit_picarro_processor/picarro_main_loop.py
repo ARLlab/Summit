@@ -1,7 +1,7 @@
 import asyncio
 import datetime as dt
-
 import pandas as pd
+from summit_errors import send_processor_email
 
 
 # async def fake_move_data(directory, sleeptime):
@@ -32,6 +32,8 @@ import pandas as pd
 #
 # 		await asyncio.sleep(sleeptime)
 
+PROC = 'Picarro Processor'
+
 
 async def check_load_new_data(logger):
     """
@@ -48,8 +50,9 @@ async def check_load_new_data(logger):
         from summit_core import connect_to_db, get_all_data_files, check_filesize
         from summit_picarro import Base, DataFile, Datum
         from sqlalchemy.orm.exc import MultipleResultsFound
-    except ImportError:
+    except ImportError as e:
         logger.error('ImportError occurred in check_load_new_data()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -57,6 +60,7 @@ async def check_load_new_data(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} caused database connection to fail in check_load_new_data()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -119,8 +123,10 @@ async def check_load_new_data(logger):
             session.commit()
 
         return True
+
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in check_load_new_data().')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -137,8 +143,9 @@ async def find_cal_events(logger):
         from summit_core import picarro_dir as rundir
         from summit_picarro import Base, Datum, CalEvent, mpv_converter, find_cal_indices
         from summit_picarro import log_event_quantification
-    except:
+    except Exception as e:
         logger.error('ImportError occured in find_cal_events()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -146,6 +153,7 @@ async def find_cal_events(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in find_cal_events()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -203,6 +211,7 @@ async def find_cal_events(logger):
 
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in find_cal_events()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -219,14 +228,16 @@ async def create_mastercals(logger):
         from summit_core import picarro_dir as rundir
         from summit_core import connect_to_db
         from summit_picarro import MasterCal, CalEvent, match_cals_by_min
-    except:
+    except Exception as e:
         logger.error('ImportError occured in create_mastercals()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
         engine, session = connect_to_db('sqlite:///summit_picarro.sqlite', rundir)
     except Exception as e:
         logger.error(f'Exception {e.args} prevented connection to database in create_mastercals()')
+        send_processor_email(PROC, exception=e)
         return False
     try:
         # Get cals by standard, but only if they're not in another MasterCal already
@@ -266,6 +277,7 @@ async def create_mastercals(logger):
 
     except Exception as e:
         logger.error(f'Exception {e.args} occured in create_mastercals()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -277,7 +289,6 @@ async def plot_new_data(logger):
     :return: boolean, did it run/process new data?
     """
     from datetime import datetime
-    import datetime as dt
 
     last_data_point = datetime(1900, 1, 1)  # default on startup - plots will be created on first run always
     days_to_plot = 7
@@ -288,8 +299,9 @@ async def plot_new_data(logger):
         from summit_core import picarro_dir as rundir
         from summit_core import create_daily_ticks, connect_to_db, TempDir
         from summit_picarro import Base, Datum, summit_picarro_plot
-    except:
+    except Exception as e:
         logger.error('ImportError occurred in plot_new_data()')
+        send_processor_email(PROC, exception=e)
         return False
 
     plotdir = rundir / 'plots'
@@ -299,6 +311,7 @@ async def plot_new_data(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in plot_new_data()')
+        send_processor_email(PROC, exception=e)
         return False
 
     try:
@@ -364,6 +377,7 @@ async def plot_new_data(logger):
         return True
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in plot_new_data()')
+        send_processor_email(PROC, exception=e)
         return False
 
 
@@ -374,6 +388,7 @@ async def main():
         logger = configure_logger(rundir, __name__)
     except Exception as e:
         print(f'Error {e.args} prevented logger configuration.')
+        send_processor_email(PROC, exception=e)
         return
 
     if await asyncio.create_task(check_load_new_data(logger)):
