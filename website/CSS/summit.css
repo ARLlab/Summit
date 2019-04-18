@@ -16,7 +16,9 @@
 .value-image {
     display: block;
     text-align: center;
-    margin: 2rem auto 0; }
+    margin: 2rem auto 0;
+    max-width:100%;
+    max-height:100%; }
 .value-prop {
   margin-top: 1rem; }
 .value-props {
