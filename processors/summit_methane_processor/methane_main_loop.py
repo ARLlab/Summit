@@ -22,6 +22,7 @@ async def check_load_pa_log(logger):
     logger.info('Running check_load_pa_log()')
 
     try:
+        from summit_core import methane_LOG_path as pa_filepath
         from summit_core import connect_to_db, check_filesize
         from summit_methane import Base, read_pa_line, PaLine
         from summit_core import methane_dir as rundir
@@ -43,7 +44,7 @@ async def check_load_pa_log(logger):
         lines_in_db = session.query(PaLine).all()
         dates_in_db = [l.date for l in lines_in_db]
 
-        pa_filepath = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor\CH4_smooth.LOG')
+        # pa_filepath = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor\CH4_smooth.LOG')
 
         if check_filesize(pa_filepath) <= start_size:
             logger.info('PA file did not change size.')
@@ -87,6 +88,7 @@ async def check_load_pa_log(logger):
 
 async def check_load_run_logs(logger):
     try:
+        from summit_core import methane_logs_path
         from summit_core import methane_dir as rundir
         from summit_core import get_all_data_files, connect_to_db
         from summit_methane import Base, GcRun, Sample, read_log_file
@@ -104,13 +106,14 @@ async def check_load_run_logs(logger):
         return False
 
     try:
+        logger.info('Running check_load_run_logs()')
         runs_in_db = session.query(GcRun).all()
         samples = session.query(Sample)
         sample_count = samples.count()
 
         run_dates = [r.date for r in runs_in_db]
 
-        files = get_all_data_files(rundir / 'data', '.txt')
+        files = get_all_data_files(methane_logs_path, '.txt')
 
         runs = []
         for file in files:
@@ -188,7 +191,7 @@ async def match_runs_to_lines(logger):
 
 
     except Exception as e:
-        logger.error('Exception {e.args} occurred in match_runs_to_lines()')
+        logger.error(f'Exception {e.args} occurred in match_runs_to_lines()')
         send_processor_email(PROC, exception=e)
         return False
 
@@ -202,7 +205,7 @@ async def match_peaks_to_samples(logger):
         from operator import attrgetter
         import datetime as dt
     except ImportError as e:
-        logger.error(f'ImportError occurred in match_peaks_to_samples()')
+        logger.error('ImportError occurred in match_peaks_to_samples()')
         send_processor_email(PROC, exception=e)
         return False
 
@@ -302,7 +305,7 @@ async def add_one_standard(logger):
         return True
 
     except Exception as e:
-        logger.error('Exception {e.args} occurred in add_one_standard()')
+        logger.error(f'Exception {e.args} occurred in add_one_standard()')
         send_processor_email(PROC, exception=e)
         return False
 
@@ -410,7 +413,7 @@ async def quantify_samples(logger):
             return False
 
     except Exception as e:
-        logger.error('Exception {e.args} occurred in quantify_samples()')
+        logger.error(f'Exception {e.args} occurred in quantify_samples()')
         send_processor_email(PROC, exception=e)
         return False
 
@@ -421,7 +424,7 @@ async def plot_new_data(logger):
 
     try:
         from summit_core import methane_dir as rundir
-        from summit_core import connect_to_db, create_daily_ticks
+        from summit_core import connect_to_db, create_daily_ticks, TempDir
         from summit_methane import Sample, Base, plottable_sample, summit_methane_plot
     except ImportError as e:
         logger.error('ImportError occurred in plot_new_data()')
@@ -455,12 +458,13 @@ async def plot_new_data(logger):
             ambient_dates = [amb.date for amb in ambient_samples]
             ambient_mrs = [amb.peak.mr for amb in ambient_samples]
 
-            summit_methane_plot(None, {'Methane': [ambient_dates, ambient_mrs]},
-                                limits={'bottom': 1800, 'top': 2150,
-                                        'right': date_limits.get('right', None),
-                                        'left': date_limits.get('left', None)},
-                                major_ticks=major_ticks,
-                                minor_ticks=minor_ticks)
+            with TempDir(rundir / 'plots'):
+                summit_methane_plot(None, {'Methane': [ambient_dates, ambient_mrs]},
+                                    limits={'bottom': 1800, 'top': 2150,
+                                            'right': date_limits.get('right', None),
+                                            'left': date_limits.get('left', None)},
+                                    major_ticks=major_ticks,
+                                    minor_ticks=minor_ticks)
             logger.info('New data plots created.')
         else:
             logger.info('No new data found to be plotted.')
@@ -471,7 +475,7 @@ async def plot_new_data(logger):
         engine.dispose()
 
     except Exception as e:
-        logger.error('Exception {e.args} occurred in quantify_samples()')
+        logger.error(f'Exception {e.args} occurred in plot_new_data()')
         send_processor_email(PROC, exception=e)
         session.close()
         engine.dispose()

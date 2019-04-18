@@ -46,6 +46,7 @@ async def check_load_new_data(logger):
     logger.info('Running check_load_new_data()')
 
     try:
+        from summit_core import picarro_logs_path as data_path
         from summit_core import picarro_dir as rundir
         from summit_core import connect_to_db, get_all_data_files, check_filesize
         from summit_picarro import Base, DataFile, Datum
@@ -70,7 +71,7 @@ async def check_load_new_data(logger):
         db_filenames = [d.name for d in db_files.all()]
         db_dates = [d.date for d in db_data.all()]
 
-        all_available_files = get_all_data_files(rundir / 'data', '.dat')
+        all_available_files = get_all_data_files(data_path, '.dat')
 
         files_to_process = session.query(DataFile).filter(DataFile.processed == False).all()
 

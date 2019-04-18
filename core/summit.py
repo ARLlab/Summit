@@ -2,11 +2,16 @@
 This will be the main script for all processing.
 
 TODO: Flow chart for processes
+
+
+TODO: Make data file paths importable from a json file
+TODO: Fix all errors from logs
 """
 from voc_main_loop import main as voc_processor
 from methane_main_loop import main as methane_processor
 from error_main_loop import main as error_processor
 import asyncio
+
 
 async def main():
     await asyncio.create_task(voc_processor())

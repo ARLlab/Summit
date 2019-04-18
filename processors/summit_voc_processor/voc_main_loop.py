@@ -17,6 +17,7 @@ async def check_load_logs(logger):
 
     try:
         import os
+        from summit_core import voc_logs_path as logpath
         from summit_core import voc_dir as rundir
         from summit_core import connect_to_db, TempDir
         from summit_voc import LogFile, read_log_file, Base
@@ -38,7 +39,6 @@ async def check_load_logs(logger):
         logger.info('Running check_load_logs()')
         log_files = session.query(LogFile).order_by(LogFile.id).all()  # list of all present log objects
 
-        logpath = rundir / 'logs'  # folder containing log files
         logfns = [file.name for file in os.scandir(logpath) if 'l.txt' in file.name]
 
         if logfns:
@@ -86,15 +86,15 @@ async def check_load_pas(logger):
 
     '''
 
-    filename = 'VOC.LOG'
     pa_file_size = 0  # always assume all lines could be new when initialized
     start_line = 0
     # TODO : These should be DB-stored in a /core db
 
     try:
         logger.info('Running check_load_pas()')
+        from summit_core import voc_LOG_path as pa_path
         from summit_core import voc_dir as rundir
-        from summit_core import connect_to_db, TempDir
+        from summit_core import connect_to_db, TempDir, check_filesize
         from summit_voc import Base, NmhcLine, read_pa_line, name_summit_peaks
     except ImportError as e:
         logger.error('Imports failed in check_load_logs()')
@@ -113,13 +113,10 @@ async def check_load_pas(logger):
         nmhc_lines = session.query(NmhcLine).order_by(NmhcLine.id).all()
         line_dates = [line.date for line in nmhc_lines]
 
-        from pathlib import Path
-
-        pa_path = Path(rundir) / filename
 
         if pa_path.is_file():
             with TempDir(rundir):
-                new_file_size = os.path.getsize(filename)
+                new_file_size = check_filesize(pa_path)
 
             if new_file_size > pa_file_size:
                 with TempDir(rundir):

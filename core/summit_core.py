@@ -12,6 +12,19 @@ picarro_dir = project_dir / 'processors/summit_picarro_processor'
 methane_dir = project_dir / 'processors/summit_methane_processor'
 error_dir = project_dir / 'processors/errors'
 
+data_file_paths = json.loads((project_dir / 'core/file_locations.json').read_text())
+
+for k, v in data_file_paths.items():
+    data_file_paths[k] = Path(v)  #Pathify stored string paths
+
+methane_LOG_path = data_file_paths.get('methane_LOG')
+methane_logs_path = data_file_paths.get('methane_logs')
+
+voc_LOG_path = data_file_paths.get('voc_LOG')
+voc_logs_path = data_file_paths.get('voc_logs')
+
+picarro_logs_path = data_file_paths.get('picarro_logs')
+
 
 class TempDir:
     """
