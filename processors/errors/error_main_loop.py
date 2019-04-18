@@ -77,7 +77,8 @@ async def check_for_new_data(logger, active_errors=None):
 
         logger.info('Running check_for_new_data()')
         # TODO : The time limits generated below are gross estimates
-        for proc, time_limit in zip(['voc', 'picarro', 'methane'], [dt.timedelta(hours=hr) for hr in [8, 3, 5]]):
+        # TODO: Not running picarro at the moment, ammend below
+        for proc, time_limit in zip(['voc', 'methane'], [dt.timedelta(hours=hr) for hr in [8, 3, 5]]):
 
             last_data_time = get_last_processor_date(proc, logger)
 

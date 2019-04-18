@@ -6,8 +6,7 @@ from pathlib import Path
 from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 
-# project_dir = Path(r'C:\Users\brend\PycharmProjects\Summit')
-project_dir = Path(r'C:/Users/arl/Desktop/summit_master')
+project_dir = Path(os.getcwd()) / '..'
 voc_dir = project_dir / 'processors/summit_voc_processor'
 picarro_dir = project_dir / 'processors/summit_picarro_processor'
 methane_dir = project_dir / 'processors/summit_methane_processor'
@@ -16,10 +15,7 @@ core_dir = project_dir / 'core'
 
 processor_dirs = [voc_dir, picarro_dir, methane_dir, error_dir, core_dir]
 
-for d in processor_dirs:
-    sys.path.append(d)
-
-data_file_paths = json.loads((project_dir / 'core/file_locations.json').read_text())
+data_file_paths = json.loads((core_dir / 'file_locations.json').read_text())
 
 for k, v in data_file_paths.items():
     data_file_paths[k] = Path(v)  # Pathify stored string paths
