@@ -1,21 +1,24 @@
 import os
+import sys
 import json
 from pathlib import Path
 
 from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 
-# project_dir = Path(r'C:\Users\brend\PycharmProjects\Summit')
-project_dir = Path(r'C:/Users/arl/Desktop/summit_master')
+project_dir = Path(os.getcwd()) / '..'
 voc_dir = project_dir / 'processors/summit_voc_processor'
 picarro_dir = project_dir / 'processors/summit_picarro_processor'
 methane_dir = project_dir / 'processors/summit_methane_processor'
 error_dir = project_dir / 'processors/errors'
+core_dir = project_dir / 'core'
 
-data_file_paths = json.loads((project_dir / 'core/file_locations.json').read_text())
+processor_dirs = [voc_dir, picarro_dir, methane_dir, error_dir, core_dir]
+
+data_file_paths = json.loads((core_dir / 'file_locations.json').read_text())
 
 for k, v in data_file_paths.items():
-    data_file_paths[k] = Path(v)  #Pathify stored string paths
+    data_file_paths[k] = Path(v)  # Pathify stored string paths
 
 methane_LOG_path = data_file_paths.get('methane_LOG')
 methane_logs_path = data_file_paths.get('methane_logs')
@@ -198,7 +201,11 @@ def find_closest_date(date, list_of_dates):
     :param list_of_dates: list, of datetimes
     :return: match, delta: the matching date from the list, and it's difference to the original as a timedelta
     """
-    match = min(list_of_dates, key=lambda x: abs(x - date))
+    try:
+        match = min(list_of_dates, key=lambda x: abs(x - date))
+    except ValueError:
+        return None, None
+        
     delta = match - date
 
     return match, delta

@@ -343,6 +343,9 @@ def match_lines_to_runs(lines, runs):
 
         [match, diff] = find_closest_date(line.date, run_dates)  # get matching date and it's difference
 
+        if not match or not diff:
+            continue
+
         if abs(diff) < dt.timedelta(minutes=5):
             # Valid matches *usually* have ~03:22 difference
 
