@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 from pathlib import Path
 
@@ -11,11 +12,17 @@ voc_dir = project_dir / 'processors/summit_voc_processor'
 picarro_dir = project_dir / 'processors/summit_picarro_processor'
 methane_dir = project_dir / 'processors/summit_methane_processor'
 error_dir = project_dir / 'processors/errors'
+core_dir = project_dir / 'core'
+
+processor_dirs = [voc_dir, picarro_dir, methane_dir, error_dir, core_dir]
+
+for d in processor_dirs:
+    sys.path.append(d)
 
 data_file_paths = json.loads((project_dir / 'core/file_locations.json').read_text())
 
 for k, v in data_file_paths.items():
-    data_file_paths[k] = Path(v)  #Pathify stored string paths
+    data_file_paths[k] = Path(v)  # Pathify stored string paths
 
 methane_LOG_path = data_file_paths.get('methane_LOG')
 methane_logs_path = data_file_paths.get('methane_logs')
