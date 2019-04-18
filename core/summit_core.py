@@ -223,3 +223,21 @@ def create_daily_ticks(days_in_plot):
     minor_ticks = [date_limits['right'] - dt.timedelta(hours=x * 6) for x in range(0, days_in_plot * 4 + 1)]
 
     return date_limits, major_ticks, minor_ticks
+
+
+def connect_to_sftp():
+    import paramiko
+    #key = paramiko.RSAKey.from_private_key_file(r'')
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    # TODO: Create sftp auth file
+    client.connect(hostname='', username='', port=21)
+    return client.open_sftp()
+
+
+async def send_file_sftp():
+    pass
+
+
+async def send_all_plots():
+    pass
