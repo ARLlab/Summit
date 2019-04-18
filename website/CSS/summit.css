@@ -8,17 +8,24 @@
   letter-spacing: .2rem;
   font-weight: 500;
   color: #27b5ea }
+.compoundText {
+  font-size: 1.5rem;
+  letter-spacing: .1rem;
+  font-weight: 300;
+  text-align: center;
+  margin-top: 1rem;
+  color: #27b5ea }
 .value-bar {
-  margin-top: 1rem; }
+  margin-top: 0rem; }
 .value-bars {
-  margin-top: 3rem;
-  margin-bottom: 3rem; }
+  margin-top: 1rem;
+  margin-bottom: 2rem; }
 .value-image {
     display: block;
     text-align: center;
     margin: 2rem auto 0;
-    max-width:100%;
-    max-height:100%; }
+    width:20rem;
+    height:12rem; }
 .value-prop {
   margin-top: 1rem; }
 .value-props {
