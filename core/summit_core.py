@@ -201,6 +201,9 @@ def find_closest_date(date, list_of_dates):
     :param list_of_dates: list, of datetimes
     :return: match, delta: the matching date from the list, and it's difference to the original as a timedelta
     """
+    if not date or not list_of_dates:
+        return None, None
+
     match = min(list_of_dates, key=lambda x: abs(x - date))
     delta = match - date
 
