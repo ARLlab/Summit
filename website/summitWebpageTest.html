@@ -40,7 +40,8 @@
 
     <div class="container"> <!-- Everything inside main container -->
 
-      <section class="header"> <!-- Title / Header -->
+      <!-- Title / Header -->
+      <section class="header">
         <img class="header-img" alt="<Image not displaying: Header Image>" src="http://instaar.colorado.edu/arl/NOAA%20GAW/Chrom_header.jpg">
         <h2 class="title">Methane, Carbon Monoxide, Carbon Dioxide, and Volatile Organic Compounds at GEOSummit in Greenland</h2>
         <a class="button button-primary" href="http://instaar.colorado.edu/arl/index.html" >ARL Homepage</a>
@@ -95,6 +96,7 @@
           <li>Add Sections for Picarro Data Once Working</li>
           <li>Header Picture Integration</li>
           <li>Have navbar for specific compounds as well</li>
+          <li>Links to past data in buttons below graphs</li>
       </div>
 
 
@@ -108,14 +110,27 @@
       <!-- Main Data Section -->
       <div class="docs-section" id="data">
 
-          <h4> Near Real Time Data from Summit GC </h4>
+          <h4> Near Real Time Data from Summit Picarro Analyzer & GC-FID </h4>
 
-          <h4 class="docs-header" id="ch4">Methane</h4>
+          <h4 class="docs-header" id="CO">Carbon Monoxide</h4>
+          <p> Carbon Monoxide.... </p>
+          <img class="value-img" alt="<Data not displaying: Picarro Carbon Monoxide>" src="filler.jpg">
+
+          <h4 class="docs-header" id="CO2">Carbon Dioxide</h4>
+          <p> Carbon Dioxide.... </p>
+          <img class="value-img" alt="<Data not displaying: Picarro Carbon Dioxide>" src="filler.jpg">
+
+          <h4 class="docs-header" id="ch4">Methane [Picarro]</h4>
           <p> Methane is a potent greenhouse gas. It has an atmospheric lifetime of about a decade and is distributed globally.
             Methane emissions in our area mainly come from... </p>
+          <img class="value-img" alt="<Data not displaying: Methane Plot>" src="filler.jpg">
+
+          <h4 class="docs-header" id="ch4_GC">Methane [GC-FID]</h4>
           <p> All times are reported in Mountain Standard Time (MST). Data during Daylight Savings Time (March-November)
               will have to be corrected by adding one hour.</p>
           <img class="value-img" alt="<Data not displaying: Methane Plot>" src="http://instaar.colorado.edu/arl/res_parameters/summit_methane_plots/methane_last_week.png">
+            <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data</a>
+            <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data</a>
 
           <h5 class="docs-header" id="voc">Selected Volatile Organic Compounds</h5>
 
@@ -123,12 +138,14 @@
           <img class="value-img" alt="<Data not displaying: ethane & propane>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/ethane_propane_last_week.png">
           <p>Ethane and propane have atmospheric lifetimes of about 2 months and about 2 weeks, respectively. They contribute to formation of ground-level ozone on a regional and continental scale. Oil and gas production and processing activities are the main source of ethane and propane.
             Propane can also be released to the atmosphere from storage and distribution of liquified petroleum gas.</p>
+            <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data</a>
+            <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data</a>
 
           <h5 class="docs-subheader">Butane(s) & Acetylene</h5>
           <img class="value-img" alt="<Data not displaying: butane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_butane_n_butane_acetylene_last_week.png">
           <p>Butanes and acetylene contribute to formation of ozone on local to regional scales. Butanes are emitted from gasoline vapors, vehicle exhaust, and oil and gas production.</p>
-          <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data [Need links]</a>
-          <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data </a>
+          <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data</a>
+          <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data</a>
 
           <h5 class="docs-subheader">Pentane(s)</h5>
           <p>Pentanes are also contributors to ozone formation on local to regional scales. Because i-pentane and n-pentane are released in different relative quantities by different sources, the i/n pentane ratio can be used to separate the influence of urban emissions from oil
@@ -136,11 +153,15 @@
             An i/n pentane ratio of 0.8 - 0.9 is typical of raw oil and gas emissions, whereas a ratio from 2-4 is characteristic of vehicle and urban emissions. </p>
           <img class="value-img" alt="<Data not displaying: pentane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_pentane_n_pentane_last_week.png">
           <img class="value-img" alt="<Data not displaying: ipentane/npentane ratio>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_n_pentane_ratio_last_week.png">
+            <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data</a>
+            <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data</a>
 
           <h5 class="docs-subheader">Benzene and Toluene</h5>
           <p> Benzene and toluene contribute to ozone formation and may be hazardous to health if breathed at high levels. Sources of toluene include paints, solvents, gasoline vapors and vehicle exhaust. Sources of benzene include gasoline vapors, vehicle exhaust, and oil and gas production activities.
               All times are reported in Mountain Standard Time (MST). Data during Daylight Savings Time (March-November) will have to be corrected by adding one hour.</p>
           <img class="value-img" alt="<Data not displaying: Benzene & Toluene>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/benzene_toluene_last_week.png">
+            <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data</a>
+            <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data</a>
 
       </div>
 
