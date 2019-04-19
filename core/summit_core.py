@@ -1,6 +1,6 @@
 import os
 import json
-from pathlib import Path
+from pathlib import Path, PosixPath
 
 from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import MutableDict, MutableList
@@ -15,7 +15,7 @@ picarro_dir = project_dir / 'processors/summit_picarro_processor'
 methane_dir = project_dir / 'processors/summit_methane_processor'
 error_dir = project_dir / 'processors/errors'
 core_dir = project_dir / 'core'
-taylor_basepath = Path(r'/data/web/htdocs/instaar/groups/arl/res_parameters/summit_plots')
+taylor_basepath = '/data/web/htdocs/instaar/groups/arl/res_parameters/summit_plots'
 
 processor_dirs = [voc_dir, picarro_dir, methane_dir, error_dir, core_dir]
 
@@ -106,6 +106,10 @@ class Plot(Base):
     def path(self, value):
         self._path = str(value)
         self._name = value.name
+
+    @property
+    def name(self):
+        return self._name
 
 
 MutableList.associate_with(JList)
@@ -234,7 +238,7 @@ def find_closest_date(date, list_of_dates):
         match = min(list_of_dates, key=lambda x: abs(x - date))
     except ValueError:
         return None, None
-        
+
     delta = match - date
 
     return match, delta
@@ -273,7 +277,7 @@ def connect_to_sftp():
 async def send_file_sftp(filepath):
     con = connect_to_sftp()
     con.chdir(taylor_basepath)
-    con.put(filepath, filepath)
+    con.put(str(filepath), filepath.name)
     return
 
 
@@ -281,13 +285,13 @@ async def check_send_plots(logger):
     try:
         from summit_errors import send_processor_email
     except ImportError as e:
-        logger.error('ImportError occurred in send_all_plots()')
+        logger.error('ImportError occurred in check_send_plots()')
         return False
 
     try:
         engine, session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
     except Exception as e:
-        logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
+        logger.error(f'Exception {e.args} prevented connection to the database in check_send_plots()')
         send_processor_email('Core', exception=e)
         return False
 
@@ -301,11 +305,13 @@ async def check_send_plots(logger):
                 session.delete(plot)
             session.commit()
 
-        engine.close()
-        session.dispose()
+        session.close()
+        engine.dispose()
         return True
 
     except Exception as e:
-        logger.error(f'Exception {e.args} occurred in send_all_plots().')
+        logger.error(f'Exception {e.args} occurred in check_send_plots().')
         send_processor_email('Core', exception=e)
+        session.close()
+        engine.dispose()
         return False

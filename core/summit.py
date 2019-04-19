@@ -41,7 +41,7 @@ async def main():
 			await asyncio.create_task(check_send_plots(logger))
 
 		print('Sleeping...')
-		await asyncio.sleep(15)
+		await asyncio.sleep(15*60)
 
 
 if __name__ == '__main__':
