@@ -5,6 +5,10 @@ from pathlib import Path
 
 from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import MutableDict, MutableList
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, Boolean
+
+Base = declarative_base()
 
 project_dir = Path(os.getcwd()) / '..'
 voc_dir = project_dir / 'processors/summit_voc_processor'
@@ -77,6 +81,29 @@ class JList(TypeDecorator):
     def process_result_value(self, value, dialect):
         value = json.loads(value)
         return value
+
+
+class Plot(Base):
+    __tablename__ = 'plots'
+
+    id = Column(Integer, primary_key=True)
+
+    staged = Column(Boolean)
+    _path = Column(String, unique=True)
+    _name = Column(String)
+
+    def __init__(self, path, staged):
+        self.path = path
+        self.staged = staged
+
+    @property
+    def path(self):
+        return Path(self._path)
+
+    @path.setter
+    def path(self, value):
+        self._path = str(value)
+        self._name = value.name
 
 
 MutableList.associate_with(JList)
@@ -238,7 +265,7 @@ def connect_to_sftp():
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     # TODO: Create sftp auth file
-    client.connect(hostname='', username='', port=21)
+    client.connect(hostname='', username='', password='', port=21)
     return client.open_sftp()
 
 
