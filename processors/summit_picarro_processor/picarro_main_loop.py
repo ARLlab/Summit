@@ -298,7 +298,7 @@ async def plot_new_data(logger):
 
     try:
         from summit_core import picarro_dir as rundir
-        from summit_core import create_daily_ticks, connect_to_db, TempDir
+        from summit_core import create_daily_ticks, connect_to_db, TempDir, Plot, core_dir
         from summit_picarro import Base, Datum, summit_picarro_plot
     except Exception as e:
         logger.error('ImportError occurred in plot_new_data()')
@@ -312,6 +312,14 @@ async def plot_new_data(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in plot_new_data()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+        Plot.__table__.create(core_engine)
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented connecting to the core database in plot_new_data()')
         send_processor_email(PROC, exception=e)
         return False
 
@@ -345,7 +353,7 @@ async def plot_new_data(logger):
             ch4.append(result.ch4)
 
         with TempDir(plotdir):
-            summit_picarro_plot(None, ({'Summit CO': [dates, co]}),
+            name = summit_picarro_plot(None, ({'Summit CO': [dates, co]}),
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
                                         'bottom': 0,
@@ -353,7 +361,10 @@ async def plot_new_data(logger):
                                 major_ticks=major_ticks,
                                 minor_ticks=minor_ticks)
 
-            summit_picarro_plot(None, ({'Summit CO2': [dates, co2]}),
+            co_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
+            core_session.add(co_plot)
+
+            name = summit_picarro_plot(None, ({'Summit CO2': [dates, co2]}),
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
                                         'bottom': 350,
@@ -362,7 +373,10 @@ async def plot_new_data(logger):
                                 minor_ticks=minor_ticks,
                                 unit_string='ppmv')
 
-            summit_picarro_plot(None, ({'Summit CH4': [dates, ch4]}),
+            co2_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
+            core_session.add(co2_plot)
+
+            name = summit_picarro_plot(None, ({'Summit CH4': [dates, ch4]}),
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
                                         'bottom': 1800,
@@ -370,15 +384,28 @@ async def plot_new_data(logger):
                                 major_ticks=major_ticks,
                                 minor_ticks=minor_ticks)
 
+            ch4_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
+            core_session.add(ch4_plot)
+
         logger.info('New data plots were created.')
 
         last_data_point = newest_data_point
         session.close()
         engine.dispose()
+
+        core_session.commit()
+        core_session.close()
+        core_engine.dispose()
         return True
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in plot_new_data()')
         send_processor_email(PROC, exception=e)
+
+        session.close()
+        engine.dispose()
+
+        core_session.close()
+        core_engine.dispose()
         return False
 
 
@@ -392,12 +419,19 @@ async def main():
         send_processor_email(PROC, exception=e)
         return
 
-    if await asyncio.create_task(check_load_new_data(logger)):
+    try:
+        if await asyncio.create_task(check_load_new_data(logger)):
 
-        await asyncio.create_task(plot_new_data(logger))
+            await asyncio.create_task(plot_new_data(logger))
 
-        if await asyncio.create_task(find_cal_events(logger)):
-            await asyncio.create_task(create_mastercals(logger))
+            if await asyncio.create_task(find_cal_events(logger)):
+                await asyncio.create_task(create_mastercals(logger))
+
+        return True
+    except Exception as e:
+        logger.error(f'Exception {e.args} occurred in Picarro main()')
+        send_processor_email(PROC, exception=e)
+        return False
 
 
 if __name__ == '__main__':
