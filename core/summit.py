@@ -26,7 +26,7 @@ async def main():
 		await asyncio.create_task(methane_processor())
 		await asyncio.create_task(error_processor())
 		print('Sleeping...')
-		await asyncio.sleep(15*60)
+		await asyncio.sleep(15)
 
 
 if __name__ == '__main__':
