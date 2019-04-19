@@ -3,9 +3,9 @@ This will be the main script for all processing.
 
 TODO: Flow chart for processes
 
-
-TODO: Make data file paths importable from a json file
-TODO: Fix all errors from logs
+TODO: Make plot files a JSON list that's updated with filenames? Could be DB table...so no un-updated files are sent...
+TODO: Some random counter variables and such are not stored in DB, those should go to config tables per processor
+TODO: FTP Transfers to Taylor Drive
 """
 import sys
 
