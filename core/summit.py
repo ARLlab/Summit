@@ -17,18 +17,33 @@ for d in processor_dirs:
 from voc_main_loop import main as voc_processor
 from methane_main_loop import main as methane_processor
 from error_main_loop import main as error_processor
+from summit_core import check_send_plots
+from summit_errors import send_processor_email
 import asyncio
 
 
 async def main():
+	try:
+		from summit_core import methane_dir as rundir
+		from summit_core import configure_logger
+		logger = configure_logger(rundir, __name__)
+	except Exception as e:
+		print(f'Error {e.args} prevented logger configuration.')
+		send_processor_email('MAIN', exception=e)
+		return
+
 	while True:
-		await asyncio.create_task(voc_processor())
-		await asyncio.create_task(methane_processor())
+		vocs = await asyncio.create_task(voc_processor())
+		methane = await asyncio.create_task(methane_processor())
 		await asyncio.create_task(error_processor())
+
+		if vocs or methane:
+			await asyncio.create_task(check_send_plots(logger))
+
 		print('Sleeping...')
 		await asyncio.sleep(15)
 
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+	loop = asyncio.get_event_loop()
+	loop.run_until_complete(main())

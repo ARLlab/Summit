@@ -1,5 +1,4 @@
 import os
-import sys
 import json
 from pathlib import Path
 
@@ -16,6 +15,7 @@ picarro_dir = project_dir / 'processors/summit_picarro_processor'
 methane_dir = project_dir / 'processors/summit_methane_processor'
 error_dir = project_dir / 'processors/errors'
 core_dir = project_dir / 'core'
+taylor_basepath = Path(r'/data/web/htdocs/instaar/groups/arl/res_parameters/summit_plots')
 
 processor_dirs = [voc_dir, picarro_dir, methane_dir, error_dir, core_dir]
 
@@ -31,6 +31,8 @@ voc_LOG_path = data_file_paths.get('voc_LOG')
 voc_logs_path = data_file_paths.get('voc_logs')
 
 picarro_logs_path = data_file_paths.get('picarro_logs')
+
+taylor_auth = data_file_paths.get('taylor_server_auth')
 
 
 class TempDir:
@@ -261,17 +263,49 @@ def create_daily_ticks(days_in_plot):
 
 def connect_to_sftp():
     import paramiko
-    #key = paramiko.RSAKey.from_private_key_file(r'')
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    # TODO: Create sftp auth file
-    client.connect(hostname='', username='', password='', port=21)
+    server_info = json.loads(taylor_auth.read_text())
+    client.connect(**server_info)
     return client.open_sftp()
 
 
-async def send_file_sftp():
-    pass
+async def send_file_sftp(filepath):
+    con = connect_to_sftp()
+    con.chdir(taylor_basepath)
+    con.put(filepath, filepath)
+    return
 
 
-async def send_all_plots():
-    pass
+async def check_send_plots(logger):
+    try:
+        from summit_errors import send_processor_email
+    except ImportError as e:
+        logger.error('ImportError occurred in send_all_plots()')
+        return False
+
+    try:
+        engine, session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+    except Exception as e:
+        logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
+        send_processor_email('Core', exception=e)
+        return False
+
+    try:
+        plots_to_upload = session.query(Plot).filter(Plot.staged == True).all()
+
+        if plots_to_upload:
+            for plot in plots_to_upload:
+                await send_file_sftp(plot.path)
+                logger.info(f'Plot {plot.name} uploaded to website.')
+                session.delete(plot)
+            session.commit()
+
+        engine.close()
+        session.dispose()
+        return True
+
+    except Exception as e:
+        logger.error(f'Exception {e.args} occurred in send_all_plots().')
+        send_processor_email('Core', exception=e)
+        return False
