@@ -870,7 +870,9 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
     compounds_safe = []
     for k, _ in compound_dict.items():
         """Create a filename-safe list using the given legend items"""
-        compounds_safe.append(k.replace('-', '_').replace('/', '_').lower())
+        compounds_safe.append(k.replace('-', '_')
+                                .replace('/', '_')
+                                .replace(' ', '_').lower())
 
     comp_list = ', '.join(compound_dict.keys())  # use real names for plot title
     fn_list = '_'.join(compounds_safe)  # use 'safe' names for filename
