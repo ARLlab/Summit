@@ -344,6 +344,7 @@ async def plot_new_data(logger):
 
     try:
         from summit_core import voc_dir as rundir
+        from summit_core import core_dir, Plot
         from summit_core import connect_to_db, TempDir, create_daily_ticks
         from summit_voc import Base, summit_voc_plot, get_dates_peak_info
         from datetime import datetime
@@ -359,6 +360,14 @@ async def plot_new_data(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Error {e.args} prevented connecting to the database in plot_new_data()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+        Base.metadata.create_all(core_engine)
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented connecting to the core database in plot_new_data()')
         send_processor_email(PROC, exception=e)
         return False
 
@@ -386,7 +395,7 @@ async def plot_new_data(logger):
             with TempDir(plotdir):  ## PLOT ethane and propane
                 ethane_mrs, ethane_dates = get_dates_peak_info(session, 'ethane', 'mr', date_start=date_ago)
                 propane_mrs, propane_dates = get_dates_peak_info(session, 'propane', 'mr', date_start=date_ago)
-                summit_voc_plot(None, ({'Ethane': [ethane_dates, ethane_mrs],
+                name = summit_voc_plot(None, ({'Ethane': [ethane_dates, ethane_mrs],
                                         'Propane': [propane_dates, propane_mrs]}),
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
@@ -394,12 +403,15 @@ async def plot_new_data(logger):
                                 major_ticks=major_ticks,
                                 minor_ticks=minor_ticks)
 
+                ethane_plot = Plot(plotdir/name, True)
+                core_session.add(ethane_plot)
+
             with TempDir(plotdir):  ## PLOT i-butane, n-butane, acetylene
                 ibut_mrs, ibut_dates = get_dates_peak_info(session, 'i-butane', 'mr', date_start=date_ago)
                 nbut_mrs, nbut_dates = get_dates_peak_info(session, 'n-butane', 'mr', date_start=date_ago)
                 acet_mrs, acet_dates = get_dates_peak_info(session, 'acetylene', 'mr', date_start=date_ago)
 
-                summit_voc_plot(None, ({'i-Butane': [ibut_dates, ibut_mrs],
+                name = summit_voc_plot(None, ({'i-Butane': [ibut_dates, ibut_mrs],
                                         'n-Butane': [nbut_dates, nbut_mrs],
                                         'Acetylene': [acet_dates, acet_mrs]}),
                                 limits={'right': date_limits.get('right', None),
@@ -407,6 +419,9 @@ async def plot_new_data(logger):
                                         'bottom': 0},
                                 major_ticks=major_ticks,
                                 minor_ticks=minor_ticks)
+
+                c4_plot = Plot(plotdir/name, True)
+                core_session.add(c4_plot)
 
             with TempDir(plotdir):  ## PLOT i-pentane and n-pentane, & ratio
                 ipent_mrs, ipent_dates = get_dates_peak_info(session, 'i-pentane', 'mr', date_start=date_ago)
@@ -423,7 +438,7 @@ async def plot_new_data(logger):
                         else:
                             inpent_ratio.append(i / n)
 
-                    summit_voc_plot(None, ({'i-Pentane': [ipent_dates, ipent_mrs],
+                    name = summit_voc_plot(None, ({'i-Pentane': [ipent_dates, ipent_mrs],
                                             'n-Pentane': [npent_dates, npent_mrs]}),
                                     limits={'right': date_limits.get('right', None),
                                             'left': date_limits.get('left', None),
@@ -431,7 +446,10 @@ async def plot_new_data(logger):
                                     major_ticks=major_ticks,
                                     minor_ticks=minor_ticks)
 
-                    summit_voc_plot(None, ({'i/n Pentane ratio': [ipent_dates, inpent_ratio]}),
+                    in_pent_plot = Plot(plotdir/name, True)
+                    core_session.add(in_pent_plot)
+
+                    name = summit_voc_plot(None, ({'i/n Pentane ratio': [ipent_dates, inpent_ratio]}),
                                     limits={'right': date_limits.get('right', None),
                                             'left': date_limits.get('left', None),
                                             'bottom': 0,
@@ -439,11 +457,14 @@ async def plot_new_data(logger):
                                     major_ticks=major_ticks,
                                     minor_ticks=minor_ticks)
 
+                    in_pent_ratio_plot = Plot(plotdir/name, True)
+                    core_session.add(in_pent_ratio_plot)
+
             with TempDir(plotdir):  ## PLOT benzene and toluene
                 benz_mrs, benz_dates = get_dates_peak_info(session, 'benzene', 'mr', date_start=date_ago)
                 tol_mrs, tol_dates = get_dates_peak_info(session, 'toluene', 'mr', date_start=date_ago)
 
-                summit_voc_plot(None, ({'Benzene': [benz_dates, benz_mrs],
+                name = summit_voc_plot(None, ({'Benzene': [benz_dates, benz_mrs],
                                         'Toluene': [tol_dates, tol_mrs]}),
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
@@ -451,12 +472,19 @@ async def plot_new_data(logger):
                                 major_ticks=major_ticks,
                                 minor_ticks=minor_ticks)
 
+                benz_tol_plot = Plot(plotdir/name, True)
+                core_session.add(benz_tol_plot)
+
             data_len = len(dates)
 
             logger.info('New data plots created.')
 
             session.close()
             engine.dispose()
+
+            core_session.commit()
+            core_session.close()
+            core_engine.dispose()
             return True
 
         else:
@@ -464,6 +492,9 @@ async def plot_new_data(logger):
 
             session.close()
             engine.dispose()
+
+            core_session.close()
+            core_engine.dispose()
             return False
 
     except Exception as e:
