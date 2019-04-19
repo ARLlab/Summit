@@ -490,5 +490,9 @@ def summit_methane_plot(dates, compound_dict, limits=None, minor_ticks=None, maj
 
     f1.subplots_adjust(bottom=.20)
 
-    f1.savefig(f'{fn_list}_last_week.png', dpi=150)
+    plot_name = f'{fn_list}_last_week.png'
+
+    f1.savefig(plot_name, dpi=150)
     plt.close(f1)
+
+    return plot_name
