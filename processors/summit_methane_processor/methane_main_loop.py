@@ -423,8 +423,9 @@ async def plot_new_data(logger):
     days_to_plot = 7
 
     try:
+        from summit_core import core_dir
         from summit_core import methane_dir as rundir
-        from summit_core import connect_to_db, create_daily_ticks, TempDir
+        from summit_core import connect_to_db, create_daily_ticks, TempDir, Plot
         from summit_methane import Sample, Base, plottable_sample, summit_methane_plot
     except ImportError as e:
         logger.error('ImportError occurred in plot_new_data()')
@@ -436,6 +437,14 @@ async def plot_new_data(logger):
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+        Plot.__table__.create(core_engine)
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented connecting to the core database in plot_new_data()')
         send_processor_email(PROC, exception=e)
         return False
 
@@ -459,12 +468,16 @@ async def plot_new_data(logger):
             ambient_mrs = [amb.peak.mr for amb in ambient_samples]
 
             with TempDir(rundir / 'plots'):
-                summit_methane_plot(None, {'Methane': [ambient_dates, ambient_mrs]},
+                name = summit_methane_plot(None, {'Methane': [ambient_dates, ambient_mrs]},
                                     limits={'bottom': 1800, 'top': 2150,
                                             'right': date_limits.get('right', None),
                                             'left': date_limits.get('left', None)},
                                     major_ticks=major_ticks,
                                     minor_ticks=minor_ticks)
+
+                methane_plot = Plot(rundir/'plots'/name, True)  # stage plots to be uploaded
+                core_session.add(methane_plot)
+
             logger.info('New data plots created.')
         else:
             logger.info('No new data found to be plotted.')
@@ -473,6 +486,11 @@ async def plot_new_data(logger):
 
         session.close()
         engine.dispose()
+
+        core_session.commit()
+        core_session.close()
+        core_engine.dispose()
+        return True
 
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in plot_new_data()')
@@ -492,15 +510,23 @@ async def main():
         send_processor_email(PROC, exception=e)
         return
 
-    new_pas = await asyncio.create_task(check_load_pa_log(logger))
-    new_logs = await asyncio.create_task(check_load_run_logs(logger))
+    try:
+        new_pas = await asyncio.create_task(check_load_pa_log(logger))
+        new_logs = await asyncio.create_task(check_load_run_logs(logger))
 
-    if new_pas or new_logs:
-        if await asyncio.create_task(match_runs_to_lines(logger)):
-            if await asyncio.create_task(match_peaks_to_samples(logger)):
-                await asyncio.create_task(add_one_standard(logger))
-                if await asyncio.create_task(quantify_samples(logger)):
-                    await asyncio.create_task(plot_new_data(logger))
+        if new_pas or new_logs:
+            if await asyncio.create_task(match_runs_to_lines(logger)):
+                if await asyncio.create_task(match_peaks_to_samples(logger)):
+                    await asyncio.create_task(add_one_standard(logger))
+                    if await asyncio.create_task(quantify_samples(logger)):
+                        await asyncio.create_task(plot_new_data(logger))
+
+        return True
+
+    except Exception as e:
+        logger.critical(f'Exception {e.args} caused a complete failure of the CH4 processing.')
+        send_processor_email(PROC, exception=e)
+        return False
 
 
 if __name__ == '__main__':
