@@ -16,7 +16,7 @@ for d in processor_dirs:
 
 from voc_main_loop import main as voc_processor
 from methane_main_loop import main as methane_processor
-from error_main_loop import main as error_processor
+from error_main_loop import main as continous_error_processor
 from summit_core import check_send_plots
 from summit_errors import send_processor_email
 import asyncio
@@ -35,7 +35,7 @@ async def main():
 	while True:
 		vocs = await asyncio.create_task(voc_processor())
 		methane = await asyncio.create_task(methane_processor())
-		await asyncio.create_task(error_processor())
+		await asyncio.create_task(continuous_error_processor())
 
 		if vocs or methane:
 			await asyncio.create_task(check_send_plots(logger))
