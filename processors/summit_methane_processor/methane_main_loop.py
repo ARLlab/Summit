@@ -16,6 +16,13 @@ PROC = 'Methane Processor'
 
 
 async def check_load_pa_log(logger):
+    """
+    Read the PA log and create new PaLine objects if possible.
+
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
+
     start_size = 0  # default to checking entire file on startup
     start_line = 0
 
@@ -44,15 +51,13 @@ async def check_load_pa_log(logger):
         lines_in_db = session.query(PaLine).all()
         dates_in_db = [l.date for l in lines_in_db]
 
-        # pa_filepath = Path(r'C:\Users\arl\Desktop\summit_master\processors\summit_methane_processor\CH4_smooth.LOG')
-
         if check_filesize(pa_filepath) <= start_size:
             logger.info('PA file did not change size.')
             return False
 
         pa_file_contents = pa_filepath.read_text().split('\n')[start_line:]
-        pa_file_contents[:] = [line for line in pa_file_contents if line != '']
-        start_line = len(pa_file_contents)
+        pa_file_contents[:] = [line for line in pa_file_contents if line]
+        start_line = len(pa_file_contents)  # TODO: len should be added to old len; test!
 
         pa_lines = []
         for line in pa_file_contents:
@@ -87,6 +92,13 @@ async def check_load_pa_log(logger):
 
 
 async def check_load_run_logs(logger):
+    """
+    Read new log files and create new GcRun and Sample objects if possible.
+
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
+
     try:
         from summit_core import methane_logs_path
         from summit_core import methane_dir as rundir
@@ -150,6 +162,12 @@ async def check_load_run_logs(logger):
 
 
 async def match_runs_to_lines(logger):
+    """
+    Read new log files and create new GcRun and Sample objects if possible.
+
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
 
     try:
         from summit_core import methane_dir as rundir
@@ -197,6 +215,13 @@ async def match_runs_to_lines(logger):
 
 
 async def match_peaks_to_samples(logger):
+    """
+    All detected peaks in a run are attached to NmhcLines, but are not linked to Samples until they've passed certain
+    criteria.
+
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
 
     try:
         from summit_core import methane_dir as rundir
@@ -267,9 +292,8 @@ async def add_one_standard(logger):
     """
     Add a single standard (the current working one), so that quantifications are possible. VERY TEMPORARY.
 
-    :param directory:
-    :param sleeptime:
-    :return:
+    :param logger: logger, to log events to
+    :return: Boolean, True if successful
     """
 
     try:
@@ -312,11 +336,11 @@ async def add_one_standard(logger):
 
 async def quantify_samples(logger):
     """
-    On a per-run basis, use std1 to calc samples 1-5 (~3) and std2 to calculate samples 6-10 (~8)
+    On a per-run basis, use std1 to calc samples 1-5 (~3) and std2 to calculate samples 6-10 (~8). Output warnings
+    if only one standard in a sample is valid.
 
-    :param directory:
-    :param sleeptime:
-    :return:
+    :param logger: logger, to log events to
+    :return: Boolean, True if successful
     """
 
     try:
@@ -419,6 +443,13 @@ async def quantify_samples(logger):
 
 
 async def plot_new_data(logger):
+    """
+    If newer data exists, plot it going back one week from the day of the plotting.
+
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
+
     data_len = 0  # always default to run when initialized
     days_to_plot = 7
 
@@ -501,6 +532,13 @@ async def plot_new_data(logger):
 
 
 async def main():
+    """
+    Configure a logger and run processes in order, only proceeding if new data is created that warrants running the next
+    processes.
+
+    :return: Boolean, True if successful
+    """
+
     try:
         from summit_core import methane_dir as rundir
         from summit_core import configure_logger
