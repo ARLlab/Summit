@@ -23,14 +23,11 @@ async def check_load_pa_log(logger):
     :return: Boolean, True if it ran without error and created data, False if not
     """
 
-    start_size = 0  # default to checking entire file on startup
-    start_line = 0
-
     logger.info('Running check_load_pa_log()')
 
     try:
         from summit_core import methane_LOG_path as pa_filepath
-        from summit_core import connect_to_db, check_filesize
+        from summit_core import connect_to_db, check_filesize, core_dir, Config
         from summit_methane import Base, read_pa_line, PaLine
         from summit_core import methane_dir as rundir
         from pathlib import Path
@@ -48,16 +45,38 @@ async def check_load_pa_log(logger):
         return False
 
     try:
+        core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+        Config.__table__.create(core_engine, checkfirst=True)
+
+        ch4_config = core_session.query(Config).filter(Config.processor == PROC).one_or_none()
+
+        if not ch4_config:
+            ch4_config = Config(processor=PROC)  # use all default values except processor on init
+            core_session.add(ch4_config)
+            core_session.commit()
+
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented connecting to the core database in plot_new_data()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
         lines_in_db = session.query(PaLine).all()
         dates_in_db = [l.date for l in lines_in_db]
 
-        if check_filesize(pa_filepath) <= start_size:
+        if check_filesize(pa_filepath) <= ch4_config.filesize:
             logger.info('PA file did not change size.')
             return False
 
-        pa_file_contents = pa_filepath.read_text().split('\n')[start_line:]
+        ch4_config.filesize = check_filesize(pa_filepath)
+        core_session.merge(ch4_config)
+        core_session.commit()
+
+        pa_file_contents = pa_filepath.read_text().split('\n')[ch4_config.pa_startline:]
+
+        ch4_config.pa_startline = ch4_config.pa_startline + len(pa_file_contents)
+
         pa_file_contents[:] = [line for line in pa_file_contents if line]
-        start_line = len(pa_file_contents)  # TODO: len should be added to old len; test!
 
         pa_lines = []
         for line in pa_file_contents:
@@ -81,11 +100,20 @@ async def check_load_pa_log(logger):
                 logger.info(f'{ct} PaLines added.')
                 session.commit()
 
+        core_session.merge(ch4_config)
+        core_session.commit()
+
         session.close()
         engine.dispose()
+        core_session.close()
+        core_engine.dispose()
         return True
 
     except Exception as e:
+        session.close()
+        engine.dispose()
+        core_session.close()
+        core_engine.dispose()
         logger.error(f'Exception {e.args} occurred in check_load_pa_log()')
         send_processor_email(PROC, exception=e)
         return False
@@ -454,7 +482,7 @@ async def plot_new_data(logger):
     days_to_plot = 7
 
     try:
-        from summit_core import core_dir
+        from summit_core import core_dir, Config
         from summit_core import methane_dir as rundir
         from summit_core import connect_to_db, create_daily_ticks, TempDir, Plot
         from summit_methane import Sample, Base, plottable_sample, summit_methane_plot
@@ -474,6 +502,15 @@ async def plot_new_data(logger):
     try:
         core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
         Plot.__table__.create(core_engine, checkfirst=True)
+        Config.__table__.create(core_engine, checkfirst=True)
+
+        ch4_config = core_session.query(Config).filter(Config.processor == PROC).one_or_none()
+
+        if not ch4_config:
+            ch4_config = Config(processor=PROC)  # use all default values except processor on init
+            core_session.add(ch4_config)
+            core_session.commit()
+
     except Exception as e:
         logger.error(f'Error {e.args} prevented connecting to the core database in plot_new_data()')
         send_processor_email(PROC, exception=e)
@@ -485,16 +522,24 @@ async def plot_new_data(logger):
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
         ambient_samples = (session.query(Sample)
-                           .filter(Sample.date.between(datetime(2019, 1, 1), datetime(2019, 6, 1)))
+                           # .filter(Sample.date.between(datetime(2019, 1, 1), datetime(2019, 6, 1)))
                            .filter(Sample.sample_type == 3)
+                           .order_by(Sample.date)
                            .all())
 
         ambient_samples[:] = [sample for sample in ambient_samples if plottable_sample(sample)]
         # remove gross outliers and non-valid samples
 
+        last_ambient_date = ambient_samples[-1].date
+        # get date after filtering, ie don't plot if there's no new data getting plotted
+
         date_limits, major_ticks, minor_ticks = create_daily_ticks(days_to_plot)
 
-        if len(ambient_samples) > data_len:
+        if last_ambient_date > ch4_config.last_data_date:
+
+            ch4_config.last_data_date = last_ambient_date[-1]
+            core_session.merge(ch4_config)
+
             ambient_dates = [amb.date for amb in ambient_samples]
             ambient_mrs = [amb.peak.mr for amb in ambient_samples]
 
@@ -513,8 +558,6 @@ async def plot_new_data(logger):
         else:
             logger.info('No new data found to be plotted.')
 
-        data_len = len(ambient_samples)
-
         session.close()
         engine.dispose()
 
@@ -526,6 +569,8 @@ async def plot_new_data(logger):
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in plot_new_data()')
         send_processor_email(PROC, exception=e)
+        core_session.close()
+        core_engine.dispose()
         session.close()
         engine.dispose()
         return False
