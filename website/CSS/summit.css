@@ -142,11 +142,22 @@
       margin-bottom: 1rem;
       width:20rem;
       height:20rem; }
-    .value-image3 {
-        display: block;
-        text-align: center;
-        margin: 2rem auto 0;
-        margin-bottom: 1rem;
-        margin-left: 8rem;
-        width:24rem;
-        height:20rem; }
+  .value-image3 {
+      display: block;
+      text-align: center;
+      margin: 2rem auto 0;
+      margin-bottom: 1rem;
+      margin-left: 8rem;
+      width:24rem;
+      height:20rem; }
+
+  /* Slideshow */
+  section.section {
+    background: transparent;}
+  .slideshow {
+    box-shadow: 0px 0px 40px rgba(0,0,0,.3); }
+  .slide img {
+      max-width: 100%;
+      width: 100%; }
+  .slick-prev:before, .slick-next:before {
+    color: black; }
