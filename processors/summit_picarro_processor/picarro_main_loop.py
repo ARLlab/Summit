@@ -299,7 +299,7 @@ async def plot_new_data(logger):
 
     try:
         from summit_core import picarro_dir as rundir
-        from summit_core import create_daily_ticks, connect_to_db, TempDir, Plot, core_dir
+        from summit_core import create_daily_ticks, connect_to_db, TempDir, Plot, core_dir, Config
         from summit_picarro import Base, Datum, summit_picarro_plot
     except Exception as e:
         logger.error('ImportError occurred in plot_new_data()')
@@ -318,7 +318,16 @@ async def plot_new_data(logger):
 
     try:
         core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
-        Plot.__table__.create(core_engine)
+        Plot.__table__.create(core_engine, checkfirst=True)
+        Config.__table__.create(core_engine, checkfirst=True)
+
+        picarro_config = core_session.query(Config).filter(Config.processor == PROC).one_or_none()
+
+        if not picarro_config:
+            picarro_config = Config(processor=PROC)  # use all default values except processor on init
+            core_session.add(picarro_config)
+            core_session.commit()
+
     except Exception as e:
         logger.error(f'Error {e.args} prevented connecting to the core database in plot_new_data()')
         send_processor_email(PROC, exception=e)
@@ -329,19 +338,31 @@ async def plot_new_data(logger):
             .filter(Datum.mpv_position == 1)
             .order_by(Datum.date.desc()).first()[0])
 
-        if newest_data_point <= last_data_point:
+        if newest_data_point <= picarro_config.last_data_date:
             logger.info('No new data was found to plot.')
+            core_session.close()
+            core_engine.dispose()
             session.close()
             engine.dispose()
             return False
 
-        now = datetime(2019, 3, 14)  # save 'now' as the start of making plots  # TODO: Remove testing temp val
-        date_ago = now - dt.timedelta(days=days_to_plot + 1)
-        # set a static for retrieving data at beginning of plot cycle
+        picarro_config.last_data_date = newest_data_point
 
         date_limits, major_ticks, minor_ticks = create_daily_ticks(days_to_plot)
 
-        all_data = session.query(Datum.date, Datum.co, Datum.co2, Datum.ch4).filter(Datum.mpv_position == 1).all()
+        all_data = (session.query(Datum.date, Datum.co, Datum.co2, Datum.ch4)
+                    .filter(Datum.mpv_position == 1)
+                    .filter(Datum.date >= date_limits['left'])  # grab only data that falls in plotting period
+                    .all())
+
+        if not all_data:
+            logger.info('No new data was found to plot.')
+            core_session.close()
+            core_engine.dispose()
+            session.close()
+            engine.dispose()
+            return False
+
         # get only ambient data
         dates = []
         co = []
