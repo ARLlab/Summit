@@ -62,10 +62,10 @@ async def main():
 		if vocs or methane:
 			await asyncio.create_task(check_send_plots(logger))
 
-		errors = await check_for_new_data(logger, active_errors=errors)
+		errors = await asyncio.create_task(check_for_new_data(logger, active_errors=errors))
 
 		if errors:
-			errors = await check_existing_errors(errors)
+			errors = await asyncio.create_task(check_existing_errors(errors))
 
 		print('Sleeping...')
 		await asyncio.sleep(15*60)

@@ -91,6 +91,7 @@ async def check_for_new_data(logger, active_errors=None):
                     active_errors.append(Error(reason, new_data_found, NewDataEmail(sender, proc, last_data_time)))
 
         return active_errors
+        
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in check_for_new_data()')
         send_processor_email(PROC, exception=e)
