@@ -1,11 +1,12 @@
 import os
 import json
 from pathlib import Path
+from datetime import datetime
 
 from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
 
 Base = declarative_base()
 
@@ -33,6 +34,25 @@ voc_logs_path = data_file_paths.get('voc_logs')
 picarro_logs_path = data_file_paths.get('picarro_logs')
 
 taylor_auth = data_file_paths.get('taylor_server_auth')
+
+
+class Config(Base):
+    __tablename__ = 'config'
+
+    id = Column(Integer, primary_key=True)
+
+    processor = Column(String, unique=True)  # only one config per processor
+    filesize = Column(Integer)
+    pa_startline = Column(Integer)
+    last_data_date = Column(DateTime)
+    days_to_plot = Column(Integer)
+
+    def __init__(self, processor=None, filesize=0, pa_startline=0, last_data_date=datetime(1900,1,1), days_to_plot=7):
+        self.processor = processor
+        self.filesize = filesize
+        self.pa_startline = pa_startline
+        self.last_data_date = last_data_date
+        self.days_to_plot = days_to_plot
 
 
 class TempDir:
