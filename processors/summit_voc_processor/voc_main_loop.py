@@ -7,12 +7,10 @@ PROC = 'VOC Processor'
 
 async def check_load_logs(logger):
     """
-    Checks the directory against the database for new log files. Loads and commits
-    to db if there are any new files.
+    Check for new logfiles and convert new files to LogFile objects for persistence.
 
-    Basic format: Connect to the db, check for new log files. If new file
-    exists, load and commit them to the db. In all cases, sleep for (n) seconds before
-    looping back.
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
     """
 
     try:
@@ -79,12 +77,12 @@ async def check_load_logs(logger):
 
 
 async def check_load_pas(logger):
-    '''
-    Basic format: Checks the file size of the PA log, opens it if it's bigger
-    than before, and reads from the last recorded line onwards. Any new lines
-    are added as objects and committed. All exits sleep for (n) seconds before re-upping.
+    """
+    Check for new lines in the PA log. Convert them to NmhcLine objects for persistence if they're new.
 
-    '''
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
 
     pa_file_size = 0  # always assume all lines could be new when initialized
     start_line = 0
@@ -173,6 +171,12 @@ async def check_load_pas(logger):
 
 
 async def load_crfs(logger):
+    """
+    Read the CRF file and commit any new Crf objects to the database.
+
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error, False if not
+    """
 
     try:
         from summit_core import voc_dir as rundir
@@ -215,6 +219,14 @@ async def load_crfs(logger):
 
 
 async def create_gc_runs(logger):
+    """
+    If there are unmatched NmhcLines or LogFiles, check for matches between them and create GcRun objects
+    where applicable. GcRuns are the combination of an NmhcLine and LogFile, and represent a completed run on the GC-FID
+
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
+
     try:
         from summit_core import voc_dir as rundir
         from summit_core import connect_to_db
@@ -243,7 +255,7 @@ async def create_gc_runs(logger):
                     .filter(LogFile.status == 'single')
                     .order_by(LogFile.id).all())
 
-        if not len(log_files) or not len(nmhc_lines):
+        if not log_files or not nmhc_lines:
             logger.info('No new logs or pa lines matched.')
             session.close()
             engine.dispose()
@@ -278,6 +290,14 @@ async def create_gc_runs(logger):
 
 
 async def integrate_runs(logger):
+    """
+    Load any unquantified GcRuns and use Crfs to calculate mixing ratios for each identified compound in each GcRun.
+    Creates Datum objects when a run has been sucessfully integrated.
+
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
+
     try:
         from summit_core import voc_dir as rundir
         from summit_core import connect_to_db
@@ -313,7 +333,7 @@ async def integrate_runs(logger):
         data_in_db = session.query(Datum).order_by(Datum.id).all()
         data_dates = [d.date_end for d in data_in_db]
 
-        if len(data):
+        if data:
             for datum in data:
                 if datum is not None and datum.date_end not in data_dates:  # prevent duplicates in db
                     data_dates.append(datum.date_end)  # prevent duplicates on this load
@@ -339,6 +359,13 @@ async def integrate_runs(logger):
 
 
 async def plot_new_data(logger):
+    """
+    If newer data exists, plot it going back one week from the day of the plotting.
+
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
+
     data_len = 0  # always start with plotting when initialized
     days_to_plot = 7
 
@@ -504,6 +531,12 @@ async def plot_new_data(logger):
 
 
 async def main():
+    """
+    Run the individual processes in order, only proceeding if they return successfully with new data and warrant
+    continuing to the next process.
+
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
     try:
         from summit_core import voc_dir as rundir
         from summit_core import configure_logger
@@ -523,12 +556,12 @@ async def main():
                 if await asyncio.create_task(integrate_runs(logger)):
                     await asyncio.create_task(plot_new_data(logger))
 
+        return True
+
     except Exception as e:
         logger.critical(f'Exception {e.args} caused a complete failure of the VOC processing.')
         send_processor_email(PROC, exception=e)
         return False
-
-    return True
 
 
 if __name__ == '__main__':
