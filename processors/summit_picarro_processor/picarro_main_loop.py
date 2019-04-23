@@ -3,7 +3,6 @@ import datetime as dt
 import pandas as pd
 from summit_errors import send_processor_email
 
-
 # async def fake_move_data(directory, sleeptime):
 # 	"""
 # 	Moves files from /test_data to /data to simulate incoming data transfers.
@@ -290,10 +289,6 @@ async def plot_new_data(logger):
     :param logger: logging logger at module level
     :return: boolean, did it run/process new data?
     """
-    from datetime import datetime
-
-    last_data_point = datetime(1900, 1, 1)  # default on startup - plots will be created on first run always
-    days_to_plot = 7
 
     logger.info('Running plot_new_data()')
 
@@ -348,7 +343,7 @@ async def plot_new_data(logger):
 
         picarro_config.last_data_date = newest_data_point
 
-        date_limits, major_ticks, minor_ticks = create_daily_ticks(days_to_plot)
+        date_limits, major_ticks, minor_ticks = create_daily_ticks(picarro_config.days_to_plot)
 
         all_data = (session.query(Datum.date, Datum.co, Datum.co2, Datum.ch4)
                     .filter(Datum.mpv_position == 1)

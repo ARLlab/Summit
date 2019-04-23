@@ -84,10 +84,6 @@ async def check_load_pas(logger):
     :return: Boolean, True if it ran without error and created data, False if not
     """
 
-    pa_file_size = 0  # always assume all lines could be new when initialized
-    start_line = 0
-    # TODO : These should be DB-stored in a /core db
-
     try:
         logger.info('Running check_load_pas()')
         from summit_core import voc_LOG_path as pa_path
@@ -130,7 +126,6 @@ async def check_load_pas(logger):
         if pa_path.is_file():
             with TempDir(rundir):
                 new_file_size = check_filesize(pa_path)
-
 
             if new_file_size > voc_config.filesize:
                 voc_config.filesize = new_file_size
@@ -407,8 +402,6 @@ async def plot_new_data(logger):
     :return: Boolean, True if it ran without error and created data, False if not
     """
 
-    data_len = 0  # always start with plotting when initialized
-    days_to_plot = 7
 
     try:
         from summit_core import voc_dir as rundir
@@ -451,9 +444,9 @@ async def plot_new_data(logger):
     try:
         logger.info('Running plot_new_data()')
         date_ago = datetime.now() - dt.timedelta(
-            days=days_to_plot + 1)  # set a static for retrieving data at beginning of plot cycle
+            days=voc_config.days_to_plot + 1)  # set a static for retrieving data at beginning of plot cycle
 
-        date_limits, major_ticks, minor_ticks = create_daily_ticks(days_to_plot)
+        date_limits, major_ticks, minor_ticks = create_daily_ticks(voc_config.days_to_plot)
 
         try:
             _, dates = get_dates_peak_info(session, 'ethane', 'mr', date_start=date_ago)  # get dates for data length

@@ -478,9 +478,6 @@ async def plot_new_data(logger):
     :return: Boolean, True if it ran without error and created data, False if not
     """
 
-    data_len = 0  # always default to run when initialized
-    days_to_plot = 7
-
     try:
         from summit_core import core_dir, Config
         from summit_core import methane_dir as rundir
@@ -533,7 +530,7 @@ async def plot_new_data(logger):
         last_ambient_date = ambient_samples[-1].date
         # get date after filtering, ie don't plot if there's no new data getting plotted
 
-        date_limits, major_ticks, minor_ticks = create_daily_ticks(days_to_plot)
+        date_limits, major_ticks, minor_ticks = create_daily_ticks(ch4_config.days_to_plot)
 
         if last_ambient_date > ch4_config.last_data_date:
 
