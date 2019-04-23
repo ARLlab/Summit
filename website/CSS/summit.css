@@ -2,14 +2,15 @@
 .container {
   max-width: 900px; }
 .header {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
+  margin-top: 0rem;
+  margin-bottom: 3rem;
   text-align: center; }
 .closer {
   margin-top: 3rem;
   text-align: center; }
 .title {
-  font-size: 3.5rem;
+  margin-top: 2rem;
+  font-size: 3.8rem;
   letter-spacing: .2rem;
   font-weight: 500;
   color: #27b5ea }
@@ -21,7 +22,7 @@
   margin-top: 1rem;
   color: #27b5ea }
 .value-bar {
-  margin-top: 0rem; }
+  margin-top: 1rem; }
 .value-bars {
   margin-top: 1rem;
   margin-bottom: 2rem; }
@@ -134,3 +135,18 @@
   /* Re-overiding the width 100% declaration to match size of % based container */
   .has-docked-nav .navbar > .container {
     width: 80%; }
+  .value-image2 {
+      display: block;
+      text-align: center;
+      margin: 2rem auto 0;
+      margin-bottom: 1rem;
+      width:20rem;
+      height:20rem; }
+    .value-image3 {
+        display: block;
+        text-align: center;
+        margin: 2rem auto 0;
+        margin-bottom: 1rem;
+        margin-left: 8rem;
+        width:24rem;
+        height:20rem; }

@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
 
   <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
-  <title>Summit GC - INSTAAR</title>
-  <meta name="description" content="INSTAAR Summit GC">
+  <title>GEOSummit - INSTAAR</title>
+  <meta name="description" content="INSTAAR Summit">
   <meta name="author" content="Jashan Chopra">
 
    <!-- <meta name="robots" content="all" /> -->
@@ -38,9 +37,19 @@
 
   <!-- Title / Header -->
   <section class="header">
-    <img class="header-img" alt="<Image not displaying: Header Image>" src="http://instaar.colorado.edu/arl/NOAA%20GAW/Chrom_header.jpg">
-    <h2 class="title">Methane, Carbon Monoxide, Carbon Dioxide, and Volatile Organic Compounds at GEOSummit in Greenland</h2>
-    <a class="button button-primary" href="http://instaar.colorado.edu/arl/index.html" >ARL Homepage</a>
+    <img class="header-img" alt="<Image not displaying: Header Image>" src="http://instaar.colorado.edu/arl/res_parameters/images/SummitHeader.jpg">
+    <h2 class="title">Atmospheric Trace Gases at GEOSummit</h2>
+    <h5> Near Real Time Data from a Picarro Analyzer & GC-FID of Methane, CO, CO2, and Selected VOC's </h4>
+      <div class="value-bars row">
+        <div class="six columns value-bar">
+          <img class="value-image3" src="http://instaar.colorado.edu/arl/res_parameters/images/instaar_logo_transparent.png" alt="INSTAAR Logo" </img>
+          <a class="button button-primary" href="http://instaar.colorado.edu/arl/index.html" >ARL Homepage</a>
+        </div>
+        <div class="six columns value-bar">
+          <img class="value-image2" src="http://instaar.colorado.edu/arl/res_parameters/images/NSF_logo.png" alt="NSF Logo" </img>
+          <a class="button button-primary" href="https://www.geosummit.org/">Summit Station</a>
+        </div>
+      </div>
   </section>
 
     <!-- Navigation Bar -->
@@ -60,36 +69,28 @@
     <div class="value-bars row">
       <div class="three columns value-bar">
         <a href="#CO">
-        <img class="value-image" src="images/CO.png" </img>
+        <img class="value-image" src="http://instaar.colorado.edu/arl/res_parameters/images/CO.png" </img>
         </a>
         <h5 class="compoundText">Carbon Monoxide</h5>
       </div>
       <div class="three columns value-bar">
         <a href="#CO2">
-        <img class="value-image" src="images/CO2.png" </img>
+        <img class="value-image" src="http://instaar.colorado.edu/arl/res_parameters/images/CO2.png" </img>
         </a>
         <h5 class="compoundText">Carbon Dioxide</h5>
       </div>
       <div class="three columns value-bar">
         <a href="#ch4">
-        <img class="value-image" src="images/Methane.png" </img>
+        <img class="value-image" src="http://instaar.colorado.edu/arl/res_parameters/images/Methane.png" </img>
         </a>
         <h5 class="compoundText">Methane</h5>
       </div>
       <div class="three columns value-bar">
         <a href="#voc">
-        <img class="value-image" src="images/VOC.png" </img>
+        <img class="value-image" src="http://instaar.colorado.edu/arl/res_parameters/images/VOC.png" </img>
         </a>
         <h5 class="compoundText">Volatile Compounds</h5>
       </div>
-    </div>
-
-    <!-- Delete this section before publish -->
-    <div class="docs-section" id="todo">
-        <h4> To-Do / Notes </h4>
-        <li>Additional section text</li>
-        <li>Add Sections for Picarro Data Once Working</li>
-        <li>Links to past data in buttons below graphs</li>
     </div>
 
     <!-- Introduction -->
@@ -105,44 +106,42 @@
     <!-- Main Data Section -->
     <div class="docs-section-main" id="data">
 
-        <h4> Near Real Time Data from Summit Picarro Analyzer & GC-FID </h4>
-
         <h4 class="docs-header" id="CO">Carbon Monoxide</h4>
+        <p> The Picarro Analyzer is in the process of being installed on site, data will be uploaded here as soon as available!</p>
         <p> Carbon Monoxide is present in the atmosphere at relatively low concentrations, with a lifespan of several months. Motor vehicles accounted
         for a large portion of carbon monoxide emissions, but natural sources include volcanoes and bushfires. Carbon monoxide typically oxidizes to carbon dioxide before it can mix completely in the troposphere,
         thus it can display local elevated concentrations at source points. </p>
-        <img class="value-img" alt="<Data not displaying: Picarro Carbon Monoxide>" src="filler.jpg">
+        <img class="value-img" alt="<Data not displaying: Picarro Carbon Monoxide>" src="summit_plots/summit_co_last_week.png">
 
         <h4 class="docs-header" id="CO2">Carbon Dioxide</h4>
         <p> Carbon Dioxide enters the atmosphere through burning fossil fuels, trees and other biomass, waste, and from some chemical reactions.
         In 2017, CO2 accounted for about 81.6 percent of all U.S greenhouse gas emissions from human activities. (<a href="https://www.epa.gov/ghgemissions/overview-greenhouse-gases">EPA</a>)
         It is absorbed by plants as part of Earth's carbon cycle, and thus removed from the atmosphere.  </p>
-        <img class="value-img" alt="<Data not displaying: Picarro Carbon Dioxide>" src="filler.jpg">
+        <img class="value-img" alt="<Data not displaying: Picarro Carbon Dioxide>" src="summit_plots/summit_co2_last_week.png">
 
         <h4 class="docs-header" id="ch4">Methane [Picarro]</h4>
         <p> Methane is a potent greenhouse gas. It has an atmospheric lifetime of about a decade and is distributed globally.
           Methane emissions can occur during the production of coal, natural gas, and oil; as well as from livestock and agricultural practices. Human's account for 50-65 percent of total methane emissions. (<a href="https://www.ipcc.ch/report/ar5/wg1/">IPCC</a>)
           In the Summit, Greenland location it mainly is emitted by ...</p>
-        <img class="value-img" alt="<Data not displaying: Methane Plot (Picarro)>" src="filler.jpg">
+        <img class="value-img" alt="<Data not displaying: Methane Plot (Picarro)>" src="summit_plots/summit_ch4_last_week.png">
 
         <h4 class="docs-header" id="ch4_GC">Methane [GC-FID]</h4>
         <p> All times are reported in Mountain Standard Time (MST). Data during Daylight Savings Time (March-November)
             will have to be corrected by adding one hour.</p>
-        <img class="value-img" alt="<Data not displaying: Methane Plot>" src="http://instaar.colorado.edu/arl/res_parameters/summit_methane_plots/methane_last_week.png">
-          <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data</a>
-          <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data</a>
+        <img class="value-img" alt="<Data not displaying: Methane Plot>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/methane_last_week.png">
+          <a class="button" href="http://instaar.colorado.edu/arl/res_parameters/pastData.html">Past Data</a>
 
         <h5 class="docs-header" id="voc">Selected Volatile Organic Compounds</h5>
 
         <h5 class="docs-subheader">Ethane & Propane</h5>
-        <img class="value-img" alt="<Data not displaying: ethane & propane>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/ethane_propane_last_week.png">
+        <img class="value-img" alt="<Data not displaying: ethane & propane>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/ethane_propane_last_week.png">
         <p>Ethane and propane have atmospheric lifetimes of about 2 months and about 2 weeks, respectively. They contribute to formation of ground-level ozone on a regional and continental scale. Oil and gas production and processing activities are the main source of ethane and propane.
           Propane can also be released to the atmosphere from storage and distribution of liquified petroleum gas.</p>
           <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data</a>
           <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data</a>
 
         <h5 class="docs-subheader">Butane(s) & Acetylene</h5>
-        <img class="value-img" alt="<Data not displaying: butane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_butane_n_butane_acetylene_last_week.png">
+        <img class="value-img" alt="<Data not displaying: butane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/i_butane_n_butane_acetylene_last_week.png">
         <p>Butanes and acetylene contribute to formation of ozone on local to regional scales. Butanes are emitted from gasoline vapors, vehicle exhaust, and oil and gas production.
         Acetylene is predominantly emmitted from the buring of carbon, making it a good tracer for forest fires. </p>
         <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data</a>
@@ -152,15 +151,15 @@
         <p>Pentanes are also contributors to ozone formation on local to regional scales. Because i-pentane and n-pentane are released in different relative quantities by different sources, the i/n pentane ratio can be used to separate the influence of urban emissions from oil
           and gas emissions (<a href="http://pubs.acs.org/doi/abs/10.1021/es304119a">Gilman, 2013</a>; <a href="https://www.elementascience.org/articles/10.12952/journal.elementa.000035/">Thompson, 2014</a>).
           An i/n pentane ratio of 0.8 - 0.9 is typical of raw oil and gas emissions, whereas a ratio from 2-4 is characteristic of vehicle and urban emissions. </p>
-        <img class="value-img" alt="<Data not displaying: pentane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_pentane_n_pentane_last_week.png">
-        <img class="value-img" alt="<Data not displaying: ipentane/npentane ratio>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/i_n_pentane_ratio_last_week.png">
+        <img class="value-img" alt="<Data not displaying: pentane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/i_pentane_n_pentane_last_week.png">
+        <img class="value-img" alt="<Data not displaying: ipentane/npentane ratio>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/i_n_pentane_ratio_last_week.png">
           <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data</a>
           <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data</a>
 
         <h5 class="docs-subheader">Benzene and Toluene</h5>
         <p> Benzene and toluene contribute to ozone formation and may be hazardous to health if breathed at high levels. Sources of toluene include paints, solvents, gasoline vapors and vehicle exhaust. Sources of benzene include gasoline vapors, vehicle exhaust, and oil and gas production activities.
             All times are reported in Mountain Standard Time (MST). Data during Daylight Savings Time (March-November) will have to be corrected by adding one hour.</p>
-        <img class="value-img" alt="<Data not displaying: Benzene & Toluene>" src="http://instaar.colorado.edu/arl/res_parameters/summit_voc_plots/benzene_toluene_last_week.png">
+        <img class="value-img" alt="<Data not displaying: Benzene & Toluene>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/benzene_toluene_last_week.png">
           <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2018 Data</a>
           <a class="button" href="http://instaar.colorado.edu/arl/index.html">Past 2017 Data</a>
 
@@ -177,12 +176,12 @@
     <!-- Monitoring Methods -->
     <div class="docs-section" id="moni">
       <h4 class="docs-header" id="moni">Monitoring Methods</h4>
-      <p> Carbon Monoxide, Carbon Dioxide, and Methane [Picarro] are measured by... </p>
+      <p> Carbon Monoxide, Carbon Dioxide, and Methane [Picarro] are measured by ... </p>
       <p> Methane [Summit GC] is monitored by loop injection of 10 ml samples and gas chromatography with flame ionization detection.
         Samples are collected at 20-min intervals. </p>
       <p> VOCs are monitored by preconcentration of 500 ml-samples onto a micro-adsorbent trap, with subsequent thermal desorption, capillary column gas chromatography separation, and flame ionization detection.
-        Samples are collected at 2-hour intervals. Currently quantified compounds include ethane, ethene, propane, propene, i-butane, acetylene, n-butane, i-pentane, n-pentane, hexane, isoprene,
-        benzene, toluene, ethyl-benzene, m,p-xylene, and o-xylene.</p>
+        Samples are collected at 2-hour intervals. Currently quantified compounds include ethane, ethene, propane, propene, i-butane, acetylene, n-butane, i-pentane, n-pentane, hexane,
+        benzene, and toluene</p>
     </div>
 
     <!-- Data Requests & Contacts-->
@@ -192,7 +191,12 @@
         INSTAAR Atmospheric Research Lab lead by Dr. Detlev Helmig. Attn: (detlev.helmig@colorado.edu) </b></p>
       <a class="button button-primary" href="https://instaar.colorado.edu/" >INSTAAR Homepage</a>
       <a class="button button-primary" href="http://instaar.colorado.edu/arl/detlev.html" >Detlev Helmig</a>
-      <p> Other team members working on this project include...</p>
+      <p> Other team members working on this project include:</p>
+        <li>Jacques Hueber - Professional Scientist</li>
+        <li>Brendan Blanchard - Professional Research Assistant</li>
+        <li>Hélène Angot - Post-doctoral Scientist</li>
+        <li>(Additional non-ARL employees?)</li>
+        <li>Jashan Chopra - Undergraduate Assistant</li>
     </div>
 
     <!-- Closer -->
