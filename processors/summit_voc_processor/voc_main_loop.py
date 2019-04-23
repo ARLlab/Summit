@@ -131,8 +131,11 @@ async def check_load_pas(logger):
             with TempDir(rundir):
                 new_file_size = check_filesize(pa_path)
 
+
             if new_file_size > voc_config.filesize:
                 voc_config.filesize = new_file_size
+                core_session.merge(voc_config)
+                core_session.commit()
 
                 with TempDir(rundir):
                     contents = pa_path.read_text().split('\n')
