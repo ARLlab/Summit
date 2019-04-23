@@ -111,13 +111,13 @@ async def check_load_new_data(logger):
             for line in df_list:
                 data_list.append(Datum(line))
 
-            if not data_list:
+            if data_list:
+                for d in data_list:
+                    if d.date not in db_dates:
+                        d.file_id = file.id  # relate Datum to the file it originated in
+                        session.add(d)
+            else:
                 logger.info(f'No new data created from file {file.name}.')
-
-            for d in data_list:
-                if d.date not in db_dates:
-                    d.file_id = file.id  # relate Datum to the file it originated in
-                    session.add(d)
 
             file.processed = True
             logger.info(f'All data in file {file.name} processed.')
@@ -138,6 +138,7 @@ async def find_cal_events(logger):
     :param logger: logging logger at module level
     :return: boolean, did it run/process new data?
     """
+
     logger.info('Running find_cal_events()')
     try:
         from summit_core import connect_to_db
@@ -264,7 +265,7 @@ async def create_mastercals(logger):
                 if matching_mid is not None:
                     mastercals.append(MasterCal([lowcal, matching_high, matching_mid]))
 
-        if len(mastercals):
+        if mastercals:
             for mc in mastercals:
                 mc.create_curve()  # calculate curve from low - high point, and check middle distance
                 session.add(mc)
