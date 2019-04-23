@@ -64,6 +64,7 @@ def matching_error(error_list, reason, processor):
     :param processor: str, in ['voc', 'methane', 'picarro']
     :return: boolean, True if there's a matching error
     """
+
     return next((True for err in error_list if
                  (err.email_template.processor == processor and err.reason == reason)), False)
 
@@ -119,7 +120,7 @@ async def check_existing_errors(logger, active_errors=None):
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in check_existing_errors()')
         send_processor_email(PROC, exception=e)
-        return False
+        return active_errors
 
 
 async def main():
@@ -135,10 +136,9 @@ async def main():
 
     errors = []
 
-    errors = await asyncio.create_task(check_for_new_data(logger, active_errors=errors))
-    await asyncio.create_task(check_existing_errors(logger, active_errors=errors))
-
-    return True
+    while True:
+        errors = await asyncio.create_task(check_for_new_data(logger, active_errors=errors))
+        await asyncio.create_task(check_existing_errors(logger, active_errors=errors))
 
 
 if __name__ == '__main__':

@@ -392,7 +392,7 @@ async def plot_new_data(logger):
 
     try:
         core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
-        Plot.__table__.create(core_engine)
+        Plot.__table__.create(core_engine, checkfirst=True)
     except Exception as e:
         logger.error(f'Error {e.args} prevented connecting to the core database in plot_new_data()')
         send_processor_email(PROC, exception=e)
