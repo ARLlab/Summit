@@ -17,7 +17,7 @@ async def check_load_logs(logger):
         import os
         from summit_core import voc_logs_path as logpath
         from summit_core import voc_dir as rundir
-        from summit_core import connect_to_db, TempDir
+        from summit_core import connect_to_db, TempDir, core_dir, Config
         from summit_voc import LogFile, read_log_file, Base
 
     except ImportError as e:
@@ -92,7 +92,7 @@ async def check_load_pas(logger):
         logger.info('Running check_load_pas()')
         from summit_core import voc_LOG_path as pa_path
         from summit_core import voc_dir as rundir
-        from summit_core import connect_to_db, TempDir, check_filesize
+        from summit_core import connect_to_db, TempDir, check_filesize, core_dir, Config
         from summit_voc import Base, NmhcLine, read_pa_line, name_summit_peaks
     except ImportError as e:
         logger.error('Imports failed in check_load_logs()')
@@ -108,22 +108,41 @@ async def check_load_pas(logger):
         return False
 
     try:
+        core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+        Config.__table__.create(core_engine, checkfirst=True)
+
+        voc_config = core_session.query(Config).filter(Config.processor == PROC).one_or_none()
+
+        if not voc_config:
+            voc_config = Config(processor=PROC)  # use all default values except processor on init
+            core_session.add(voc_config)
+            core_session.commit()
+
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented configuring the core database in check_load_logs()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
         nmhc_lines = session.query(NmhcLine).order_by(NmhcLine.id).all()
         line_dates = [line.date for line in nmhc_lines]
-
 
         if pa_path.is_file():
             with TempDir(rundir):
                 new_file_size = check_filesize(pa_path)
 
-            if new_file_size > pa_file_size:
+            if new_file_size > voc_config.filesize:
+                voc_config.filesize = new_file_size
+
                 with TempDir(rundir):
                     contents = pa_path.read_text().split('\n')
+
+                new_startline = len(contents)  # get length of file before any lines omitted
 
                 contents[:] = [c for c in contents if c]  # keep only lines with information
 
                 new_lines = []
-                for line in contents[start_line:]:
+                for line in contents[voc_config.pa_startline:]:
                     try:
                         with TempDir(rundir):
                             new_lines.append(read_pa_line(line))
@@ -131,7 +150,7 @@ async def check_load_pas(logger):
                         logger.warning('A line in NMHC_PA.LOG was not processed by read_pa_line() due to an exception.')
                         logger.warning(f'That line was: {line}')
 
-                if not len(new_lines):
+                if not new_lines:
                     logger.info('No new pa lines were added.')
                     return False
 
@@ -148,23 +167,42 @@ async def check_load_pas(logger):
                         ct += 1
 
                 if ct:
+                    voc_config.pa_startline = new_startline
+                    core_session.merge(voc_config)
+                    core_session.commit()
                     session.commit()
                 else:
                     logger.info('No new pa lines were added.')
                     return False
 
-                start_line = len(contents)
-                pa_file_size = new_file_size  # set filesize to current file size
+                session.close()
+                core_session.close()
+                engine.dispose()
+                core_engine.dispose()
+
                 return True
 
             else:
+                session.close()
+                core_session.close()
+                engine.dispose()
+                core_engine.dispose()
                 logger.info('PA file was not larger, so  it was not touched.')
                 return False
 
         else:
+            session.close()
+            core_session.close()
+            engine.dispose()
+            core_engine.dispose()
             logger.critical('VOC.LOG does not exist.')
             return False
+
     except Exception as e:
+        session.close()
+        core_session.close()
+        engine.dispose()
+        core_engine.dispose()
         logger.error(f'Exception {e.args} occurred in check_load_pas()')
         send_processor_email(PROC, exception=e)
         return False
@@ -371,7 +409,7 @@ async def plot_new_data(logger):
 
     try:
         from summit_core import voc_dir as rundir
-        from summit_core import core_dir, Plot
+        from summit_core import core_dir, Plot, Config
         from summit_core import connect_to_db, TempDir, create_daily_ticks
         from summit_voc import Base, summit_voc_plot, get_dates_peak_info
         from datetime import datetime
@@ -393,6 +431,15 @@ async def plot_new_data(logger):
     try:
         core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
         Plot.__table__.create(core_engine, checkfirst=True)
+        Config.__table__.create(core_engine, checkfirst=True)
+
+        voc_config = core_session.query(Config).filter(Config.processor == PROC).one_or_none()
+
+        if not voc_config:
+            voc_config = Config(processor=PROC)  # use all default values except processor on init
+            core_session.add(voc_config)
+            core_session.commit()
+
     except Exception as e:
         logger.error(f'Error {e.args} prevented connecting to the core database in plot_new_data()')
         send_processor_email(PROC, exception=e)
@@ -415,7 +462,7 @@ async def plot_new_data(logger):
             engine.dispose()
             return False
 
-        if len(dates) != data_len:
+        if dates[-1] > voc_config.last_data_date:
 
             logger.info('New data found to be plotted.')
 
@@ -502,7 +549,8 @@ async def plot_new_data(logger):
                 benz_tol_plot = Plot(plotdir/name, True)
                 core_session.add(benz_tol_plot)
 
-            data_len = len(dates)
+            voc_config.last_data_date = dates[-1]
+            core_session.merge(voc_config)
 
             logger.info('New data plots created.')
 
