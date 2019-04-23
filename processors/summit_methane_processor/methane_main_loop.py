@@ -411,7 +411,7 @@ async def quantify_samples(logger):
                     logger.warning(f'No ambient samples were quantifiable in GcRun for {run.date}')
                     continue
 
-                if (not valid_sample(standard1)) and (not valid_sample(standard2)):
+                if (not valid_sample(standard1)) and (not valid_sample(standard2)):  # TODO Fix condition styles
                     logger.warning(f'No valid standard samples found in GcRun for {run.date}.')
                     continue
 
@@ -534,7 +534,7 @@ async def plot_new_data(logger):
 
         if last_ambient_date > ch4_config.last_data_date:
 
-            ch4_config.last_data_date = last_ambient_date[-1]
+            ch4_config.last_data_date = last_ambient_date
             core_session.merge(ch4_config)
 
             ambient_dates = [amb.date for amb in ambient_samples]
