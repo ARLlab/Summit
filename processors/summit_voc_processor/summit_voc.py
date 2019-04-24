@@ -39,8 +39,6 @@ compound_ecns = ({'ethane': 2, 'ethene': 1.9, 'propane': 3, 'propene': 2.9,
                   'n-pentane': 5, 'hexane': 6, 'benzene': 5.7, 'toluene': 6.7})
 # expected carbon numbers for mixing ratio calcs
 
-
-# TODO: Make compound windows and name_summit_peaks() use dates for different integration parameters...
 compound_windows_1 = (
     {'ethane': (1.65, 1.85),  # compound retention windows for every named compound at Summit 'name':(low, high)
      'ethene': (2.04, 2.152),
@@ -60,7 +58,6 @@ compound_windows_1 = (
      'benzene': (19.95, 20.25),
      'toluene': (23.3, 23.75)})
 
-
 compound_windows_2 = (
     {'ethane': (1.6, 1.8),  # compound retention windows for every named compound at Summit 'name':(low, high)
      'ethene': (1.95, 2.1),
@@ -79,6 +76,25 @@ compound_windows_2 = (
      'hexane': (16.2, 16.45),
      'benzene': (19.3, 19.7),
      'toluene': (22.55, 22.95)})
+
+
+class CompoundWindow(Base):
+    """
+    A CompoundWindow is the retention time specs for a compound.
+    It holds integration windows as a function of date.
+    """
+
+    __tablename__ = 'compound_windows'
+
+    id = Column(Integer, primary_key=True)
+    date_start = Column(DateTime)
+    date_end = Column(DateTime)
+    compounds = Column(MutableDict.as_mutable(JDict))
+
+    def __init__(self, date_start, date_end, compounds):
+        self.date_start = date_start
+        self.date_end = date_end
+        self.compounds = compounds
 
 
 class Crf(Base):
@@ -944,7 +960,7 @@ def get_peak_data(run):
     return (pas, rts)
 
 
-def name_summit_peaks(nmhcline):
+def name_summit_peaks(nmhcline, rt_windows):
     """
     'Simple' peak identification based on retention times. The C4 compounds get more rigorous treatment, though.
     :param nmhcline: NmhcLine object
@@ -956,7 +972,7 @@ def name_summit_peaks(nmhcline):
     compound_pools = dict()
 
     for peak in nmhcline.peaklist:
-        for compound, limits in compound_windows_1.items():
+        for compound, limits in rt_windows['compounds'].items():
             if limits[0] < peak.get_rt() < limits[1]:
                 try:  # add peak to pool for that compound and stop attempting to assign it. NEXT!
                     compound_pools[compound].append(peak)
@@ -987,8 +1003,7 @@ def name_summit_peaks(nmhcline):
 
         if find_acet:
             acet_pool = [peak for peak in nmhcline.peaklist if .6 < (peak.rt - ibut_rt) < .7]
-            # print('acet', acet_pool)
-            if len(acet_pool) == 0:
+            if not acet_pool:
                 pass
             else:
                 acet = max(acet_pool, key=lambda peak: peak.pa)  # get largest peak in possible peaks
@@ -996,8 +1011,7 @@ def name_summit_peaks(nmhcline):
 
         if find_nbut:
             nbut_pool = [peak for peak in nmhcline.peaklist if .55 < (peak.rt - ibut_rt) < .60]
-            # print('nbut', nbut_pool)
-            if len(nbut_pool) == 0:
+            if not nbut_pool:
                 pass
             else:
                 nbut = max(nbut_pool, key=lambda peak: peak.pa)  # get largest peak in possible peaks

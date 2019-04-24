@@ -89,7 +89,7 @@ async def check_load_pas(logger):
         from summit_core import voc_LOG_path as pa_path
         from summit_core import voc_dir as rundir
         from summit_core import connect_to_db, TempDir, check_filesize, core_dir, Config
-        from summit_voc import Base, NmhcLine, read_pa_line, name_summit_peaks
+        from summit_voc import Base, NmhcLine, read_pa_line, name_summit_peaks, CompoundWindow
     except ImportError as e:
         logger.error('Imports failed in check_load_logs()')
         send_processor_email(PROC, exception=e)
@@ -154,7 +154,27 @@ async def check_load_pas(logger):
 
                 else:
                     # If list isn't empty, attempt to name all peaks
-                    new_lines[:] = [name_summit_peaks(line) for line in new_lines]
+                    run_one = 1
+                    rt_windows = None
+
+                    for ind, line in enumerate(new_lines):
+
+                        if run_one or not (rt_windows.date_start < line.date < rt_windows.date_end):
+                            # get rt_windows on first iteration OR retrieve if the current sample is outside the past
+                            # window. This should prevent constant needless queries
+                            rt_windows = (session.query(CompoundWindow)
+                                          .filter(CompoundWindow.date_start < line.date < CompoundWindow.date_end)
+                                          .one_or_none())
+                            if run_one:
+                                run_one = 0
+
+                        if not rt_windows:
+                            logger.warning(f'No retention time windows found for NmhcLine for {line.date}.'
+                                           + 'It was not quantified.')
+                            run_one = 1  # reset so next sample will re-check for a Window
+                            continue
+
+                        new_lines[ind] = name_summit_peaks(line, rt_windows)
 
                 ct = 0
                 for item in new_lines:
@@ -251,6 +271,55 @@ async def load_crfs(logger):
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in load_crfs()')
         send_processor_email(PROC, exception=e)
+        return False
+
+async def add_compound_windows(logger):
+
+    try:
+        logger.info('Running add_compound_windows()')
+        from datetime import datetime
+        from summit_core import voc_LOG_path as pa_path
+        from summit_core import voc_dir as rundir
+        from summit_core import connect_to_db, TempDir, check_filesize, core_dir
+        from summit_voc import Base, NmhcLine, read_pa_line, name_summit_peaks, CompoundWindow
+        from summit_voc import compound_windows_1, compound_windows_2
+    except ImportError as e:
+        logger.error('Imports failed in add_compound_windows()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        engine, session = connect_to_db('sqlite:///summit_voc.sqlite', rundir)
+        Base.metadata.create_all(engine)
+    except Exception as e:
+        logger.error(f'Error {e.args} connecting to database in add_compound_windows()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+
+        windows_in_db = session.query(CompoundWindow).all()
+        dates_in_db = [w.date_start for w in windows_in_db]
+
+        window1 = CompoundWindow(datetime(2018,11,1), datetime(2019,4,9), compound_windows_1)  # TODO: This is a guess
+        window2 = CompoundWindow(datetime(2019,4,9), datetime(2019,12,31), compound_windows_2) # TODO: Also a guess
+
+        if window1.date_start not in dates_in_db:
+            session.add(window1)
+
+        if window2.date_start not in dates_in_db:
+            session.add(window2)
+
+        session.commit()
+        session.close()
+        engine.dispose()
+        return True
+
+    except Exception as e:
+        logger.error(f'Error {e.args} occurred in add_compound_windows()')
+        session.commit()
+        session.close()
+        engine.dispose()
         return False
 
 
