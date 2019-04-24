@@ -40,23 +40,23 @@ compound_ecns = ({'ethane': 2, 'ethene': 1.9, 'propane': 3, 'propene': 2.9,
 # expected carbon numbers for mixing ratio calcs
 
 compound_windows = (
-    {'ethane': (1.65, 1.85),  # compound retention windows for every named compound at Summit 'name':(low, high)
-     'ethene': (2.04, 2.152),
-     'propane': (2.85, 3.1),
-     'propene': (5.75, 5.95),
-     'i-butane': (7.3, 7.6),
+    {'ethane': (1.6, 1.8),  # compound retention windows for every named compound at Summit 'name':(low, high)
+     'ethene': (1.95, 2.1),
+     'propane': (2.6, 3.1),
+     'propene': (5.32, 5.58),
+     'i-butane': (6.85, 7.1),
      '4b': (0, 0),  # don't address 4b, acetylene, or n-butane for now
      'acetylene': (0, 0),
      'n-butane': (0, 0),
-     '5a': (9.5, 10.3),
-     '5b': (11.25, 11.65),
-     '5c': (12.48, 12.55),
-     'i-pentane': (12.60, 12.78),
-     'cfc': (12.80, 13),
-     'n-pentane': (13, 13.4),
-     'hexane': (16.9, 17.05),
-     'benzene': (19.95, 20.25),
-     'toluene': (23.3, 23.75)})
+     '5a': (9, 9.5),
+     '5b': (10.6, 11.1),
+     '5c': (11.75, 11.95),
+     'i-pentane': (11.95, 12.13),
+     'cfc': (12.13, 12.32),
+     'n-pentane': (12.35, 12.7),
+     'hexane': (16.2, 16.45),
+     'benzene': (19.3, 19.7),
+     'toluene': (22.55, 22.95)})
 
 
 class Crf(Base):
@@ -216,8 +216,6 @@ class NmhcCorrection(NmhcLine):
 
     nmhcline_con = relationship(NmhcLine, uselist=False, back_populates='nmhc_corr_con')
     correction_date = association_proxy('nmhcline_con', 'date')  # pass date from line to here
-
-    # TODO:
 
     def __init__(self, nmhcline, peaks, res_flag, flag):
         # super().__init__(nmhcline.date, peaks) # nmhcline.date, peaks
