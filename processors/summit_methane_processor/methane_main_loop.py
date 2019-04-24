@@ -407,11 +407,11 @@ async def quantify_samples(logger):
                 standard1 = search_for_attr_value(samples, 'sample_num', 2)
                 standard2 = search_for_attr_value(samples, 'sample_num', 7)
 
-                if len(ambients) is 0:
+                if not ambients:
                     logger.warning(f'No ambient samples were quantifiable in GcRun for {run.date}')
                     continue
 
-                if (not valid_sample(standard1)) and (not valid_sample(standard2)):  # TODO Fix condition styles
+                if (not valid_sample(standard1)) and (not valid_sample(standard2)):
                     logger.warning(f'No valid standard samples found in GcRun for {run.date}.')
                     continue
 
