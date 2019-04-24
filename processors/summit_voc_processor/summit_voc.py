@@ -39,7 +39,29 @@ compound_ecns = ({'ethane': 2, 'ethene': 1.9, 'propane': 3, 'propene': 2.9,
                   'n-pentane': 5, 'hexane': 6, 'benzene': 5.7, 'toluene': 6.7})
 # expected carbon numbers for mixing ratio calcs
 
-compound_windows = (
+
+# TODO: Make compound windows and name_summit_peaks() use dates for different integration parameters...
+compound_windows_1 = (
+    {'ethane': (1.65, 1.85),  # compound retention windows for every named compound at Summit 'name':(low, high)
+     'ethene': (2.04, 2.152),
+     'propane': (2.85, 3.1),
+     'propene': (5.75, 5.95),
+     'i-butane': (7.3, 7.6),
+     '4b': (0, 0),  # don't address 4b, acetylene, or n-butane for now
+     'acetylene': (0, 0),
+     'n-butane': (0, 0),
+     '5a': (9.5, 10.3),
+     '5b': (11.25, 11.65),
+     '5c': (12.48, 12.55),
+     'i-pentane': (12.60, 12.78),
+     'cfc': (12.80, 13),
+     'n-pentane': (13, 13.4),
+     'hexane': (16.9, 17.05),
+     'benzene': (19.95, 20.25),
+     'toluene': (23.3, 23.75)})
+
+
+compound_windows_2 = (
     {'ethane': (1.6, 1.8),  # compound retention windows for every named compound at Summit 'name':(low, high)
      'ethene': (1.95, 2.1),
      'propane': (2.6, 3.1),
@@ -934,7 +956,7 @@ def name_summit_peaks(nmhcline):
     compound_pools = dict()
 
     for peak in nmhcline.peaklist:
-        for compound, limits in compound_windows.items():
+        for compound, limits in compound_windows_1.items():
             if limits[0] < peak.get_rt() < limits[1]:
                 try:  # add peak to pool for that compound and stop attempting to assign it. NEXT!
                     compound_pools[compound].append(peak)
