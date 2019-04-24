@@ -406,7 +406,6 @@ async def plot_new_data(logger):
 
         logger.info('New data plots were created.')
 
-        last_data_point = newest_data_point
         session.close()
         engine.dispose()
 
