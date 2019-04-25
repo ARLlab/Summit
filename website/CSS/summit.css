@@ -1,4 +1,5 @@
 /* Main CSS */
+
 .container {
   max-width: 900px; }
 .header {
@@ -78,6 +79,66 @@
     max-width:100%;
     max-height:100%}
 
+  /* Slideshow */
+* {box-sizing:border-box}
+
+.slideshow-container {
+  max-width: 900px;
+  position: relative;
+  margin: auto; }
+.mySlides {
+  display: none; }
+.prev, .next {
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  width: auto;
+  margin-top: -1.8rem;
+  padding: 2rem;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+  transition: 0.6s ease;
+  border-radius: 0 3px 3px 0;
+  user-select: none; }
+.next {
+  right: 0;
+  border-radius: .3rem 0 0 .3rem; }
+.prev {
+  left: 0;
+  border-radius: .3rem 0 0 .3rem; }
+.prev:hover, .next:hover {
+  background-color: rgba(0,0,0,0.8); }
+.textSlides {
+  color: #f2f2f2;
+  font-size: 1.5rem;
+  padding: .8rem 1.2rem;
+  position: absolute;
+  bottom: 0.8rem;
+  width: 100%
+  text-align: center; }
+.dot {
+  cursor: pointer;
+  height: 1.5rem;
+  width: 1.5rem;
+  margin: 0 0.2rem;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background-color 0.6s ease; }
+.fade {
+  -webkit-animation-name: fade;
+  -webkit-animation-duration: 1.5s;
+  animation-name: fade;
+  animation-duration: 1.5s; }
+
+@-webkit-keyframes fade {
+  from {opacity: .4}
+  to {opacity: 1} }
+@keyframes fade {
+  from {opacity: .4}
+  to {opacity: 1} }
+
 /* Larger than phone */
 @media (min-width: 550px) {
   .header {
@@ -150,14 +211,3 @@
       margin-left: 8rem;
       width:24rem;
       height:20rem; }
-
-  /* Slideshow */
-  section.section {
-    background: transparent;}
-  .slideshow {
-    box-shadow: 0px 0px 40px rgba(0,0,0,.3); }
-  .slide img {
-      max-width: 100%;
-      width: 100%; }
-  .slick-prev:before, .slick-next:before {
-    color: black; }
