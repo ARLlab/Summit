@@ -25,23 +25,55 @@
   <link rel="stylesheet" href="http://instaar.colorado.edu/arl/res_parameters/skeleton.css">
   <link rel="stylesheet" href="http://instaar.colorado.edu/arl/res_parameters/summit.css">
 
-  <!-- Scripts
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-  <script src="js/site.js"></script>
-
   <!-- Favicon
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <link rel="icon" type="image/png" href="http://instaar.colorado.edu/arl/pictures/data/summit/summit1.jpg">
 
 <div class="container"> <!-- Everything inside main container -->
 
-  <!-- Title / Header -->
-  <section class="header">
-    <img class="header-img" alt="<Image not displaying: Header Image>" src="http://instaar.colorado.edu/arl/res_parameters/images/SummitHeader.jpg">
-    <h2 class="title">Methane, Carbon Monoxide, Carbon Dioxide, and Volatile Organic Compounds at GEOSummit in Greenland</h2>
-    <a class="button button-primary" href="http://instaar.colorado.edu/arl/index.html" >ARL Homepage</a>
-  </section>
+    <!-- Title / Header -->
+    <section class="header">
+
+      <!-- Slideshow Images -->
+      <div class="slideshow-container">
+        <div class="mySlides fade">
+          <img src="http://instaar.colorado.edu/arl/res_parameters/images/SummitHeader.jpg" style="width:100%"></img>
+          <div class="textSlides"> Some of the Summit Team </div>
+        </div>
+        <div class="mySlides fade">
+          <img src="https://www.geosummit.org/sites/default/files/2017-11/vision-nsf-summit-station.jpg" style="width:100%"></img>
+          <div class="textSlides"> The Big House </div>
+        </div>
+        <div class="mySlides fade">
+          <img src="http://instaar.colorado.edu/arl/NOAA%20GAW/Chrom_header.jpg" style="width:100%"></img>
+          <div class="textSlides"> NMHC Chromatogram </div>
+        </div>
+        <!-- Slideshow javascript click --->
+        <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
+        <a class="next" onclick="plusSlides(1)">&#10095;</a>
+
+      </div>
+      <!-- Slideshow Buttons -->
+      <div style="text-align:center">
+        <span class="dot" onclick="currentSlide(1)"></span>
+        <span class="dot" onclick="currentSlide(2)"></span>
+        <span class="dot" onclick="currentSlide(3)"></span>
+      </div>
+
+      <!-- Header text & Logos -->
+      <h2 class="title">Atmospheric Trace Gases at GEOSummit</h2>
+      <h5> Near Real Time Data from a Picarro Analyzer & GC-FID of Methane, CO, CO2, and Selected VOC's </h4>
+        <div class="value-bars row">
+          <div class="six columns value-bar">
+            <img class="value-image3" src="http://instaar.colorado.edu/arl/res_parameters/images/instaar_logo_transparent.png" alt="INSTAAR Logo" </img>
+            <a class="button button-primary" href="http://instaar.colorado.edu/arl/index.html" >ARL Homepage</a>
+          </div>
+          <div class="six columns value-bar">
+            <img class="value-image2" src="http://instaar.colorado.edu/arl/res_parameters/images/NSF_logo.png" alt="NSF Logo" </img>
+            <a class="button button-primary" href="https://www.geosummit.org/">Summit Station</a>
+          </div>
+        </div>
+      </section>
 
     <!-- Navigation Bar -->
     <div class="navbar-spacer"></div>
@@ -187,8 +219,10 @@
       <p> Other team members working on this project include:</p>
         <li>Jacques Hueber - Professional Scientist</li>
         <li>Brendan Blanchard - Professional Research Assistant</li>
-        <li>Hélène Angot - Post-doctoral Scientist</li>
-        <li>(Additional non-ARL employees?)</li>
+        <li>Hélène Angot - Postdoctoral Associate</li>
+        <li>Louisa Emmons (NCAR, Boulder)</li>
+        <li>Maria Val Martin (University of Sheffield, UK)</li>
+        <li>    Christine Wiedinmyer (CIRES, CU Boulder)</li>
         <li>Jashan Chopra - Undergraduate Assistant</li>
     </div>
 
@@ -199,4 +233,7 @@
     </div>
 
   </div>
+
+  <!-- Scripts -->
+  <script src="http://instaar.colorado.edu/arl/res_parameters/slideshow.js"></script>
 </html>
