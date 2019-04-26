@@ -19,7 +19,7 @@ def find_project_dir(runpath):
     """
     runpath = runpath.resolve()
 
-    if runpath.name == "summit_master":
+    if runpath.name == "Summit" or runpath.name == 'summit_master':
         return runpath
     else:
         runpath = runpath / '..'
