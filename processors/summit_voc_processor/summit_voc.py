@@ -161,6 +161,9 @@ class Peak(Base):
     line_id = Column(Integer, ForeignKey('nmhclines.id'))
     correction_id = Column(Integer, ForeignKey('nmhc_corrections.correction_id'))
 
+    log_id = Column(Integer, ForeignKey('logfiles.id'))
+    log_con = relationship('LogFile', foreign_keys=[log_id], back_populates='peaks')
+
     def __init__(self, name, pa, rt):
         self.name = name.lower()
         self.pa = pa
@@ -219,8 +222,16 @@ class NmhcLine(Base):
     status = Column(String)
 
     run_con = relationship('GcRun', uselist=False, back_populates='nmhc_con')
-    nmhc_corr_con = relationship('NmhcCorrection', uselist=False, back_populates='nmhcline_con')
+
+    # log_id = Column(Integer, ForeignKey('logfiles.id'))
+    log_con = relationship('LogFile', back_populates='line_con')
+
+    # data_id = Column(Integer, ForeignKey('data.id'))
+    data_con = relationship('Datum', back_populates='line_con')
+
     nmhc_corr_id = Column(Integer, ForeignKey('nmhc_corrections.correction_id'))
+    nmhc_corr_con = relationship('NmhcCorrection', uselist=False, back_populates='nmhcline_con')
+
 
     def __init__(self, date, peaks):
         self.date = date
@@ -360,6 +371,13 @@ class LogFile(Base):
 
     run_con = relationship('GcRun', uselist=False, back_populates='log_con')
 
+    line_id = Column(Integer, ForeignKey('nmhclines.id'))
+    line_con = relationship('NmhcLine', uselist=False, foreign_keys=[line_id], back_populates='log_con')
+
+    data_con = relationship('Datum', uselist=False, back_populates='log_con')
+
+    peaks = relationship('Peak', back_populates='log_con')
+
     def __init__(self, param_dict):
         # These are specified since a log_dict does not necessarily contain
         # every parameter, but all should be set, even if None
@@ -444,19 +462,20 @@ class GcRun(Base):
 
     nmhcline_id = Column(Integer, ForeignKey('nmhclines.id'))
     nmhc_con = relationship('NmhcLine', uselist=False, foreign_keys=[nmhcline_id], back_populates='run_con')
+
     peaks = association_proxy('nmhc_con', 'peaklist')
     date_end = association_proxy('nmhc_con', 'date')  # pass date from NMHC to GcRun
 
     logfile_id = Column(Integer, ForeignKey('logfiles.id'))
     log_con = relationship('LogFile', uselist=False, foreign_keys=[logfile_id], back_populates='run_con')
+
     date_start = association_proxy('log_con', 'date')  # pass date from LogFile to GcRun
 
     for attr in log_params_list:
         vars()[attr] = association_proxy('log_con', attr)  # set association_proxy(s)
     # for all log parameters to pass them to this GC instance
 
-    data_id = Column(Integer, ForeignKey('data.id'))
-    data_con = relationship('Datum', uselist=False, foreign_keys=[data_id], back_populates='run_con')
+    data_con = relationship('Datum', uselist=False, back_populates='run_con')
 
     crfs = relationship('Crf', uselist=False)
     crf_id = Column(Integer, ForeignKey('crfs.id'))
@@ -541,7 +560,14 @@ class Datum(Base):
     qc = Column(Integer)
     notes = Column(String)
 
-    run_con = relationship('GcRun', uselist=False, back_populates='data_con')
+    run_id = Column(Integer, ForeignKey('gcruns.id'))
+    run_con = relationship('GcRun', uselist=False, foreign_keys=[run_id], back_populates='data_con')
+
+    log_id = Column(Integer, ForeignKey('logfiles.id'))
+    log_con = relationship('LogFile', uselist=False, foreign_keys=[log_id], back_populates='data_con')
+
+    line_id = Column(Integer, ForeignKey('nmhclines.id'))
+    line_con = relationship('NmhcLine', uselist=False, foreign_keys=[line_id], back_populates='data_con')
 
     for attr in gcrun_params_list:
         vars()[attr] = association_proxy('run_con', attr)  # set association_proxy(s)
@@ -782,6 +808,8 @@ def match_log_to_pa(LogFiles, NmhcLines):
             matched_line = search_for_attr_value(NmhcLines, 'date', match)  # pull matching NmhcLine
 
             runs.append(GcRun(log, matched_line))
+            log.line_con = matched_line
+            log.peaks = matched_line.peaklist
             log.status = 'married'
             matched_line.status = 'married'
         else:
@@ -893,6 +921,9 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
     if dates is None:  # dates supplied by individual compounds
         for compound, val_list in compound_dict.items():
             if val_list[0] and val_list[1]:
+                print(compound)
+                print(len(val_list[0]))
+                print(len(val_list[1]))
                 assert len(val_list[0]) > 0 and len(val_list[0]) == len(
                     val_list[1]), 'Supplied dates were empty or lengths did not match'
                 ax.plot(val_list[0], val_list[1], '-o')
@@ -972,7 +1003,7 @@ def name_summit_peaks(nmhcline, rt_windows):
     compound_pools = dict()
 
     for peak in nmhcline.peaklist:
-        for compound, limits in rt_windows['compounds'].items():
+        for compound, limits in rt_windows.compounds.items():
             if limits[0] < peak.get_rt() < limits[1]:
                 try:  # add peak to pool for that compound and stop attempting to assign it. NEXT!
                     compound_pools[compound].append(peak)

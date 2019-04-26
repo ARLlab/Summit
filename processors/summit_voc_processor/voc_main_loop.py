@@ -163,7 +163,7 @@ async def check_load_pas(logger):
                             # get rt_windows on first iteration OR retrieve if the current sample is outside the past
                             # window. This should prevent constant needless queries
                             rt_windows = (session.query(CompoundWindow)
-                                          .filter(CompoundWindow.date_start < line.date < CompoundWindow.date_end)
+                                          .filter((CompoundWindow.date_start < line.date) & (CompoundWindow.date_end > line.date))
                                           .one_or_none())
                             if run_one:
                                 run_one = 0
@@ -424,7 +424,7 @@ async def integrate_runs(logger):
     try:
         logger.info('Running integrate_runs()')
         gc_runs = (session.query(GcRun)
-                  .filter(GcRun.data_id == None)
+                  .filter(GcRun.data_con == None)
                   .order_by(GcRun.id).all())  # get all un-integrated runs
 
         crfs = session.query(Crf).order_by(Crf.id).all()  # get all crfs
@@ -456,7 +456,7 @@ async def integrate_runs(logger):
         return True
 
     except Exception as e:
-        logger.error('Exception {e.args} occurred in integrate_runs()')
+        logger.error(f'Exception {e.args} occurred in integrate_runs()')
         send_processor_email(PROC, exception=e)
         session.close()
         engine.dispose()
@@ -660,6 +660,7 @@ async def main():
         return
 
     try:
+        await asyncio.create_task(add_compound_windows(logger))
         new_logs = await asyncio.create_task(check_load_logs(logger))
         new_lines = await asyncio.create_task(check_load_pas(logger))
 
