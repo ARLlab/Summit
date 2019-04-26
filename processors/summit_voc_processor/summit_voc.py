@@ -821,6 +821,10 @@ def match_log_to_pa(LogFiles, NmhcLines):
 def get_dates_peak_info(session, compound, info, date_start=None, date_end=None):
     """
 
+    TODO: This can be made into a much more comprehensive function, essentially a get_date_peak_table()?
+        It should take a list of peak info and a list of compounds and return them as a long-ass tuple.
+        It'll involve something akin to dynamic aliases. See i/n pentane section of plot_new_data() in voc_main_loop.py
+
     :param session: An active sqlalchemy session object
     :param compound: string, the compound to be retrieved
     :param info: string, the item from ['mr','pa', 'rt'] to be retrieved

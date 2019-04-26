@@ -563,8 +563,22 @@ async def plot_new_data(logger):
                 core_session.add(c4_plot)
 
             with TempDir(plotdir):  ## PLOT i-pentane and n-pentane, & ratio
-                ipent_mrs, ipent_dates = get_dates_peak_info(session, 'i-pentane', 'mr', date_start=date_ago)
-                npent_mrs, npent_dates = get_dates_peak_info(session, 'n-pentane', 'mr', date_start=date_ago)
+                from summit_voc import Peak, LogFile
+                from sqlalchemy.orm import aliased
+                ipentane = aliased(Peak)
+                npentane = aliased(Peak)
+
+                data = (session.query(LogFile.date, ipentane.mr, npentane.mr)
+                        .join(ipentane, ipentane.log_id == LogFile.id)
+                        .join(npentane, npentane.log_id == LogFile.id)
+                        .filter(ipentane.name == 'i-pentane')
+                        .filter(npentane.name == 'n-pentane')
+                        .order_by(LogFile.date)
+                        .all())
+
+                pentane_dates = [d.date for d in data]
+                ipent_mrs = [d[1] for d in data]
+                npent_mrs =[d[2] for d in data]
 
                 inpent_ratio = []
 
@@ -577,8 +591,8 @@ async def plot_new_data(logger):
                         else:
                             inpent_ratio.append(i / n)
 
-                    name = summit_voc_plot(None, ({'i-Pentane': [ipent_dates, ipent_mrs],
-                                            'n-Pentane': [npent_dates, npent_mrs]}),
+                    name = summit_voc_plot(pentane_dates, ({'i-Pentane': [None, ipent_mrs],
+                                            'n-Pentane': [None, npent_mrs]}),
                                     limits={'right': date_limits.get('right', None),
                                             'left': date_limits.get('left', None),
                                             'bottom': 0},
