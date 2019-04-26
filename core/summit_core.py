@@ -10,7 +10,24 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime
 
 Base = declarative_base()
 
-project_dir = Path(os.getcwd()) / '..'
+
+def find_project_dir(runpath):
+    """
+    Scans up directories until it finds the project folder.
+    :param runpath: pathlib.Path, where summit_core is called from.
+    :return: pathlib.Path, the base project directory
+    """
+    runpath = runpath.resolve()
+
+    if runpath.name == "summit_master":
+        return runpath
+    else:
+        runpath = runpath / '..'
+        return find_project_dir(runpath)
+
+
+project_dir = find_project_dir(Path(os.getcwd()))
+
 voc_dir = project_dir / 'processors/summit_voc_processor'
 picarro_dir = project_dir / 'processors/summit_picarro_processor'
 methane_dir = project_dir / 'processors/summit_methane_processor'
