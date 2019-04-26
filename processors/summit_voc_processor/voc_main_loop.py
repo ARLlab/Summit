@@ -602,7 +602,7 @@ async def plot_new_data(logger):
                     in_pent_plot = Plot(plotdir/name, True)
                     core_session.add(in_pent_plot)
 
-                    name = summit_voc_plot(None, ({'i/n Pentane ratio': [ipent_dates, inpent_ratio]}),
+                    name = summit_voc_plot(pentane_dates, ({'i/n Pentane ratio': [None, inpent_ratio]}),
                                     limits={'right': date_limits.get('right', None),
                                             'left': date_limits.get('left', None),
                                             'bottom': 0,

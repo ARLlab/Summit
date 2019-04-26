@@ -833,15 +833,18 @@ def get_dates_peak_info(session, compound, info, date_start=None, date_end=None)
     :return: info, dates; lists of the requested info and corresponding dates
     """
 
-    peak_info = getattr(Peak, info, None)
+    peak_attr = getattr(Peak, info, None)
 
-    if peak_info is None:
+    if peak_attr is None:
         return None, None
 
     if date_start is None and date_end is None:
         try:
-            peak_info = (session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
-                         .join(NmhcLine).join(GcRun).join(LogFile).order_by(LogFile.date))  # get everything
+            peak_info = (session.query(peak_attr, GcRun.date)
+                         .join(LogFile, LogFile.id == Peak.log_id)
+                         .join(GcRun, GcRun.id == LogFile.id)
+                         .filter(Peak.name == compound, GcRun.type == 'ambient')
+                         .order_by(LogFile.date))  # get everything
             info, dates = zip(*peak_info.all())
         except ValueError:
             info = None
@@ -851,9 +854,12 @@ def get_dates_peak_info(session, compound, info, date_start=None, date_end=None)
 
     elif date_start is None:
         try:
-            peak_info = (session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
-                         .join(NmhcLine).join(GcRun).join(LogFile)
-                         .filter(LogFile.date < date_end).order_by(LogFile.date))  # get only before the end date given
+            peak_info = (session.query(peak_attr, GcRun.date)
+                         .join(LogFile, LogFile.id == Peak.log_id)
+                         .join(GcRun, GcRun.id == LogFile.id)
+                         .filter(Peak.name == compound, GcRun.type == 'ambient')
+                         .filter(LogFile.date < date_end)
+                         .order_by(LogFile.date))  # get only before the end date given
 
             info, dates = zip(*peak_info.all())
         except ValueError:
@@ -864,10 +870,13 @@ def get_dates_peak_info(session, compound, info, date_start=None, date_end=None)
 
     elif date_end is None:
         try:
-            peak_info = (session.query(peak_info, LogFile.date)
+            peak_info = (session.query(peak_attr, GcRun.date)
+                         .join(LogFile, LogFile.id == Peak.log_id)
+                         .join(GcRun, GcRun.id == LogFile.id)
                          .filter(Peak.name == compound, GcRun.type == 'ambient')
-                         .join(NmhcLine).join(GcRun).join(LogFile)
-                         .filter(LogFile.date > date_start).order_by(LogFile.date))
+                         .filter(LogFile.date > date_start)
+                         .order_by(LogFile.date))
+
             info, dates = zip(*peak_info.all())  # get only after the start date given
         except ValueError:
             info = None
@@ -877,10 +886,13 @@ def get_dates_peak_info(session, compound, info, date_start=None, date_end=None)
 
     else:
         try:
-            peak_info = (session.query(peak_info, LogFile.date).filter(Peak.name == compound, GcRun.type == 'ambient')
-                .join(NmhcLine).join(GcRun).join(LogFile)
-                .filter(LogFile.date.between(date_start, date_end)).order_by(
-                LogFile.date))  # get between date bookends (inclusive beginning!)
+            peak_info = (session.query(peak_attr, GcRun.date)
+                         .join(LogFile, LogFile.id == Peak.log_id)
+                         .join(GcRun, GcRun.id == LogFile.id)
+                         .filter(Peak.name == compound, GcRun.type == 'ambient')
+                         .filter(LogFile.date.between(date_start, date_end))
+                         .order_by(LogFile.date))  # get between date bookends (inclusive beginning!)
+
             info, dates = zip(*peak_info.all())
         except ValueError:
             info = None
