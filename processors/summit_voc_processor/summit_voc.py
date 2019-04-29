@@ -937,9 +937,6 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
     if dates is None:  # dates supplied by individual compounds
         for compound, val_list in compound_dict.items():
             if val_list[0] and val_list[1]:
-                print(compound)
-                print(len(val_list[0]))
-                print(len(val_list[1]))
                 assert len(val_list[0]) > 0 and len(val_list[0]) == len(
                     val_list[1]), 'Supplied dates were empty or lengths did not match'
                 ax.plot(val_list[0], val_list[1], '-o')
