@@ -1,32 +1,7 @@
 """
 This will be the main script for all processing.
-
-TODO: Some random counter variables and such are not stored in DB, those should go to config tables per processor
-
-_______Things that need config/DB Storage:
-Best way to do this? ORM seems overpowered and possibly not helpful?
-
-VOCs:
-pa_file_size: bytesize of the pa file to determine if it's newer
-start_line: line to start reading from; saves rejecting thousands of already-in-db lines later
-data_len: Length of data for VOC plotting to determine new data; should be changed to most recent data date instead
-days_to_plot:
-
-CH4:
-start_size, start_line: bytesize of the PA file and line to start reading from
-data_len: Length of data for VOC plotting to determine new data; should be changed to most recent data date instead
-days_to_plot:
-
-Picarro:
-days_to_plot:
-date_ago: this even used?
-last_data_point: should be date
-
-
-
-
-
 """
+
 import sys
 
 from summit_core import processor_dirs
@@ -48,6 +23,7 @@ async def main():
 		from summit_core import configure_logger
 		logger = configure_logger(rundir, __name__)
 		errors = []  # initiate with no errors
+
 	except Exception as e:
 		print(f'Error {e.args} prevented logger configuration.')
 		send_processor_email('MAIN', exception=e)
