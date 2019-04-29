@@ -901,7 +901,8 @@ def get_dates_peak_info(session, compound, info, date_start=None, date_end=None)
         return info, dates
 
 
-def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None):
+def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None,
+                    y_label_str='Mixing Ratio (ppbv)'):
     """
     :param dates: list, of Python datetimes; if set, this applies to all compounds.
         If None, each compound supplies its own date values
@@ -976,7 +977,7 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
     ax.tick_params(axis='both', which='major', size=8, width=2, labelsize=15)
     f1.set_size_inches(11.11, 7.406)
 
-    ax.set_ylabel('Mixing Ratio (ppbv)', fontsize=20)
+    ax.set_ylabel(y_label_str, fontsize=20)
     ax.set_title(f'{comp_list}', fontsize=24, y=1.02)
     ax.legend(compound_dict.keys())
 

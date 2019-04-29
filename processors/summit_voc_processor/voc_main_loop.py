@@ -608,7 +608,8 @@ async def plot_new_data(logger):
                                             'bottom': 0,
                                             'top': 3},
                                     major_ticks=major_ticks,
-                                    minor_ticks=minor_ticks)
+                                    minor_ticks=minor_ticks,
+                                    y_label_str='')
 
                     in_pent_ratio_plot = Plot(plotdir/name, True)
                     core_session.add(in_pent_ratio_plot)
