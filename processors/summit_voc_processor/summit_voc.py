@@ -159,7 +159,7 @@ class Peak(Base):
     qc = Column(Integer)
 
     line_id = Column(Integer, ForeignKey('nmhclines.id'))
-    correction_id = Column(Integer, ForeignKey('nmhc_corrections.correction_id'))
+    correction_id = Column(Integer, ForeignKey('nmhc_corrections.id'))
 
     log_id = Column(Integer, ForeignKey('logfiles.id'))
     log_con = relationship('LogFile', foreign_keys=[log_id], back_populates='peaks')
@@ -229,8 +229,8 @@ class NmhcLine(Base):
     # data_id = Column(Integer, ForeignKey('data.id'))
     data_con = relationship('Datum', back_populates='line_con')
 
-    nmhc_corr_id = Column(Integer, ForeignKey('nmhc_corrections.correction_id'))
-    nmhc_corr_con = relationship('NmhcCorrection', uselist=False, back_populates='nmhcline_con')
+    correction_id = Column(Integer, ForeignKey('nmhc_corrections.id'))
+    correction = relationship('NmhcCorrection', uselist=False, back_populates='nmhcline')
 
 
     def __init__(self, date, peaks):
@@ -247,38 +247,35 @@ class NmhcLine(Base):
         return f'<NmhcLine for {iso}>'
 
 
-class NmhcCorrection(NmhcLine):
+class NmhcCorrection(Base):
     """
-    A subclass of NmhcLine, this is linked to one NmhcLine, and is tied to a new table. All corrections are therefore
-    also objects and recorded.
+    Similar to an NmhcLine, but loaded manually, created with peak corrections.
 
-    status: str, either 'unapplied' or 'applied', rather than single/married as normal NmhcLines are
+    status: str, either 'unapplied' or 'applied', rather than single/married as normal NmhcLines are.
     """
 
     __tablename__ = 'nmhc_corrections'
 
-    correction_id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     peaklist = relationship('Peak', order_by=Peak.id)
-
-    res_flag = Column(Integer)  # flag from the column in ambient_results_master.xlsx
     flag = Column(Integer)  # undetermined flagging system... TODO:
+    status = Column(String)
+    date = Column(DateTime)
 
-    nmhcline_con = relationship(NmhcLine, uselist=False, back_populates='nmhc_corr_con')
-    correction_date = association_proxy('nmhcline_con', 'date')  # pass date from line to here
+    nmhcline = relationship(NmhcLine, uselist=False, back_populates='correction')
 
-    def __init__(self, nmhcline, peaks, res_flag, flag):
-        # super().__init__(nmhcline.date, peaks) # nmhcline.date, peaks
+    def __init__(self, nmhcline, peaks, flag):
         self.peaklist = peaks
-        self.nmhcline_con = nmhcline
+        self.nmhcline = nmhcline
         self.status = 'unapplied'  # all corrections are created as unapplied
-        self.res_flag = res_flag
         self.flag = flag
+        self.date = nmhcline.date
 
     def __str__(self):
-        return f'<NmhcCorrection for {self.correction_date} with {len(self.peaklist)} peaks>'
+        return f'<NmhcCorrection for {self.date} with {len(self.peaklist)} peaks>'
 
     def __repr__(self):
-        return f'<NmhcCorrection for {self.correction_date} with {len(self.peaklist)} peaks>'
+        return f'<NmhcCorrection for {self.date} with {len(self.peaklist)} peaks>'
 
 
 class LogFile(Base):
