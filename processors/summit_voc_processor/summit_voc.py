@@ -230,8 +230,7 @@ class NmhcLine(Base):
     data_con = relationship('Datum', back_populates='line_con')
 
     correction_id = Column(Integer, ForeignKey('nmhc_corrections.id'))
-    correction = relationship('NmhcCorrection', uselist=False, back_populates='nmhcline')
-
+    correction = relationship('NmhcCorrection', foreign_keys=[correction_id], uselist=False, back_populates='nmhcline')
 
     def __init__(self, date, peaks):
         self.date = date
@@ -257,10 +256,10 @@ class NmhcCorrection(Base):
     __tablename__ = 'nmhc_corrections'
 
     id = Column(Integer, primary_key=True)
+    date = Column(DateTime, unique=True)
     peaklist = relationship('Peak', order_by=Peak.id)
     flag = Column(Integer)  # undetermined flagging system... TODO:
     status = Column(String)
-    date = Column(DateTime)
 
     nmhcline = relationship(NmhcLine, uselist=False, back_populates='correction')
 
