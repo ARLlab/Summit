@@ -73,11 +73,16 @@
   max-width:110%;
   max-height:110%}
 .header-img {
-    display: block;
-    text-align: center;
-    margin: 1rem auto 0;
-    max-width:100%;
-    max-height:100%}
+  display: block;
+  text-align: center;
+  margin: 1rem auto 0;
+  max-width:100%;
+  max-height:100%}
+.illustration img {
+  max-width: 35%;
+  display: block;
+  text-align: center;
+  margin: 1rem auto 0 }
 
   /* Slideshow */
 * {box-sizing:border-box}
@@ -153,6 +158,8 @@
     margin-bottom: 7rem; }
   .value-img {
     margin-bottom: 1rem; }
+  .value-img2 {
+    margin-bottom: 1rem; }
 .docs-section {
   padding: 6rem 0; }
 
@@ -201,18 +208,3 @@
   /* Re-overiding the width 100% declaration to match size of % based container */
   .has-docked-nav .navbar > .container {
     width: 80%; }
-  .value-image2 {
-      display: block;
-      text-align: center;
-      margin: 2rem auto 0;
-      margin-bottom: 1rem;
-      width:20rem;
-      height:20rem; }
-  .value-image3 {
-      display: block;
-      text-align: center;
-      margin: 2rem auto 0;
-      margin-bottom: 1rem;
-      margin-left: 8rem;
-      width:24rem;
-      height:20rem; }
