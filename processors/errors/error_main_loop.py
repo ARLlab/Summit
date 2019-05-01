@@ -91,7 +91,7 @@ async def check_for_new_data(logger, active_errors=None):
                     active_errors.append(Error(reason, new_data_found, NewDataEmail(sender, proc, last_data_time)))
 
         return active_errors
-        
+
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in check_for_new_data()')
         send_processor_email(PROC, exception=e)
@@ -107,14 +107,17 @@ async def check_existing_errors(logger, active_errors=None):
             return False
 
         for ind, err in enumerate(active_errors):
-            if err.reason is 'no new data':
+            if err.reason == 'no new data':
+                # TODO : NMHC no-new-data email appeared to resolve itself without sending a resolution
+                    # This may be resolved now, switch 'is "no_new_data"' ' to ' == "no_new_data"'
                 if err.is_resolved(processor=err.email_template.processor,
                                    last_data_time=err.email_template.last_data_time, logger=logger):
                     active_errors[ind] = None
             else:
+                logger.info('Error aside from "no new data" was found.')
                 pass  # is_resolved() handles logging in both cases
 
-        active_errors = [err for err in active_errors if err is not None]
+        active_errors = [err for err in active_errors if err]
 
         return active_errors
 

@@ -36,9 +36,10 @@ class Error():
         logger.error(f'Error for {self.reason} intiated with error ID: {self.id}')
         self.email_template.send()
 
-    def is_resolved(self, *args):
-        if self.resolution_function(*args):
+    def is_resolved(self, **kwargs):
+        if self.resolution_function(**kwargs):
             self.resolve()
+            logger.error(f'Error for {self.reason} with error ID {self.id} was checked and resolved.')
             return True
         else:
             logger.error(f'Error for {self.reason} with error ID {self.id} was checked and is un-resolved.')
