@@ -47,7 +47,10 @@ def get_last_processor_date(processor, logger):
 
     with TempDir(directory):
         engine, session = connect_to_db(f'sqlite:///summit_{processor}.sqlite', directory)
-        val = session.query(DataType.date).order_by(DataType.date.desc()).first()[0]
+        val = session.query(DataType.date).order_by(DataType.date.desc()).first()
+
+        if val:
+            val = val[0]
 
     session.close()
     engine.dispose()
@@ -79,9 +82,13 @@ async def check_for_new_data(logger, active_errors=None):
         logger.info('Running check_for_new_data()')
         # TODO : The time limits generated below are gross estimates
         # TODO: Not running picarro at the moment, ammend below
-        for proc, time_limit in zip(['voc', 'methane'], [dt.timedelta(hours=hr) for hr in [8, 3, 5]]):
+        for proc, time_limit in zip(['voc', 'methane', 'picarro'], [dt.timedelta(hours=hr) for hr in [8, 3, 5]]):
 
             last_data_time = get_last_processor_date(proc, logger)
+
+            if not last_data_time:
+                logger.warning(f'No data available to compare for {proc}.')
+                continue
 
             if datetime.now() - last_data_time > time_limit:
                 if matching_error(active_errors, reason, proc):
@@ -91,7 +98,7 @@ async def check_for_new_data(logger, active_errors=None):
                     active_errors.append(Error(reason, new_data_found, NewDataEmail(sender, proc, last_data_time)))
 
         return active_errors
-        
+
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in check_for_new_data()')
         send_processor_email(PROC, exception=e)
@@ -107,14 +114,17 @@ async def check_existing_errors(logger, active_errors=None):
             return False
 
         for ind, err in enumerate(active_errors):
-            if err.reason is 'no new data':
+            if err.reason == 'no new data':
+                # TODO : NMHC no-new-data email appeared to resolve itself without sending a resolution
+                    # This may be resolved now, switch 'is "no_new_data"' ' to ' == "no_new_data"'
                 if err.is_resolved(processor=err.email_template.processor,
                                    last_data_time=err.email_template.last_data_time, logger=logger):
                     active_errors[ind] = None
             else:
+                logger.info('Error aside from "no new data" was found.')
                 pass  # is_resolved() handles logging in both cases
 
-        active_errors = [err for err in active_errors if err is not None]
+        active_errors = [err for err in active_errors if err]
 
         return active_errors
 

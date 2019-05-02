@@ -11,6 +11,7 @@ for d in processor_dirs:
 
 from voc_main_loop import main as voc_processor
 from methane_main_loop import main as methane_processor
+from picarro_main_loop import main as picarro_processor
 from error_main_loop import check_for_new_data, check_existing_errors
 from summit_core import check_send_plots
 from summit_errors import send_processor_email
@@ -33,9 +34,9 @@ async def main():
 
 		vocs = await asyncio.create_task(voc_processor())
 		methane = await asyncio.create_task(methane_processor())
+		picarro = await asyncio.create_task(picarro_processor())
 
-
-		if vocs or methane:
+		if vocs or methane or picarro:
 			await asyncio.create_task(check_send_plots(logger))
 
 		errors = await asyncio.create_task(check_for_new_data(logger, active_errors=errors))
@@ -44,7 +45,7 @@ async def main():
 			errors = await asyncio.create_task(check_existing_errors(logger, active_errors=errors))
 
 		print('Sleeping...')
-		await asyncio.sleep(15*60)
+		await asyncio.sleep(9*60)
 
 
 if __name__ == '__main__':

@@ -36,9 +36,10 @@ class Error():
         logger.error(f'Error for {self.reason} intiated with error ID: {self.id}')
         self.email_template.send()
 
-    def is_resolved(self, *args):
-        if self.resolution_function(*args):
+    def is_resolved(self, **kwargs):
+        if self.resolution_function(**kwargs):
             self.resolve()
+            logger.error(f'Error for {self.reason} with error ID {self.id} was checked and resolved.')
             return True
         else:
             logger.error(f'Error for {self.reason} with error ID {self.id} was checked and is un-resolved.')
@@ -120,7 +121,7 @@ class NewDataEmail(EmailTemplate):
 
     def send_resolution(self):
         try:
-            self.resolution_body = (f'New data for {self.processor_name}' +
+            self.resolution_body = (f'New data for {self.processor}' +
                                     f'was found after {datetime.now() - self.last_data_time}.')
             auth = json.loads(auth_file.read_text())
             user, passw = (auth.get('gmail_username'), auth.get('gmail_password'))

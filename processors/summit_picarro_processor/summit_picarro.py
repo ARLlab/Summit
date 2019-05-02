@@ -367,7 +367,7 @@ def summit_picarro_plot(dates, compound_dict, limits=None, minor_ticks=None, maj
         compounds_safe.append(k.replace('-', '_').replace('/', '_').lower())
 
     comp_list = ', '.join(compound_dict.keys())  # use real names for plot title
-    fn_list = '_'.join(compounds_safe)  # use 'safe' names for filename
+    fn_list = '_'.join(compounds_safe).replace(' ', '_')  # use 'safe' names for filename
 
     if limits is not None:
         ax.set_xlim(right=limits.get('right'))
@@ -412,12 +412,18 @@ def match_cals_by_min(cal, cals, minutes=4):
 
     cal_dates = [c.date for c in cals]
 
+    if not cal_dates:
+        return None
+
     [match, diff] = find_closest_date(cal.date, cal_dates)
+
+    if not match or not diff:
+        return None
 
     if abs(diff) < dt.timedelta(minutes=minutes):
         return search_for_attr_value(cals, 'date', match)  # return the matching cal if within tolerance
     else:
-        return
+        return None
 
 
 def calc_two_pt_curve(low, high):
