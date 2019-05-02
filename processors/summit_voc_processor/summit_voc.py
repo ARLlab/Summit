@@ -1059,3 +1059,53 @@ def name_summit_peaks(nmhcline, rt_windows):
                 nbut.name = 'n-butane'
 
     return nmhcline
+
+
+def check_ambient_sheet_cols(name):
+    """
+    Callable mini-function passed to pd.read_excel(usecols=function).
+    Grab the first column to use as an index, then all columns starting with column 4.
+    """
+    return True if name == 0 or name >= 4 else False
+
+
+def correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger):
+    """
+    Loop over columns of ambient_results_master.xlsx.
+    This finds the log for each column, then retrieves the NmhcLine that matches it (if any),
+    and applies all flags necessary while creating the NmhcCorrection objects.
+    """
+    from summit_voc import Peak, LogFile, GcRun, NmhcLine, NmhcCorrection
+
+    code = col.iloc[0]
+
+    log = logfiles.filter(LogFile.samplecode == code).one_or_none()
+
+    if not log:
+        logger.warning(f'A log with samplecode {code} was not found in the record, this correction was not processed.')
+        return
+
+    run = gc_runs.filter(GcRun.logfile_id == log.id).one_or_none()
+
+    if not run:
+        logger.warning(f'A run matching the log with samplecode {code} was not found, this correction was not processed.')
+        return
+
+    line = nmhc_lines.filter(NmhcLine.id == run.nmhcline_id).one_or_none()
+
+    correction_peaklist = []
+
+    slice_st = 43  # excel is not 0-indexed
+    slice_end = 59  # excel is not 0-indexed
+
+    for name, pa, rt in zip(col.index[slice_st:slice_end].tolist(),
+                            col[slice_st:slice_end].tolist(),
+                            col[slice_st + 54:slice_end + 54].tolist()):
+        correction_peaklist.append(Peak(name, pa, rt))
+
+    if not correction_peaklist or not line:
+        return None
+
+    return NmhcCorrection(line, correction_peaklist, None)
+
+
