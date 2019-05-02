@@ -47,7 +47,10 @@ def get_last_processor_date(processor, logger):
 
     with TempDir(directory):
         engine, session = connect_to_db(f'sqlite:///summit_{processor}.sqlite', directory)
-        val = session.query(DataType.date).order_by(DataType.date.desc()).first()[0]
+        val = session.query(DataType.date).order_by(DataType.date.desc()).first()
+
+        if val:
+            val = val[0]
 
     session.close()
     engine.dispose()
@@ -79,9 +82,13 @@ async def check_for_new_data(logger, active_errors=None):
         logger.info('Running check_for_new_data()')
         # TODO : The time limits generated below are gross estimates
         # TODO: Not running picarro at the moment, ammend below
-        for proc, time_limit in zip(['voc', 'methane'], [dt.timedelta(hours=hr) for hr in [8, 3, 5]]):
+        for proc, time_limit in zip(['voc', 'methane', 'picarro'], [dt.timedelta(hours=hr) for hr in [8, 3, 5]]):
 
             last_data_time = get_last_processor_date(proc, logger)
+
+            if not last_data_time:
+                logger.warning(f'No data available to compare for {proc}.')
+                continue
 
             if datetime.now() - last_data_time > time_limit:
                 if matching_error(active_errors, reason, proc):

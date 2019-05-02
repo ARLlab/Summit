@@ -367,7 +367,7 @@ def summit_picarro_plot(dates, compound_dict, limits=None, minor_ticks=None, maj
         compounds_safe.append(k.replace('-', '_').replace('/', '_').lower())
 
     comp_list = ', '.join(compound_dict.keys())  # use real names for plot title
-    fn_list = '_'.join(compounds_safe)  # use 'safe' names for filename
+    fn_list = '_'.join(compounds_safe).replace(' ', '_')  # use 'safe' names for filename
 
     if limits is not None:
         ax.set_xlim(right=limits.get('right'))

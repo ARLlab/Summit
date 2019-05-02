@@ -342,11 +342,13 @@ async def plot_new_data(logger):
             return False
 
         picarro_config.last_data_date = newest_data_point
+        core_session.add(picarro_config)
 
         date_limits, major_ticks, minor_ticks = create_daily_ticks(picarro_config.days_to_plot)
 
         all_data = (session.query(Datum.date, Datum.co, Datum.co2, Datum.ch4)
-                    .filter(Datum.mpv_position == 1)
+                    .filter(Datum.mpv_position == 0 | Datum.mpv_position == 1)
+                    .filter(Datum.instrument_status == 963, Datum.alarm_status == 0)
                     .filter(Datum.date >= date_limits['left'])  # grab only data that falls in plotting period
                     .all())
 
@@ -374,7 +376,7 @@ async def plot_new_data(logger):
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
                                         'bottom': 0,
-                                        'top': 500},
+                                        'top': 300},
                                 major_ticks=major_ticks,
                                 minor_ticks=minor_ticks)
 
@@ -384,8 +386,8 @@ async def plot_new_data(logger):
             name = summit_picarro_plot(None, ({'Summit CO2': [dates, co2]}),
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
-                                        'bottom': 350,
-                                        'top': 650},
+                                        'bottom': 400,
+                                        'top': 500},
                                 major_ticks=major_ticks,
                                 minor_ticks=minor_ticks,
                                 unit_string='ppmv')
@@ -397,7 +399,7 @@ async def plot_new_data(logger):
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
                                         'bottom': 1800,
-                                        'top': 2800},
+                                        'top': 2200},
                                 major_ticks=major_ticks,
                                 minor_ticks=minor_ticks)
 
