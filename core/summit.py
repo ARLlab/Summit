@@ -43,7 +43,7 @@ async def main():
 		methane = await asyncio.create_task(methane_processor())
 		picarro = await asyncio.create_task(picarro_processor())
 
-		excel_loads = await asyncio.create_task(load_excel_corrections(ambient_sheetpath, logger))
+		# excel_loads = await asyncio.create_task(load_excel_corrections(ambient_sheetpath, logger))
 		# TODO : Change to call only once after 12:30AM each day (and config-store a date for plots?)
 
 		if vocs or methane or picarro:

@@ -1082,7 +1082,7 @@ def correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger):
     log = logfiles.filter(LogFile.samplecode == code).one_or_none()
 
     if not log:
-        logger.warning(f'A log with samplecode {code} was not found in the record, this correction was not processed.')
+        logger.warning(f'A log with samplecode {code} was not found, this correction was not processed.')
         return
 
     run = gc_runs.filter(GcRun.logfile_id == log.id).one_or_none()
@@ -1107,5 +1107,3 @@ def correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger):
         return None
 
     return NmhcCorrection(line, correction_peaklist, None)
-
-

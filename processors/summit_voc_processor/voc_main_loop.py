@@ -767,11 +767,12 @@ async def load_excel_corrections(sheetpath, logger):
             session.merge(correction)
             session.merge(line)
             logger.info(f'Successful peak corrections made to {line.date}')
-            session.commit()
 
-            session.close()
-            engine.dispose()
-            return True
+        session.commit()
+        session.close()
+        engine.dispose()
+
+        return True
 
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in load_excel_corrections()')

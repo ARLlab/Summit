@@ -88,7 +88,7 @@ async def check_load_new_data(logger):
                 logger.info(f'File {file.name} had more data and was added for procesing.')
                 files_to_process.append(db_match)
 
-        if not len(files_to_process):
+        if not files_to_process:
             logger.warning('No new data was found.')
             return False
 
@@ -119,6 +119,7 @@ async def check_load_new_data(logger):
                 logger.info(f'No new data created from file {file.name}.')
 
             file.processed = True
+            file.size = check_filesize(file)
             logger.info(f'All data in file {file.name} processed.')
             session.commit()
 
