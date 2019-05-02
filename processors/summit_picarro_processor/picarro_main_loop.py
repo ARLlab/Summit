@@ -347,8 +347,8 @@ async def plot_new_data(logger):
         date_limits, major_ticks, minor_ticks = create_daily_ticks(picarro_config.days_to_plot)
 
         all_data = (session.query(Datum.date, Datum.co, Datum.co2, Datum.ch4)
-                    .filter(Datum.mpv_position == 0 | Datum.mpv_position == 1)
-                    .filter(Datum.instrument_status == 963, Datum.alarm_status == 0)
+                    .filter((Datum.mpv_position == 0) | (Datum.mpv_position == 1))
+                    .filter((Datum.instrument_status == 963), (Datum.alarm_status == 0))
                     .filter(Datum.date >= date_limits['left'])  # grab only data that falls in plotting period
                     .all())
 
@@ -386,8 +386,8 @@ async def plot_new_data(logger):
             name = summit_picarro_plot(None, ({'Summit CO2': [dates, co2]}),
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
-                                        'bottom': 400,
-                                        'top': 500},
+                                        'bottom': 380,
+                                        'top': 480},
                                 major_ticks=major_ticks,
                                 minor_ticks=minor_ticks,
                                 unit_string='ppmv')
