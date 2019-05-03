@@ -180,30 +180,6 @@ class Peak(Base):
         self.rev = 0
         self.qc = 0
 
-    def get_name(self):
-        return self.name
-
-    def get_pa(self):
-        return self.pa
-
-    def get_rt(self):
-        return self.rt
-
-    def get_mr(self):
-        return self.mr
-
-    def set_name(self, name):
-        self.name = name
-
-    def set_pa(self, pa):
-        self.pa = pa
-
-    def set_rt(self, rt):
-        self.rt = rt
-
-    def set_mr(self, mr):
-        self.mr = mr
-
     def __str__(self):
         # Print the name, pa, and rt of a peak when called
         return f'<name: {self.name} pa: {self.pa} rt: {self.rt}, mr: {self.mr}>'
@@ -504,17 +480,6 @@ class GcRun(Base):
     def _repr__(self):
         return f'<matched gc run at {self.date_end}>'
 
-    ## GET Methods for all embedded objects of a datum
-
-    def get_mr(self, compound_name):
-        return next((peak.mr for peak in self.peaks if peak.name == compound_name), None)
-
-    def get_pa(self, compound_name):
-        return next((peak.pa for peak in self.peaks if peak.name == compound_name), None)
-
-    def get_rt(self, compound_name):
-        return next((peak.rt for peak in self.peaks if peak.name == compound_name), None)
-
     def get_unnamed_peaks(self):
         # returns list of unidentified peaks in a run
         return [peak for peak in self.peaks if peak.name == '-']
@@ -594,18 +559,6 @@ class Datum(Base):
 
     def __repr__(self):
         return f'<data for {self.date_end} with {len(self.peaks)} peaks>'
-
-    ## GET Methods for all embedded objects of a datum
-    # These are resource-expensive, but can be used for one-offs where queries are unnecesary or tedious
-
-    def get_mr(self, compound_name):
-        return next((peak.mr for peak in self.peaks if peak.name == compound_name), None)
-
-    def get_pa(self, compound_name):
-        return next((peak.pa for peak in self.peaks if peak.name == compound_name), None)
-
-    def get_rt(self, compound_name):
-        return next((peak.rt for peak in self.peaks if peak.name == compound_name), None)
 
     def get_crf(self, compound_name):
         return self.crfs.compounds.get(compound_name, None)
@@ -1019,7 +972,7 @@ def name_summit_peaks(nmhcline, rt_windows):
 
     for peak in nmhcline.peaklist:
         for compound, limits in rt_windows.compounds.items():
-            if limits[0] < peak.get_rt() < limits[1]:
+            if limits[0] < peak.rt < limits[1]:
                 try:  # add peak to pool for that compound and stop attempting to assign it. NEXT!
                     compound_pools[compound].append(peak)
                     break
@@ -1037,7 +990,7 @@ def name_summit_peaks(nmhcline, rt_windows):
                 chosen = max(pool, key=lambda peak: peak.pa)  # get largest peak in possible peaks
 
             if chosen is not None:
-                chosen.set_name(name)
+                chosen.name = name
 
     ibut = search_for_attr_value(nmhcline.peaklist, 'name', 'i-butane')
 
@@ -1045,7 +998,7 @@ def name_summit_peaks(nmhcline, rt_windows):
     find_acet = True  # default to both needing to be found
 
     if ibut is not None:
-        ibut_rt = ibut.get_rt()
+        ibut_rt = ibut.rt
 
         if find_acet:
             acet_pool = [peak for peak in nmhcline.peaklist if .6 < (peak.rt - ibut_rt) < .7]
