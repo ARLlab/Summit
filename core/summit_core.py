@@ -52,6 +52,8 @@ picarro_logs_path = data_file_paths.get('picarro_logs')
 
 taylor_auth = data_file_paths.get('taylor_server_auth')
 
+ambient_sheet = data_file_paths.get('ambient_sheet')
+
 
 class Config(Base):
     __tablename__ = 'config'
