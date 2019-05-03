@@ -52,11 +52,6 @@ picarro_logs_path = data_file_paths.get('picarro_logs')
 
 taylor_auth = data_file_paths.get('taylor_server_auth')
 
-ambient_sheet = data_file_paths.get('ambient_sheet')
-ba_sheet = data_file_paths.get('ba_sheet')
-bh_sheet = data_file_paths.get('bh_sheet')
-blanks_sheet = data_file_paths.get('blanks_sheet')
-trapblanks_sheet = data_file_paths.get('trapblanks_sheet')
 
 class Config(Base):
     __tablename__ = 'config'
