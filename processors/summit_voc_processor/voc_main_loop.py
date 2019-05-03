@@ -471,7 +471,6 @@ async def plot_new_data(logger):
     :return: Boolean, True if it ran without error and created data, False if not
     """
 
-
     try:
         from summit_core import voc_dir as rundir
         from summit_core import core_dir, Plot, Config
@@ -659,6 +658,14 @@ async def plot_new_data(logger):
 
 
 async def load_excel_corrections(sheetpath, logger):
+    """
+    Load the datasheet from another drive.
+    Create NmhcCorrections if any new corrections are available, then reintegrate.
+
+    :param sheetpath: Path, to the datasheet to be processed
+    :param logger: logger, for all logging
+    :return: Boolean, True if successful, False if an Exception is handled
+    """
 
     logger.info('Running load_excel_corrections()')
 
@@ -716,7 +723,7 @@ async def load_excel_corrections(sheetpath, logger):
                             .filter(NmhcCorrection.status == 'unapplied')
                             .filter(NmhcCorrection.date != None)
                             .all())
-        # re-get all added corrections that haven't been applied
+        # re-get all added corrections that haven't been applied, but have a date from a mathed line
 
         for correction in nmhc_corrections:
             if correction:
@@ -734,9 +741,11 @@ async def load_excel_corrections(sheetpath, logger):
 
                 peak_by_name = search_for_attr_value(line.peaklist, 'name', peak_corr.name)
                 peak_by_rt = search_for_attr_value(line.peaklist, 'rt', peak_corr.rt)
+                # try to find peak by name, then retention time exact match
 
                 if not peak_by_rt:
                     peak_by_rt = find_approximate_rt(line.peaklist, peak_corr.rt)
+                    # if peak not found by rt exactly, search with a fuzzy limit
 
                 if (peak_by_name and peak_by_rt) and (peak_by_name is peak_by_rt):  # if they're not None, and identical
                     peak = peak_by_name
@@ -749,18 +758,18 @@ async def load_excel_corrections(sheetpath, logger):
                         session.merge(peak)
                         session.merge(peak_by_name)
 
-                    elif peak_by_name:
+                    elif peak_by_name:  # if only found by name, use the named one
                         peak = peak_by_name
                         session.merge(peak)
 
-                    elif peak_by_rt:
+                    elif peak_by_rt:  # if only found by rt, use the rt one
                         peak = peak_by_rt
                         peak.name = peak_corr.name
                         session.merge(peak)
 
                     else:
-                        line.peaklist.append(peak_corr)
-                        logger.warning (f'Peak with name {peak_corr} added to NmhcLine for {line.date}.')
+                        line.peaklist.append(peak_corr)  # if not found at all, add the corrected peak as a new peak
+                        logger.warning(f'Peak with name {peak_corr} added to NmhcLine for {line.date}.')
 
                         continue
 
@@ -778,6 +787,7 @@ async def load_excel_corrections(sheetpath, logger):
             if data:
                 data.reintegrate()
                 session.merge(data)
+                # find and reintegrate data after correcting peaks
 
             session.merge(correction)
             session.merge(line)
@@ -805,6 +815,7 @@ async def main():
     :return: Boolean, True if it ran without error and created data, False if not
     """
     try:
+        from datetime import datetime
         from summit_core import voc_dir as rundir
         from summit_core import configure_logger, ambient_sheet
         logger = configure_logger(rundir, __name__)
@@ -822,7 +833,8 @@ async def main():
             await asyncio.create_task(load_crfs(logger))
             if await asyncio.create_task(create_gc_runs(logger)):
                 if await asyncio.create_task(integrate_runs(logger)):
-                    await asyncio.create_task(load_excel_corrections(ambient_sheet, logger))
+                    if datetime.now().hour < 1 and datetime.now().minute > 30:  # run only between 12:30 and 1AM local
+                        await asyncio.create_task(load_excel_corrections(ambient_sheet, logger))
                     await asyncio.create_task(plot_new_data(logger))
 
         return True
