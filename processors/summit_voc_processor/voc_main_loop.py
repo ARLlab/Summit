@@ -697,7 +697,7 @@ async def load_excel_corrections(sheetpath, logger):
         nmhc_corrections = []
 
         corrections_in_db = session.query(NmhcCorrection).all()
-        correction_dates_in_db = [c.date for c in corrections_in_db]
+        correction_codes_in_db = [c.samplecode for c in corrections_in_db]
 
         with session.no_autoflush:
             for col_name in data.columns.tolist():
@@ -706,13 +706,16 @@ async def load_excel_corrections(sheetpath, logger):
 
         for correction in nmhc_corrections:
             if correction:
-                if correction.date not in correction_dates_in_db:
+                if correction.samplecode not in correction_codes_in_db:
                     session.add(correction)
-                    logger.info(f'Correction for {correction.date} added.')
+                    logger.info(f'Correction for {correction.samplecode} added.')
 
         session.commit()
 
-        nmhc_corrections = session.query(NmhcCorrection).filter(NmhcCorrection.status == 'unapplied').all()
+        nmhc_corrections = (session.query(NmhcCorrection)
+                            .filter(NmhcCorrection.status == 'unapplied')
+                            .filter(NmhcCorrection.date != None)
+                            .all())
         # re-get all added corrections that haven't been applied
 
         for correction in nmhc_corrections:
