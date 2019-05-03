@@ -121,7 +121,7 @@ class NewDataEmail(EmailTemplate):
 
     def send_resolution(self):
         try:
-            self.resolution_body = (f'New data for {self.processor}' +
+            self.resolution_body = (f'New data for {self.processor} ' +
                                     f'was found after {datetime.now() - self.last_data_time}.')
             auth = json.loads(auth_file.read_text())
             user, passw = (auth.get('gmail_username'), auth.get('gmail_password'))
