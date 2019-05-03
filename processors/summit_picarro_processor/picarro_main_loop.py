@@ -119,7 +119,7 @@ async def check_load_new_data(logger):
                 logger.info(f'No new data created from file {file.name}.')
 
             file.processed = True
-            file.size = check_filesize(file)
+            file.size = check_filesize(file.path)
             logger.info(f'All data in file {file.name} processed.')
             session.commit()
 
