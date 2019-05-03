@@ -665,8 +665,8 @@ async def load_excel_corrections(sheetpath, logger):
     try:
         import pandas as pd
         from pathlib import Path
-        from summit_voc import Peak, LogFile, NmhcLine, NmhcCorrection, GcRun, Base
-        from summit_voc import check_ambient_sheet_cols, correction_from_df_column
+        from summit_voc import Peak, LogFile, NmhcLine, NmhcCorrection, GcRun, Datum, Base
+        from summit_voc import check_ambient_sheet_cols, correction_from_df_column, find_approximate_rt
         from summit_core import connect_to_db, search_for_attr_value
         from summit_core import voc_dir as rundir
     except ImportError as e:
@@ -729,8 +729,14 @@ async def load_excel_corrections(sheetpath, logger):
                 continue
 
             for peak_corr in correction.peaklist:
+                if not peak_corr.rt:
+                    continue
+
                 peak_by_name = search_for_attr_value(line.peaklist, 'name', peak_corr.name)
                 peak_by_rt = search_for_attr_value(line.peaklist, 'rt', peak_corr.rt)
+
+                if not peak_by_rt:
+                    peak_by_rt = find_approximate_rt(line.peaklist, peak_corr.rt)
 
                 if (peak_by_name and peak_by_rt) and (peak_by_name is peak_by_rt):  # if they're not None, and identical
                     peak = peak_by_name
@@ -753,19 +759,25 @@ async def load_excel_corrections(sheetpath, logger):
                         session.merge(peak)
 
                     else:
-                        logger.warning(f"Peak with name {peak_corr.name} or retention time of {peak_corr.rt} from "
-                                       + f"NmhcCorrection {correction.date} not found in NmhcLine for {line.date}")
+                        line.peaklist.append(peak_corr)
+                        logger.warning (f'Peak with name {peak_corr} added to NmhcLine for {line.date}.')
+
                         continue
 
-                if peak.pa != peak_corr.pa:
-                    peak.pa = peak_corr.pa
-                    peak.rt = peak_corr.rt
-                    peak.rev = peak.rev + 1  # Sqlite *does not* like using += notation
+                peak.pa = peak_corr.pa
+                peak.rt = peak_corr.rt
+                peak.rev = peak.rev + 1  # Sqlite *does not* like using += notation
 
             correction.status = 'applied'
 
             line.nmhc_corr_con = correction
             correction.correction_id = line
+
+            data = session.query(Datum).filter(Datum.line_id == line.id).one_or_none()
+
+            if data:
+                data.reintegrate()
+                session.merge(data)
 
             session.merge(correction)
             session.merge(line)
@@ -794,7 +806,7 @@ async def main():
     """
     try:
         from summit_core import voc_dir as rundir
-        from summit_core import configure_logger
+        from summit_core import configure_logger, ambient_sheet
         logger = configure_logger(rundir, __name__)
     except Exception as e:
         print(f'Error {e.args} prevented logger configuration.')
@@ -810,6 +822,7 @@ async def main():
             await asyncio.create_task(load_crfs(logger))
             if await asyncio.create_task(create_gc_runs(logger)):
                 if await asyncio.create_task(integrate_runs(logger)):
+                    await asyncio.create_task(load_excel_corrections(ambient_sheet, logger))
                     await asyncio.create_task(plot_new_data(logger))
 
         return True

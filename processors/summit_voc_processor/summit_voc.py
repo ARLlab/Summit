@@ -260,15 +260,18 @@ class NmhcCorrection(Base):
     peaklist = relationship('Peak', order_by=Peak.id)
     flag = Column(Integer)  # undetermined flagging system... TODO:
     status = Column(String)
+    samplecode = Column(Integer)
 
     nmhcline = relationship(NmhcLine, uselist=False, back_populates='correction')
 
-    def __init__(self, nmhcline, peaks, flag):
+    def __init__(self, nmhcline, peaks, flag, samplecode):
         self.peaklist = peaks
         self.nmhcline = nmhcline
         self.status = 'unapplied'  # all corrections are created as unapplied
         self.flag = flag
-        self.date = nmhcline.date
+        if nmhcline:
+            self.date = nmhcline.date
+        self.samplecode = samplecode
 
     def __str__(self):
         return f'<NmhcCorrection for {self.date} with {len(self.peaklist)} peaks>'
@@ -575,6 +578,8 @@ class Datum(Base):
         self.revision = 0  # init with revision status zero
         self.qc = 0
         self.notes = None
+        self.log_con = GcRun.log_con
+        self.line_con = GcRun.nmhc_con
 
     def __str__(self):
         return f'<data for {self.date_end} with {len(self.peaks)} peaks>'
@@ -596,6 +601,25 @@ class Datum(Base):
 
     def get_crf(self, compound_name):
         return self.crfs.compounds.get(compound_name, None)
+
+    def reintegrate(self):
+        if self.crfs is None:
+            return None  # no crfs, no integration!
+        elif self.type == 'ambient' or self.type == 'zero':
+            for peak in self.peaks:
+                if peak.name in compound_list and peak.name in self.crfs.compounds.keys():
+                    crf = self.crfs.compounds[peak.name]
+
+                    peak.mr = ((peak.pa /
+                                (crf * compound_ecns.get(peak.name, None) * self.sampletime * self.sampleflow1))
+                               * 1000 * 1.5)
+                    # formula is (pa / (CRF * ECN * SampleTime * SampleFlow1)) * 1000 *1.5
+                    # 1000 * 1.5 normalizes to a sample volume of 2000s by convention
+
+            return None
+
+        else:
+            return None  # don't integrate if it's not an ambient or blank sample
 
 
 def find_crf(crfs, sample_date):
@@ -1075,23 +1099,21 @@ def correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger):
     This finds the log for each column, then retrieves the NmhcLine that matches it (if any),
     and applies all flags necessary while creating the NmhcCorrection objects.
     """
-    from summit_voc import Peak, LogFile, GcRun, NmhcLine, NmhcCorrection
-
     code = col.iloc[0]
 
     log = logfiles.filter(LogFile.samplecode == code).one_or_none()
 
     if not log:
-        logger.warning(f'A log with samplecode {code} was not found, this correction was not processed.')
-        return
+        logger.warning(f'A log with samplecode {code} was not found.')
+        run, line = (None, None)
 
-    run = gc_runs.filter(GcRun.logfile_id == log.id).one_or_none()
+    else:
+        run = gc_runs.filter(GcRun.logfile_id == log.id).one_or_none()
 
-    if not run:
-        logger.warning(f'A run matching the log with samplecode {code} was not found, this correction was not processed.')
-        return
+        if not run:
+            logger.warning(f'A run matching the log with samplecode {code} was not found.')
 
-    line = nmhc_lines.filter(NmhcLine.id == run.nmhcline_id).one_or_none()
+        line = nmhc_lines.filter(NmhcLine.id == run.nmhcline_id).one_or_none()
 
     correction_peaklist = []
 
@@ -1103,7 +1125,12 @@ def correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger):
                             col[slice_st + 54:slice_end + 54].tolist()):
         correction_peaklist.append(Peak(name, pa, rt))
 
-    if not correction_peaklist or not line:
+    if not correction_peaklist:
         return None
 
-    return NmhcCorrection(line, correction_peaklist, None)
+    return NmhcCorrection(line, correction_peaklist, None, code)
+
+
+def find_approximate_rt(peaklist, rt):
+    peaklist = [peak for peak in peaklist if peak.rt]  # clean list for only those with RTs
+    return next((peak for peak in peaklist if rt-.011 < peak.rt < rt+.011), None)
