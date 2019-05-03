@@ -657,7 +657,7 @@ async def plot_new_data(logger):
         return False
 
 
-async def load_excel_corrections(sheetpath, logger):
+async def load_excel_corrections(sheet_name, logger):
     """
     Load the datasheet from another drive.
     Create NmhcCorrections if any new corrections are available, then reintegrate.
@@ -667,14 +667,14 @@ async def load_excel_corrections(sheetpath, logger):
     :return: Boolean, True if successful, False if an Exception is handled
     """
 
-    logger.info('Running load_excel_corrections()')
+    logger.info(f'Running load_excel_corrections() for {sheet_name}')
 
     try:
         import pandas as pd
         from pathlib import Path
         from summit_voc import Peak, LogFile, NmhcLine, NmhcCorrection, GcRun, Datum, Base
-        from summit_voc import check_ambient_sheet_cols, correction_from_df_column, find_approximate_rt
-        from summit_core import connect_to_db, search_for_attr_value
+        from summit_voc import check_sheet_cols, correction_from_df_column, find_approximate_rt, sheet_slices
+        from summit_core import connect_to_db, search_for_attr_value, data_file_paths
         from summit_core import voc_dir as rundir
     except ImportError as e:
         logger.error('ImportError occurred in load_excel_corrections()')
@@ -688,8 +688,11 @@ async def load_excel_corrections(sheetpath, logger):
         send_processor_email(PROC, exception=e)
         return False
 
+
+    sheetpath = data_file_paths.get(sheet_name+'_sheet')
+
     try:
-        data = pd.read_excel(sheetpath, header=None, usecols=check_ambient_sheet_cols).dropna(axis=1, how='all')
+        data = pd.read_excel(sheetpath, header=None, usecols=check_sheet_cols).dropna(axis=1, how='all')
 
         data = data.set_index([0])  # set first row of df to the index
         data.index = data.index.str.lower()
@@ -709,7 +712,8 @@ async def load_excel_corrections(sheetpath, logger):
         with session.no_autoflush:
             for col_name in data.columns.tolist():
                 col = data.loc[:, col_name]
-                nmhc_corrections.append(correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger))
+                nmhc_corrections.append(correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger,
+                                                                  sheet_name, correction_codes_in_db))
 
         for correction in nmhc_corrections:
             if correction:
@@ -817,7 +821,7 @@ async def main():
     try:
         from datetime import datetime
         from summit_core import voc_dir as rundir
-        from summit_core import configure_logger, ambient_sheet
+        from summit_core import configure_logger
         logger = configure_logger(rundir, __name__)
     except Exception as e:
         print(f'Error {e.args} prevented logger configuration.')
@@ -833,8 +837,12 @@ async def main():
             await asyncio.create_task(load_crfs(logger))
             if await asyncio.create_task(create_gc_runs(logger)):
                 if await asyncio.create_task(integrate_runs(logger)):
+
                     if datetime.now().hour < 1 and datetime.now().minute > 30:  # run only between 12:30 and 1AM local
-                        await asyncio.create_task(load_excel_corrections(ambient_sheet, logger))
+                        from summit_voc import sheet_slices
+                        for sheet_name in sheet_slices.keys():
+                            await asyncio.create_task(load_excel_corrections(sheet_name, logger))
+
                     await asyncio.create_task(plot_new_data(logger))
 
         return True
