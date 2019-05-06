@@ -141,7 +141,7 @@ class Plot(Base):
 
     @path.setter
     def path(self, value):
-        self._path = str(value)
+        self._path = str(value.resolve())
         self._name = value.name
 
     @property
