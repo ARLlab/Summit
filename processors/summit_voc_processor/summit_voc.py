@@ -39,6 +39,14 @@ compound_ecns = ({'ethane': 2, 'ethene': 1.9, 'propane': 3, 'propene': 2.9,
                   'n-pentane': 5, 'hexane': 6, 'benzene': 5.7, 'toluene': 6.7})
 # expected carbon numbers for mixing ratio calcs
 
+sheet_slices = {
+    'ambient':{'start': 43, 'end': 59, 'diff': 54},
+    'ba':{'start': 42, 'end': 57, 'diff': 43},
+    'bh': {'start': 42, 'end': 57, 'diff': 44},
+    'blank': {'start': 42, 'end': 57, 'diff': 43},
+    'trapblank': {'start': 42, 'end': 57, 'diff': 42}
+                }  # sheet indexes for pulling pas and rts
+
 compound_windows_1 = (
     {'ethane': (1.65, 1.85),  # compound retention windows for every named compound at Summit 'name':(low, high)
      'ethene': (2.04, 2.152),
@@ -774,33 +782,6 @@ def read_pa_line(line):
     return this_line
 
 
-# def find_closest_date(date, list_of_dates):
-# 	"""
-# 	This is a helper function that works on Python datetimes. It returns the closest date value,
-# 	and the timedelta from the provided date.
-# 	:param date: datetime
-# 	:param list_of_dates: list, of datetimes
-# 	:return: match, delta: the matching date from the list, and it's difference to the original as a timedelta
-# 	"""
-# 	match = min(list_of_dates, key = lambda x: abs(x - date))
-# 	delta = match - date
-#
-# 	return match, delta
-#
-#
-# def search_for_attr_value(obj_list, attr, value):
-# 	"""
-# 	Finds the first (not necesarilly the only) object in a list, where its
-# 	attribute 'attr' is equal to 'value', returns None if none is found.
-# 	:param obj_list: list, of objects to search
-# 	:param attr: string, attribute to search for
-# 	:param value: mixed types, value that should be searched for
-# 	:return: obj, from obj_list, where attribute attr matches value
-# 		**** warning: returns the *first* obj, not necessarily the only
-# 	"""
-# 	return next((obj for obj in obj_list if getattr(obj,attr, None) == value), None)
-
-
 def match_log_to_pa(LogFiles, NmhcLines):
     """
     This takes a list of LogFile and NmhcLine objects and returns a list (empty, even)
@@ -1085,7 +1066,7 @@ def name_summit_peaks(nmhcline, rt_windows):
     return nmhcline
 
 
-def check_ambient_sheet_cols(name):
+def check_sheet_cols(name):
     """
     Callable mini-function passed to pd.read_excel(usecols=function).
     Grab the first column to use as an index, then all columns starting with column 4.
@@ -1093,13 +1074,16 @@ def check_ambient_sheet_cols(name):
     return True if name == 0 or name >= 4 else False
 
 
-def correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger):
+def correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger, sheetname, codes_in_db):
     """
     Loop over columns of ambient_results_master.xlsx.
     This finds the log for each column, then retrieves the NmhcLine that matches it (if any),
     and applies all flags necessary while creating the NmhcCorrection objects.
     """
     code = col.iloc[0]
+
+    if code in codes_in_db:
+        return None  # don't touch ones that have already been added to db
 
     log = logfiles.filter(LogFile.samplecode == code).one_or_none()
 
@@ -1117,12 +1101,13 @@ def correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger):
 
     correction_peaklist = []
 
-    slice_st = 43  # excel is not 0-indexed
-    slice_end = 59  # excel is not 0-indexed
+    slice_st = sheet_slices.get(sheetname).get('start')
+    slice_end = sheet_slices.get(sheetname).get('end')
+    diff = sheet_slices.get(sheetname).get('diff')
 
     for name, pa, rt in zip(col.index[slice_st:slice_end].tolist(),
                             col[slice_st:slice_end].tolist(),
-                            col[slice_st + 54:slice_end + 54].tolist()):
+                            col[slice_st + diff:slice_end + diff].tolist()):
         correction_peaklist.append(Peak(name, pa, rt))
 
     if not correction_peaklist:
