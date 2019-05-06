@@ -320,6 +320,7 @@ async def send_file_sftp(filepath):
     con = connect_to_sftp()
     con.chdir(taylor_basepath)
     con.put(str(filepath), filepath.name)
+    con.close()
     return
 
 
