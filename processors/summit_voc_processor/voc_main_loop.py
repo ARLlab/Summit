@@ -474,7 +474,7 @@ async def plot_new_data(logger):
     try:
         from summit_core import voc_dir as rundir
         from summit_core import core_dir, Plot, Config
-        from summit_core import connect_to_db, TempDir, create_daily_ticks
+        from summit_core import connect_to_db, TempDir, create_daily_ticks, add_or_ignore_plot
         from summit_voc import Base, summit_voc_plot, get_dates_peak_info
         from datetime import datetime
         import datetime as dt
@@ -542,7 +542,7 @@ async def plot_new_data(logger):
                                 minor_ticks=minor_ticks)
 
                 ethane_plot = Plot(plotdir/name, True)
-                core_session.add(ethane_plot)
+                add_or_ignore_plot(ethane_plot, core_session)
 
             with TempDir(plotdir):  ## PLOT i-butane, n-butane, acetylene
                 ibut_mrs, ibut_dates = get_dates_peak_info(session, 'i-butane', 'mr', date_start=date_ago)
@@ -559,7 +559,7 @@ async def plot_new_data(logger):
                                 minor_ticks=minor_ticks)
 
                 c4_plot = Plot(plotdir/name, True)
-                core_session.add(c4_plot)
+                add_or_ignore_plot(c4_plot, core_session)
 
             with TempDir(plotdir):  ## PLOT i-pentane and n-pentane, & ratio
                 from summit_voc import Peak, LogFile
@@ -599,7 +599,7 @@ async def plot_new_data(logger):
                                     minor_ticks=minor_ticks)
 
                     in_pent_plot = Plot(plotdir/name, True)
-                    core_session.add(in_pent_plot)
+                    add_or_ignore_plot(in_pent_plot, core_session)
 
                     name = summit_voc_plot(pentane_dates, ({'i/n Pentane ratio': [None, inpent_ratio]}),
                                     limits={'right': date_limits.get('right', None),
@@ -611,7 +611,7 @@ async def plot_new_data(logger):
                                     y_label_str='')
 
                     in_pent_ratio_plot = Plot(plotdir/name, True)
-                    core_session.add(in_pent_ratio_plot)
+                    add_or_ignore_plot(in_pent_ratio_plot, core_session)
 
             with TempDir(plotdir):  ## PLOT benzene and toluene
                 benz_mrs, benz_dates = get_dates_peak_info(session, 'benzene', 'mr', date_start=date_ago)
@@ -626,7 +626,7 @@ async def plot_new_data(logger):
                                 minor_ticks=minor_ticks)
 
                 benz_tol_plot = Plot(plotdir/name, True)
-                core_session.add(benz_tol_plot)
+                add_or_ignore_plot(benz_tol_plot, core_session)
 
             voc_config.last_data_date = dates[-1]
             core_session.merge(voc_config)

@@ -311,6 +311,14 @@ def connect_to_sftp():
     return client.open_sftp()
 
 
+def add_or_ignore_plot(plot, core_session):
+    plots_in_db = core_session.query(Plot._path).all()
+
+    if plot.path not in plots_in_db:
+        core_session.add(plot)
+    return
+
+
 async def send_file_sftp(filepath):
     con = connect_to_sftp()
     con.chdir(taylor_basepath)

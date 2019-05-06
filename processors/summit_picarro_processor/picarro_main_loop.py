@@ -295,7 +295,7 @@ async def plot_new_data(logger):
 
     try:
         from summit_core import picarro_dir as rundir
-        from summit_core import create_daily_ticks, connect_to_db, TempDir, Plot, core_dir, Config
+        from summit_core import create_daily_ticks, connect_to_db, TempDir, Plot, core_dir, Config, add_or_ignore_plot
         from summit_picarro import Base, Datum, summit_picarro_plot
     except Exception as e:
         logger.error('ImportError occurred in plot_new_data()')
@@ -382,7 +382,7 @@ async def plot_new_data(logger):
                                 minor_ticks=minor_ticks)
 
             co_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
-            core_session.add(co_plot)
+            add_or_ignore_plot(co_plot, core_session)
 
             name = summit_picarro_plot(None, ({'Summit CO2': [dates, co2]}),
                                 limits={'right': date_limits.get('right', None),
@@ -394,7 +394,7 @@ async def plot_new_data(logger):
                                 unit_string='ppmv')
 
             co2_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
-            core_session.add(co2_plot)
+            add_or_ignore_plot(co2_plot, core_session)
 
             name = summit_picarro_plot(None, ({'Summit CH4': [dates, ch4]}),
                                 limits={'right': date_limits.get('right', None),
@@ -405,7 +405,7 @@ async def plot_new_data(logger):
                                 minor_ticks=minor_ticks)
 
             ch4_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
-            core_session.add(ch4_plot)
+            add_or_ignore_plot(ch4_plot, core_session)
 
         logger.info('New data plots were created.')
 
