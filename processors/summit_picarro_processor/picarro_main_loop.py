@@ -451,10 +451,10 @@ async def main():
     try:
         if await asyncio.create_task(check_load_new_data(logger)):
 
-            await asyncio.create_task(plot_new_data(logger))
-
             if await asyncio.create_task(find_cal_events(logger)):
                 await asyncio.create_task(create_mastercals(logger))
+
+            await asyncio.create_task(plot_new_data(logger))
 
         return True
     except Exception as e:
