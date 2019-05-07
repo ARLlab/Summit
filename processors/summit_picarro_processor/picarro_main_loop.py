@@ -186,12 +186,19 @@ async def find_cal_events(logger):
         for standard, data in standard_data.items():
             indices = find_cal_indices(data['date'])
 
-            if not len(indices):
+            cal_events = []
+
+            if not len(indices) and len(data):
+                # if there's not provided indices, but there's still calibration data, create the one event
+                event_data = session.query(Datum).filter(Datum.id.in_(data['id'])).all()
+                cal_events.append(CalEvent(event_data, standard))
+
+            elif not len(indices):
+                # if there's no provided indices
                 logger.info(f'No new cal events were found for {standard} standard.')
                 continue
 
             prev_ind = 0
-            cal_events = []
 
             for num, ind in enumerate(indices):  # get all data within this event
                 event_data = session.query(Datum).filter(Datum.id.in_(data['id'].iloc[prev_ind:ind])).all()
@@ -235,6 +242,8 @@ async def create_mastercals(logger):
     :param logger: logging logger at module level
     :return: boolean, did it run/process new data?
     """
+
+    logger.info('Running create_mastercals()')
 
     try:
         from summit_core import picarro_dir as rundir
