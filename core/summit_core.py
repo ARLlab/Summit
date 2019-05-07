@@ -302,6 +302,21 @@ def create_daily_ticks(days_in_plot):
     return date_limits, major_ticks, minor_ticks
 
 
+def average_five_minutes(dates, vals):
+    """
+    Takes a list of dates and matching list of values, averaging them to 5-minute intervals and returns.
+    :param dates: list, of datetimes
+    :param vals: list, of any type that can be put in a dataframe
+    :return: list, list
+    """
+    import pandas as pd
+    df = pd.DataFrame({'dates': dates, 'vals': vals})
+    df.set_index(df['dates'], inplace=True, drop=True)
+    df = df.resample('5min')
+
+    return df.index.tolist(), df['vals'].tolist()
+
+
 def connect_to_sftp():
     import paramiko
     client = paramiko.SSHClient()
