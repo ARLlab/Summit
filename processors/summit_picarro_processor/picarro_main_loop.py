@@ -98,7 +98,14 @@ async def check_load_new_data(logger):
         session.commit()
 
         for file in files_to_process:
-            df = pd.read_csv(file.path, delim_whitespace=True)
+            try:
+                df = pd.read_csv(file.path, delim_whitespace=True)
+            except Exception as e:
+                logger.error(f'Exception {e.args} occurred in check_load_new_data() while reading a file.'
+                             + f'The file was {file.name}')
+                send_processor_email(PROC, exception=e)
+                return False
+
             # CO2 stays in ppm
             df['CO_sync'] *= 1000  # convert CO to ppb
             df['CH4_sync'] *= 1000  # convert CH4 to ppb
@@ -144,7 +151,7 @@ async def find_cal_events(logger):
         from summit_core import connect_to_db
         from summit_core import picarro_dir as rundir
         from summit_picarro import Base, Datum, CalEvent, mpv_converter, find_cal_indices
-        from summit_picarro import log_event_quantification
+        from summit_picarro import log_event_quantification, filter_postcal_data
     except Exception as e:
         logger.error('ImportError occured in find_cal_events()')
         send_processor_email(PROC, exception=e)
@@ -197,6 +204,9 @@ async def find_cal_events(logger):
                 prev_ind = ind
 
             for ev in cal_events:
+
+                filter_postcal_data(ev, session)  # flag the following minute as questionable data (inst_status = 999)
+
                 if ev.date - ev.dates[0] < dt.timedelta(seconds=90):
                     logger.info(f'CalEvent for date {ev.date} had a duration < 90s and was ignored.')
                     ev.standard_used = 'dump'  # give not-long-enough events standard type 'dump' so they're ignored
