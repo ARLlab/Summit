@@ -474,8 +474,8 @@ async def plot_new_data(logger):
     try:
         from summit_core import voc_dir as rundir
         from summit_core import core_dir, Plot, Config
-        from summit_core import connect_to_db, TempDir, create_daily_ticks
-        from summit_voc import Base, summit_voc_plot, get_dates_peak_info
+        from summit_core import connect_to_db, TempDir, create_daily_ticks, add_or_ignore_plot
+        from summit_voc import Base, GcRun, summit_voc_plot, get_dates_peak_info
         from datetime import datetime
         import datetime as dt
         plotdir = rundir / '../summit_master/summit_master/static/img/coding'  # local flask static folder
@@ -517,7 +517,8 @@ async def plot_new_data(logger):
         date_limits, major_ticks, minor_ticks = create_daily_ticks(voc_config.days_to_plot)
 
         try:
-            _, dates = get_dates_peak_info(session, 'ethane', 'mr', date_start=date_ago)  # get dates for data length
+            dates = session.query(GcRun.date).filter(GcRun.date > date_ago).order_by(GcRun.date).all()
+            dates[:] = [d.date for d in dates]
             assert dates is not None
 
         except (ValueError, AssertionError):
@@ -542,7 +543,7 @@ async def plot_new_data(logger):
                                 minor_ticks=minor_ticks)
 
                 ethane_plot = Plot(plotdir/name, True)
-                core_session.add(ethane_plot)
+                add_or_ignore_plot(ethane_plot, core_session)
 
             with TempDir(plotdir):  ## PLOT i-butane, n-butane, acetylene
                 ibut_mrs, ibut_dates = get_dates_peak_info(session, 'i-butane', 'mr', date_start=date_ago)
@@ -559,7 +560,7 @@ async def plot_new_data(logger):
                                 minor_ticks=minor_ticks)
 
                 c4_plot = Plot(plotdir/name, True)
-                core_session.add(c4_plot)
+                add_or_ignore_plot(c4_plot, core_session)
 
             with TempDir(plotdir):  ## PLOT i-pentane and n-pentane, & ratio
                 from summit_voc import Peak, LogFile
@@ -583,9 +584,7 @@ async def plot_new_data(logger):
 
                 if ipent_mrs is not None and npent_mrs is not None:
                     for i, n in zip(ipent_mrs, npent_mrs):
-                        if not n:
-                            inpent_ratio.append(None)
-                        elif not i:
+                        if not n or not i:
                             inpent_ratio.append(None)
                         else:
                             inpent_ratio.append(i / n)
@@ -599,7 +598,7 @@ async def plot_new_data(logger):
                                     minor_ticks=minor_ticks)
 
                     in_pent_plot = Plot(plotdir/name, True)
-                    core_session.add(in_pent_plot)
+                    add_or_ignore_plot(in_pent_plot, core_session)
 
                     name = summit_voc_plot(pentane_dates, ({'i/n Pentane ratio': [None, inpent_ratio]}),
                                     limits={'right': date_limits.get('right', None),
@@ -611,7 +610,7 @@ async def plot_new_data(logger):
                                     y_label_str='')
 
                     in_pent_ratio_plot = Plot(plotdir/name, True)
-                    core_session.add(in_pent_ratio_plot)
+                    add_or_ignore_plot(in_pent_ratio_plot, core_session)
 
             with TempDir(plotdir):  ## PLOT benzene and toluene
                 benz_mrs, benz_dates = get_dates_peak_info(session, 'benzene', 'mr', date_start=date_ago)
@@ -626,7 +625,7 @@ async def plot_new_data(logger):
                                 minor_ticks=minor_ticks)
 
                 benz_tol_plot = Plot(plotdir/name, True)
-                core_session.add(benz_tol_plot)
+                add_or_ignore_plot(benz_tol_plot, core_session)
 
             voc_config.last_data_date = dates[-1]
             core_session.merge(voc_config)
@@ -727,7 +726,7 @@ async def load_excel_corrections(sheet_name, logger):
                             .filter(NmhcCorrection.status == 'unapplied')
                             .filter(NmhcCorrection.date != None)
                             .all())
-        # re-get all added corrections that haven't been applied, but have a date from a mathed line
+        # re-get all added corrections that haven't been applied, but have a date from a matched line
 
         for correction in nmhc_corrections:
             if correction:

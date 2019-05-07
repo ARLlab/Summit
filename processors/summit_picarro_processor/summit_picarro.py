@@ -132,7 +132,7 @@ class CalEvent(Base):
 
     id = Column(Integer, primary_key=True)
     date = Column(DateTime)
-    data = relationship('Datum', back_populates='cal')
+    data = relationship('Datum', back_populates='cal', order_by='Datum.date')
     standard_used = Column(String)  # type = 'high' | 'mid' | 'low' | other_specific_names
     co_result = Column(MutableDict.as_mutable(JDict))  # {'mean': x, 'median': x, 'stdev': x}
     co2_result = Column(MutableDict.as_mutable(JDict))  # {'mean': x, 'median': x, 'stdev': x}
@@ -437,3 +437,25 @@ def calc_two_pt_curve(low, high):
     intercept = low.y - m * low.x
 
     return Curve(m, intercept)
+
+
+def filter_postcal_data(cal, session):
+    """
+    Takes a calibration event and filters the ambient data for one minute after the end of the event
+    to allow for the sampling line to flush all the standard out.
+    :param session: Sqlalchemy session()
+    :param cal: CalEvent
+    :return: None
+    """
+    last_cal_date = cal.data[-1].date
+    end_flush_date = last_cal_date + dt.timedelta(minutes=1)
+    flush_data = (session.query(Datum)
+                  .filter(Datum.date > last_cal_date, Datum.date <= end_flush_date)
+                  .all())
+
+    for data in flush_data:
+        data.instrument_status = 999  # set to anything but 963 and it will be filtered
+        session.merge(data)
+    session.commit()
+
+    return

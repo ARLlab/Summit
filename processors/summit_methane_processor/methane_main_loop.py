@@ -481,7 +481,7 @@ async def plot_new_data(logger):
     try:
         from summit_core import core_dir, Config
         from summit_core import methane_dir as rundir
-        from summit_core import connect_to_db, create_daily_ticks, TempDir, Plot
+        from summit_core import connect_to_db, create_daily_ticks, TempDir, Plot, add_or_ignore_plot
         from summit_methane import Sample, Base, plottable_sample, summit_methane_plot
     except ImportError as e:
         logger.error('ImportError occurred in plot_new_data()')
@@ -549,7 +549,7 @@ async def plot_new_data(logger):
                                     minor_ticks=minor_ticks)
 
                 methane_plot = Plot(rundir/'plots'/name, True)  # stage plots to be uploaded
-                core_session.add(methane_plot)
+                add_or_ignore_plot(methane_plot, core_session)
 
             logger.info('New data plots created.')
         else:

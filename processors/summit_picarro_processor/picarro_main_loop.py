@@ -98,7 +98,14 @@ async def check_load_new_data(logger):
         session.commit()
 
         for file in files_to_process:
-            df = pd.read_csv(file.path, delim_whitespace=True)
+            try:
+                df = pd.read_csv(file.path, delim_whitespace=True)
+            except Exception as e:
+                logger.error(f'Exception {e.args} occurred in check_load_new_data() while reading a file.'
+                             + f'The file was {file.name}')
+                send_processor_email(PROC, exception=e)
+                return False
+
             # CO2 stays in ppm
             df['CO_sync'] *= 1000  # convert CO to ppb
             df['CH4_sync'] *= 1000  # convert CH4 to ppb
@@ -144,7 +151,7 @@ async def find_cal_events(logger):
         from summit_core import connect_to_db
         from summit_core import picarro_dir as rundir
         from summit_picarro import Base, Datum, CalEvent, mpv_converter, find_cal_indices
-        from summit_picarro import log_event_quantification
+        from summit_picarro import log_event_quantification, filter_postcal_data
     except Exception as e:
         logger.error('ImportError occured in find_cal_events()')
         send_processor_email(PROC, exception=e)
@@ -179,12 +186,19 @@ async def find_cal_events(logger):
         for standard, data in standard_data.items():
             indices = find_cal_indices(data['date'])
 
-            if not len(indices):
+            cal_events = []
+
+            if not len(indices) and len(data):
+                # if there's not provided indices, but there's still calibration data, create the one event
+                event_data = session.query(Datum).filter(Datum.id.in_(data['id'])).all()
+                cal_events.append(CalEvent(event_data, standard))
+
+            elif not len(indices):
+                # if there's no provided indices
                 logger.info(f'No new cal events were found for {standard} standard.')
                 continue
 
             prev_ind = 0
-            cal_events = []
 
             for num, ind in enumerate(indices):  # get all data within this event
                 event_data = session.query(Datum).filter(Datum.id.in_(data['id'].iloc[prev_ind:ind])).all()
@@ -197,6 +211,9 @@ async def find_cal_events(logger):
                 prev_ind = ind
 
             for ev in cal_events:
+
+                filter_postcal_data(ev, session)  # flag the following minute as questionable data (inst_status = 999)
+
                 if ev.date - ev.dates[0] < dt.timedelta(seconds=90):
                     logger.info(f'CalEvent for date {ev.date} had a duration < 90s and was ignored.')
                     ev.standard_used = 'dump'  # give not-long-enough events standard type 'dump' so they're ignored
@@ -225,6 +242,8 @@ async def create_mastercals(logger):
     :param logger: logging logger at module level
     :return: boolean, did it run/process new data?
     """
+
+    logger.info('Running create_mastercals()')
 
     try:
         from summit_core import picarro_dir as rundir
@@ -295,7 +314,7 @@ async def plot_new_data(logger):
 
     try:
         from summit_core import picarro_dir as rundir
-        from summit_core import create_daily_ticks, connect_to_db, TempDir, Plot, core_dir, Config
+        from summit_core import create_daily_ticks, connect_to_db, TempDir, Plot, core_dir, Config, add_or_ignore_plot
         from summit_picarro import Base, Datum, summit_picarro_plot
     except Exception as e:
         logger.error('ImportError occurred in plot_new_data()')
@@ -386,7 +405,7 @@ async def plot_new_data(logger):
                                 minor_ticks=minor_ticks)
 
             co_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
-            core_session.add(co_plot)
+            add_or_ignore_plot(co_plot, core_session)
 
             name = summit_picarro_plot(None, ({'Summit CO2': [dates, co2]}),
                                 limits={'right': date_limits.get('right', None),
@@ -398,7 +417,7 @@ async def plot_new_data(logger):
                                 unit_string='ppmv')
 
             co2_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
-            core_session.add(co2_plot)
+            add_or_ignore_plot(co2_plot, core_session)
 
             name = summit_picarro_plot(None, ({'Summit CH4': [dates, ch4]}),
                                 limits={'right': date_limits.get('right', None),
@@ -409,7 +428,7 @@ async def plot_new_data(logger):
                                 minor_ticks=minor_ticks)
 
             ch4_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
-            core_session.add(ch4_plot)
+            add_or_ignore_plot(ch4_plot, core_session)
 
         logger.info('New data plots were created.')
 
@@ -445,10 +464,10 @@ async def main():
     try:
         if await asyncio.create_task(check_load_new_data(logger)):
 
-            await asyncio.create_task(plot_new_data(logger))
-
             if await asyncio.create_task(find_cal_events(logger)):
                 await asyncio.create_task(create_mastercals(logger))
+
+            await asyncio.create_task(plot_new_data(logger))
 
         return True
     except Exception as e:

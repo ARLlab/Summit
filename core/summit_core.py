@@ -141,7 +141,7 @@ class Plot(Base):
 
     @path.setter
     def path(self, value):
-        self._path = str(value)
+        self._path = str(value.resolve())
         self._name = value.name
 
     @property
@@ -324,6 +324,14 @@ def connect_to_sftp():
     server_info = json.loads(taylor_auth.read_text())
     client.connect(**server_info)
     return client.open_sftp()
+
+
+def add_or_ignore_plot(plot, core_session):
+    plots_in_db = core_session.query(Plot._path).all()
+
+    if plot.path not in plots_in_db:
+        core_session.add(plot)
+    return
 
 
 async def send_file_sftp(filepath):
