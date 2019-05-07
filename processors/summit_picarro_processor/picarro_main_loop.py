@@ -373,11 +373,15 @@ async def plot_new_data(logger):
             ch4.append(result.ch4)
 
         with TempDir(plotdir):
+
+            from summit_core import average_five_minutes
+            dates, co = average_five_minutes(dates, co)
+
             name = summit_picarro_plot(None, ({'Summit CO': [dates, co]}),
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
-                                        'bottom': 0,
-                                        'top': 300},
+                                        'bottom': 50,
+                                        'top': 200},
                                 major_ticks=major_ticks,
                                 minor_ticks=minor_ticks)
 
@@ -387,8 +391,8 @@ async def plot_new_data(logger):
             name = summit_picarro_plot(None, ({'Summit CO2': [dates, co2]}),
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
-                                        'bottom': 380,
-                                        'top': 480},
+                                        'bottom': 400,
+                                        'top': 440},
                                 major_ticks=major_ticks,
                                 minor_ticks=minor_ticks,
                                 unit_string='ppmv')
@@ -399,8 +403,8 @@ async def plot_new_data(logger):
             name = summit_picarro_plot(None, ({'Summit CH4': [dates, ch4]}),
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
-                                        'bottom': 1800,
-                                        'top': 2200},
+                                        'bottom': 1850,
+                                        'top': 2050},
                                 major_ticks=major_ticks,
                                 minor_ticks=minor_ticks)
 
