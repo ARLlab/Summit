@@ -542,7 +542,7 @@ async def plot_new_data(logger):
 
             with TempDir(rundir / 'plots'):
                 name = summit_methane_plot(None, {'Methane': [ambient_dates, ambient_mrs]},
-                                    limits={'bottom': 1800, 'top': 2150,
+                                    limits={'bottom': 1850, 'top': 2050,
                                             'right': date_limits.get('right', None),
                                             'left': date_limits.get('left', None)},
                                     major_ticks=major_ticks,
