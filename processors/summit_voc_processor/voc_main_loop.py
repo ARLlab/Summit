@@ -475,7 +475,7 @@ async def plot_new_data(logger):
         from summit_core import voc_dir as rundir
         from summit_core import core_dir, Plot, Config
         from summit_core import connect_to_db, TempDir, create_daily_ticks, add_or_ignore_plot
-        from summit_voc import Base, summit_voc_plot, get_dates_peak_info
+        from summit_voc import Base, GcRun, summit_voc_plot, get_dates_peak_info
         from datetime import datetime
         import datetime as dt
         plotdir = rundir / '../summit_master/summit_master/static/img/coding'  # local flask static folder
@@ -517,7 +517,8 @@ async def plot_new_data(logger):
         date_limits, major_ticks, minor_ticks = create_daily_ticks(voc_config.days_to_plot)
 
         try:
-            _, dates = get_dates_peak_info(session, 'ethane', 'mr', date_start=date_ago)  # get dates for data length
+            dates = session.query(GcRun.date).filter(GcRun.date > date_ago).order_by(GcRun.date).all()
+            dates[:] = [d.date for d in dates]
             assert dates is not None
 
         except (ValueError, AssertionError):
@@ -583,9 +584,7 @@ async def plot_new_data(logger):
 
                 if ipent_mrs is not None and npent_mrs is not None:
                     for i, n in zip(ipent_mrs, npent_mrs):
-                        if not n:
-                            inpent_ratio.append(None)
-                        elif not i:
+                        if not n or not i:
                             inpent_ratio.append(None)
                         else:
                             inpent_ratio.append(i / n)
@@ -727,7 +726,7 @@ async def load_excel_corrections(sheet_name, logger):
                             .filter(NmhcCorrection.status == 'unapplied')
                             .filter(NmhcCorrection.date != None)
                             .all())
-        # re-get all added corrections that haven't been applied, but have a date from a mathed line
+        # re-get all added corrections that haven't been applied, but have a date from a matched line
 
         for correction in nmhc_corrections:
             if correction:
