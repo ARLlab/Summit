@@ -96,15 +96,15 @@ def read_daily_line(line):
 
     dailydata = {}
 
-    dailydata['date'] = datetime.strptime(ls[0], '%y%j%H%M')
+    dailydata['date'] = datetime.strptime(ls[0].split('.')[0], '%y%j%H%M')
     dailydata['ads_xfer_a'] = float(ls[1])
     dailydata['ads_xfer_b'] = float(ls[2])
     dailydata['valves_temp'] = float(ls[3])
     dailydata['gc_xfer_temp'] = float(ls[4])
     dailydata['cj1'] = float(ls[5])
     dailydata['catalyst'] = float(ls[6])
-    dailydata['molsieve_a'] = int(ls[7])
-    dailydata['molsieve_b'] = int(ls[8])
+    dailydata['molsieve_a'] = float(ls[7])
+    dailydata['molsieve_b'] = float(ls[8])
     dailydata['inlet_long'] = float(ls[9])
     dailydata['inlet_short'] = float(ls[10])
     dailydata['std_temp'] = float(ls[11])
@@ -133,6 +133,7 @@ def read_daily_line(line):
 def read_daily_file(filepath):
 
     contents = filepath.read_text().split('\n')
+    contents = [line for line in contents if line]
 
     dailies = []
     for line in contents:
@@ -161,7 +162,7 @@ async def check_load_dailies(logger):
         return False
 
     try:
-        engine, session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+        engine, session = connect_to_db('sqlite:///summit_daily.sqlite', core_dir)
         Base.metadata.create_all(engine)
     except Exception as e:
         logger.error(f'Error {e.args} prevented connecting to the database in check_load_dailies()')

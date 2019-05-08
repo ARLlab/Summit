@@ -1,15 +1,15 @@
 import os
 import asyncio
+from pathlib import Path
 
-
-async def main():
-    from summit_core import check_load_dailies, configure_logger
-
-    logger = configure_logger(os.getcwd(), __name__)
-
-    await asyncio.create_task(check_load_dailies(logger))
+from summit_daily import check_load_dailies
 
 
 if __name__ == '__main__':
-    await asyncio.create_task(main())
+    from summit_core import configure_logger, core_dir
+
+    logger = configure_logger(core_dir, __name__)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(check_load_dailies(logger))
 
