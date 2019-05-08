@@ -302,7 +302,7 @@ def create_daily_ticks(days_in_plot):
     return date_limits, major_ticks, minor_ticks
 
 
-def average_five_minutes(dates, vals):
+def five_minute_medians(dates, vals):
     """
     Takes a list of dates and matching list of values, averaging them to 5-minute intervals and returns.
     :param dates: list, of datetimes
@@ -312,7 +312,7 @@ def average_five_minutes(dates, vals):
     import pandas as pd
     df = pd.DataFrame({'dates': dates, 'vals': vals})
     df.set_index(df['dates'], inplace=True, drop=True)
-    df = df.resample('5min')
+    df = df.resample('5min').median()
 
     return df.index.tolist(), df['vals'].tolist()
 
