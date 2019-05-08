@@ -10,6 +10,11 @@ Base = declarative_base()
 
 PROC = 'Daily Processor'
 
+daily_parameters = ['date', 'ads_xfer_a', 'ads_xfer_b', 'valves_temp', 'gc_xfer_temp', 'cj1', 'catalyst', 'molsieve_a',
+                    'molsieve_b', 'inlet_long', 'inlet_short', 'std_temp', 'cj2', 'battv', 'v12a', 'v12b', 'v15a',
+                    'v15b', 'v24', 'v5a', 'mfc1', 'mfc4', 'mfc2', 'mfc5', 'mfc3a', 'mfc3b', 'h2_gen_p', 'line_p',
+                    'zero_p','fid_p']
+
 
 class Daily(Base):
     __tablename__ = 'dailies'
@@ -145,10 +150,15 @@ def read_daily_file(filepath):
     return dailies
 
 
+def summit_daily_plot():
+    pass
+
+    #maybe map a parameter object that has the parameter and limits to it? Some hard-coding seems inevitable.
+
+
 async def check_load_dailies(logger):
     """
-    Load any unquantified GcRuns and use Crfs to calculate mixing ratios for each identified compound in each GcRun.
-    Creates Datum objects when a run has been sucessfully integrated.
+    TODO:
 
     :param logger: logger, to log events to
     :return: Boolean, True if it ran without error and created data, False if not
@@ -197,6 +207,46 @@ async def check_load_dailies(logger):
 
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in check_load_dailies()')
+        send_processor_email(PROC, exception=e)
+        session.close()
+        engine.dispose()
+        return False
+
+
+async def plot_dailies(logger):
+    """
+    TODO:
+
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
+
+    try:
+        from summit_core import connect_to_db, core_dir
+    except ImportError as e:
+        logger.error(f'ImportError occurred in plot_dailies()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        engine, session = connect_to_db('sqlite:///summit_daily.sqlite', core_dir)
+        Base.metadata.create_all(engine)
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented connecting to the database in plot_dailies()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        logger.info('Running plot_dailies()')
+
+        # TODO
+
+        session.close()
+        engine.dispose()
+        return True
+
+    except Exception as e:
+        logger.error(f'Exception {e.args} occurred in plot_dailies()')
         send_processor_email(PROC, exception=e)
         session.close()
         engine.dispose()
