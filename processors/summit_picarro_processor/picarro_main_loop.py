@@ -394,9 +394,9 @@ async def plot_new_data(logger):
         with TempDir(plotdir):
 
             from summit_core import average_five_minutes
-            dates, co = average_five_minutes(dates, co)
+            dates_co, co = average_five_minutes(dates, co)
 
-            name = summit_picarro_plot(None, ({'Summit CO': [dates, co]}),
+            name = summit_picarro_plot(None, ({'Summit CO': [dates_co, co]}),
                                 limits={'right': date_limits.get('right', None),
                                         'left': date_limits.get('left', None),
                                         'bottom': 50,
