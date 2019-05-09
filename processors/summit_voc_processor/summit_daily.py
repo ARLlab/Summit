@@ -30,6 +30,7 @@ class DailyFile(Base):
     def __init__(self, path):
         self.path = path
         self.size = path.stat().st_size
+        self.entries = []
 
     @property
     def path(self):
@@ -160,7 +161,6 @@ def read_daily_line(line):
 
 def read_daily_file(filepath):
 
-    file = DailyFile(filepath)
     contents = filepath.read_text().split('\n')
     contents = [line for line in contents if line]
 
@@ -168,13 +168,7 @@ def read_daily_file(filepath):
     for line in contents:
         dailies.append(Daily(**read_daily_line(line)))
 
-    for daily in dailies:
-        daily.path = filepath  # set filepath of all dailies at once
-
-    if dailies:
-        file.entries = dailies
-
-    return file, dailies
+    return dailies
 
 
 def summit_daily_plot():
@@ -210,36 +204,27 @@ async def check_load_dailies(logger):
         logger.info('Running check_load_dailies()')
 
         daily_files_in_db = session.query(DailyFile).all()
-        daily_paths_in_db = [file.path for file in daily_files_in_db]
 
-        daily_files = get_all_data_files(daily_logs_path, '.txt')
+        daily_files = [DailyFile(path) for path in get_all_data_files(daily_logs_path, '.txt')]
 
         new_files = []
 
         for file in daily_files:
-            file_in_db = search_for_attr_value(daily_files_in_db, 'path', file)
+            file_in_db = search_for_attr_value(daily_files_in_db, 'path', file.path)
 
             if not file_in_db:
                 new_files.append(file)
                 logger.info(f'File {file.name} added for processing.')
             else:
-                if file.stat().st_size > file_in_db.size:
-                    logger.info(f'File {file.name} added to process additional data.')
-                    new_files.append(file)
+                if file.size > file_in_db.size:
+                    logger.info(f'File {file_in_db.name} added to process additional data.')
+                    new_files.append(file_in_db)
 
         if new_files:
-            daily_files = []
-            dailies = []
             for file in new_files:
-                daily_file, new_dailies = read_daily_file(file)
-                daily_files.append(daily_file)
-                dailies.append(new_dailies)
-
-            for file in daily_files:
-                if file.path not in daily_paths_in_db:
-                    session.add(file)
-                else:
-                    session.merge(file)
+                dailies = read_daily_file(file.path)
+                file.entries.extend([d for d in dailies if d not in file.entries])
+                session.merge(file)
 
             session.commit()
 
