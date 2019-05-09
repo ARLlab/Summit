@@ -842,7 +842,7 @@ async def main():
                         for sheet_name in sheet_slices.keys():
                             await asyncio.create_task(load_excel_corrections(sheet_name, logger))
 
-                    await asyncio.create_task(plot_new_data(logger))
+        await asyncio.create_task(plot_new_data(logger))
 
         return True
 
