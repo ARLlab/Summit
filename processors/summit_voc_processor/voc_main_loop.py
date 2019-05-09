@@ -135,7 +135,7 @@ async def check_load_pas(logger):
                 with TempDir(rundir):
                     contents = pa_path.read_text().split('\n')
 
-                new_startline = len(contents) - 1  # get length of file before any lines omitted
+                new_startline = len(contents) - 4  # only read what's necessary, but w/ some padding
 
                 contents[:] = [c for c in contents if c]  # keep only lines with information
 
