@@ -2,7 +2,8 @@ from pathlib import Path
 from datetime import datetime
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float
+from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, ForeignKey
 
 from summit_errors import send_processor_email
 
@@ -15,13 +16,43 @@ daily_parameters = ['date', 'ads_xfer_a', 'ads_xfer_b', 'valves_temp', 'gc_xfer_
                     'v15b', 'v24', 'v5a', 'mfc1', 'mfc4', 'mfc2', 'mfc5', 'mfc3a', 'mfc3b', 'h2_gen_p', 'line_p',
                     'zero_p','fid_p']
 
+class DailyFile(Base):
+    __tablename__ = 'files'
+
+    id = Column(Integer, primary_key=True)
+
+    entries = relationship('Daily', back_populates='file')
+
+    _path = Column(String, unique=True)
+    _name = Column(String)
+    size = Column(Integer)
+
+    def __init__(self, path):
+        self.path = path
+        self.size = path.stat().st_size
+
+    @property
+    def path(self):
+        return Path(self._path)
+
+    @path.setter
+    def path(self, value):
+        self._path = str(value.resolve())
+        self._name = value.name
+
+    @property
+    def name(self):
+        return self._name
+
 
 class Daily(Base):
     __tablename__ = 'dailies'
 
     id = Column(Integer, primary_key=True)
 
-    _path = Column(String)
+    file_id = Column(Integer, ForeignKey('files.id'))
+    file = relationship('DailyFile', back_populates='entries')
+
     date = Column(DateTime)
     ads_xfer_a = Column(Float)
     ads_xfer_b = Column(Float)
@@ -87,14 +118,6 @@ class Daily(Base):
         self.zero_p = zero_p
         self.fid_p = fid_p
 
-    @property
-    def path(self):
-        return Path(self._path)
-
-    @path.setter
-    def path(self, value):
-        self._path = str(value.resolve())
-
 
 def read_daily_line(line):
     ls = line.split('\t')
@@ -137,6 +160,7 @@ def read_daily_line(line):
 
 def read_daily_file(filepath):
 
+    file = DailyFile(filepath)
     contents = filepath.read_text().split('\n')
     contents = [line for line in contents if line]
 
@@ -147,7 +171,10 @@ def read_daily_file(filepath):
     for daily in dailies:
         daily.path = filepath  # set filepath of all dailies at once
 
-    return dailies
+    if dailies:
+        file.entries = dailies
+
+    return file, dailies
 
 
 def summit_daily_plot():
@@ -165,7 +192,7 @@ async def check_load_dailies(logger):
     """
 
     try:
-        from summit_core import connect_to_db, get_all_data_files, core_dir, daily_logs_path
+        from summit_core import connect_to_db, get_all_data_files, core_dir, daily_logs_path, search_for_attr_value
     except ImportError as e:
         logger.error(f'ImportError occurred in check_load_dailies()')
         send_processor_email(PROC, exception=e)
@@ -182,24 +209,39 @@ async def check_load_dailies(logger):
     try:
         logger.info('Running check_load_dailies()')
 
-        daily_files_in_db = session.query(Daily).all()
-        daily_names_in_db = [file.path for file in daily_files_in_db]
+        daily_files_in_db = session.query(DailyFile).all()
+        daily_paths_in_db = [file.path for file in daily_files_in_db]
 
         daily_files = get_all_data_files(daily_logs_path, '.txt')
 
-        dailies = []
+        new_files = []
+
         for file in daily_files:
-            filepath = Path(file)
-            if filepath not in daily_names_in_db:
-                new_dailies = read_daily_file(filepath)
+            file_in_db = search_for_attr_value(daily_files_in_db, 'path', file)
 
-                for n in new_dailies:
-                    dailies.append(n)
+            if not file_in_db:
+                new_files.append(file)
+                logger.info(f'File {file.name} added for processing.')
+            else:
+                if file.stat().st_size > file_in_db.size:
+                    logger.info(f'File {file.name} added to process additional data.')
+                    new_files.append(file)
 
-        for daily in dailies:
-            session.add(daily)
+        if new_files:
+            daily_files = []
+            dailies = []
+            for file in new_files:
+                daily_file, new_dailies = read_daily_file(file)
+                daily_files.append(daily_file)
+                dailies.append(new_dailies)
 
-        session.commit()
+            for file in daily_files:
+                if file.path not in daily_paths_in_db:
+                    session.add(file)
+                else:
+                    session.merge(file)
+
+            session.commit()
 
         session.close()
         engine.dispose()

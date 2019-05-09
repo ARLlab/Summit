@@ -13,6 +13,7 @@ from voc_main_loop import main as voc_processor
 from methane_main_loop import main as methane_processor
 from picarro_main_loop import main as picarro_processor
 from error_main_loop import check_for_new_data, check_existing_errors
+from summit_daily import check_load_dailies as daily_processor
 from summit_core import check_send_plots
 from summit_errors import send_processor_email
 import asyncio
@@ -38,6 +39,7 @@ async def main():
 		vocs = await asyncio.create_task(voc_processor())
 		methane = await asyncio.create_task(methane_processor())
 		picarro = await asyncio.create_task(picarro_processor())
+		dailies = await asyncio.create_task(daily_processor(logger))
 
 		if vocs or methane or picarro:
 			await asyncio.create_task(check_send_plots(logger))
