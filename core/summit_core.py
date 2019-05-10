@@ -330,7 +330,7 @@ def connect_to_sftp():
 
 
 def add_or_ignore_plot(plot, core_session):
-    plots_in_db = core_session.query(Plot._path).all()
+    plots_in_db = [p[0] for p in core_session.query(Plot._path).all()]
 
     if str(plot.path.resolve()) not in plots_in_db:
         core_session.add(plot)
