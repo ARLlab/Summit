@@ -339,7 +339,7 @@ async def plot_dailies(logger):
     try:
         import datetime as dt
         from summit_core import connect_to_db, core_dir, TempDir, Config, Plot, add_or_ignore_plot, create_daily_ticks
-        plotdir = core_dir / 'plots'
+        plotdir = core_dir / 'plots/daily'
 
         try:
             os.chdir(plotdir)
