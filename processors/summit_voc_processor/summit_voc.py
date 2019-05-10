@@ -946,7 +946,7 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
     return plot_name
 
 
-def summit_log_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None,
+def summit_log_plot(name, dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None,
                     y_label_str='Temperature (\xb0C)'):
     """
     :param dates: list, of Python datetimes; if set, this applies to all compounds.
@@ -998,10 +998,10 @@ def summit_log_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
         """Create a filename-safe list using the given legend items"""
         compounds_safe.append(k.replace('-', '_')
                                 .replace('/', '_')
-                                .replace(' ', '_').lower())
+                                .replace(' ', '_')
+                                .replace(',', '').lower())
 
     comp_list = ', '.join(compound_dict.keys())  # use real names for plot title
-    fn_list = '_'.join(compounds_safe)  # use 'safe' names for filename
 
     if limits is not None:
         ax.set_xlim(right=limits.get('right'))
@@ -1028,11 +1028,10 @@ def summit_log_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
 
     f1.subplots_adjust(bottom=.20)
 
-    plot_name = f'{fn_list}.png'
-    f1.savefig(plot_name, dpi=150)
+    f1.savefig(name, dpi=150)
     plt.close(f1)
 
-    return plot_name
+    return
 
 
 def get_peak_data(run):

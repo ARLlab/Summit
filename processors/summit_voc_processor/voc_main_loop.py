@@ -519,7 +519,7 @@ async def plot_new_data(logger):
         try:
             dates = session.query(GcRun.date).filter(GcRun.date > date_ago).order_by(GcRun.date).all()
             dates[:] = [d.date for d in dates]
-            assert dates is not None
+            assert dates
 
         except (ValueError, AssertionError):
             logger.error('No new data was found within time window. Plots were not created.')
@@ -672,7 +672,12 @@ async def plot_logdata(logger):
         from summit_core import voc_dir, core_dir
         from summit_voc import LogFile, summit_log_plot
         from summit_voc import log_params_list as log_parameters
-        plotdir = voc_dir / 'plots'
+        plotdir = core_dir / 'plots/log'
+
+        try:
+            os.chdir(plotdir)
+        except FileNotFoundError:
+            os.mkdir(plotdir)
 
         try:
             os.chdir(plotdir)
@@ -724,68 +729,74 @@ async def plot_logdata(logger):
         for param in log_parameters:
             logdict[param] = [getattr(l, param) for l in logs]
 
+        dates = [l.date for l in logs]
+
         with TempDir(plotdir):  ## PLOT i-butane, n-butane, acetylene
 
-            name = summit_log_plot(logdict.get('date'),
-                                   ({'Chamber Temp Start': [None, logdict.get('chamber_temp_start')],
-                                     'H20 Trap A, Sample Start': [None, logdict.get('WTA_temp_start')],
-                                     'H20 Trap B, Sample Start': [None, logdict.get('WTB_temp_start')],
-                                     'Ads Trap A, Sample Start': [None, logdict.get('adsA_temp_start')],
-                                     'Ads Trap B, Sample Start': [None, logdict.get('adsB_temp_start')],
-                                     'Chamber Temp End': [None, logdict.get('chamber_temp_end')],
-                                     'H20 Trap A, Sample End': [None, logdict.get('WTA_temp_end')],
-                                     'H20 Trap B, Sample End': [None, logdict.get('WTB_temp_end')],
-                                     'Ads Trap A, Sample End': [None, logdict.get('adsA_temp_end')],
-                                     'Ads Trap B, Sample End': [None, logdict.get('adsB_temp_end')]}),
-                                     limits={'right': date_limits.get('right', None),
-                                             'left': date_limits.get('left', None),
-                                             'bottom': -40,
-                                             'top': 40},
-                                     major_ticks=major_ticks,
-                                     minor_ticks=minor_ticks)
+            name = 'trap_chamber_starts_ends.png'
+            summit_log_plot(name, dates,
+                           ({'Chamber Temp Start': [None, logdict.get('chamber_temp_start')],
+                             'H20 Trap A, Sample Start': [None, logdict.get('WTA_temp_start')],
+                             'H20 Trap B, Sample Start': [None, logdict.get('WTB_temp_start')],
+                             'Ads Trap A, Sample Start': [None, logdict.get('adsA_temp_start')],
+                             'Ads Trap B, Sample Start': [None, logdict.get('adsB_temp_start')],
+                             'Chamber Temp End': [None, logdict.get('chamber_temp_end')],
+                             'H20 Trap A, Sample End': [None, logdict.get('WTA_temp_end')],
+                             'H20 Trap B, Sample End': [None, logdict.get('WTB_temp_end')],
+                             'Ads Trap A, Sample End': [None, logdict.get('adsA_temp_end')],
+                             'Ads Trap B, Sample End': [None, logdict.get('adsB_temp_end')]}),
+                             limits={'right': date_limits.get('right', None),
+                                     'left': date_limits.get('left', None),
+                                     'bottom': -40,
+                                     'top': 40},
+                             major_ticks=major_ticks,
+                             minor_ticks=minor_ticks)
 
             traps_plot = Plot(plotdir / name, True)
             add_or_ignore_plot(traps_plot, core_session)
 
-            name = summit_log_plot(logdict.get('date'),
-                                   ({'Sample Pressure (PSI)': [None, logdict.get('sampleflow2')],
-                                     'Sample Flow (V)': [None, logdict.get('samplepressure2')]}),
-                                     limits={'right': date_limits.get('right', None),
-                                             'left': date_limits.get('left', None),
-                                             'bottom': 0,
-                                             'top': 10},
-                                     y_label_str='',
-                                     major_ticks=major_ticks,
-                                     minor_ticks=minor_ticks)
+            name = 'sample_flow_and_pressure.png'
+            summit_log_plot(name, dates,
+                           ({'Sample Pressure (PSI)': [None, logdict.get('sampleflow2')],
+                             'Sample Flow (V)': [None, logdict.get('samplepressure2')]}),
+                             limits={'right': date_limits.get('right', None),
+                                     'left': date_limits.get('left', None),
+                                     'bottom': 0,
+                                     'top': 10},
+                             y_label_str='',
+                             major_ticks=major_ticks,
+                             minor_ticks=minor_ticks)
 
             sample_plot = Plot(plotdir / name, True)
             add_or_ignore_plot(sample_plot, core_session)
 
-            name = summit_log_plot(logdict.get('date'),
-                                   ({'H20 Trap A Hot Temp': [None, logdict.get('WTA_hottemp')],
-                                     'H20 Trap B Hot Temp': [None, logdict.get('WTB_hottemp')]}),
-                                   limits={'right': date_limits.get('right', None),
-                                           'left': date_limits.get('left', None),
-                                           'bottom': 0,
-                                           'top': 10},
-                                   y_label_str='',
-                                   major_ticks=major_ticks,
-                                   minor_ticks=minor_ticks)
+            name = 'water_trap_hot_temps.png'
+            summit_log_plot(name, dates,
+                           ({'H20 Trap A Hot Temp': [None, logdict.get('WTA_hottemp')],
+                             'H20 Trap B Hot Temp': [None, logdict.get('WTB_hottemp')]}),
+                           limits={'right': date_limits.get('right', None),
+                                   'left': date_limits.get('left', None),
+                                   'bottom': 0,
+                                   'top': 90},
+                           y_label_str='',
+                           major_ticks=major_ticks,
+                           minor_ticks=minor_ticks)
 
             hot_water_plot = Plot(plotdir / name, True)
             add_or_ignore_plot(hot_water_plot, core_session)
 
-            name = summit_log_plot(logdict.get('date'),
-                                   ({'Trap Temp, Flash Heat': [None, logdict.get('traptempFH')],
-                                     'Trap Temp, Inject': [None, logdict.get('traptempinject_end')],
-                                     'Trap Temp, Bakeout': [None, logdict.get('traptempbakeout_end')]}),
-                                     limits={'right': date_limits.get('right', None),
-                                             'left': date_limits.get('left', None),
-                                             'bottom': 0,
-                                             'top': 75},
-                                     y_label_str='Pressure (PSI)',
-                                     major_ticks=major_ticks,
-                                     minor_ticks=minor_ticks)
+            name = 'trap_temps_inject_flashheat.png'
+            summit_log_plot(name, dates,
+                           ({'Trap Temp, Flash Heat': [None, logdict.get('traptempFH')],
+                             'Trap Temp, Inject': [None, logdict.get('traptempinject_end')],
+                             'Trap Temp, Bakeout': [None, logdict.get('traptempbakeout_end')]}),
+                             limits={'right': date_limits.get('right', None),
+                                     'left': date_limits.get('left', None),
+                                     'bottom': -50,
+                                     'top': 350},
+                             y_label_str='Pressure (PSI)',
+                             major_ticks=major_ticks,
+                             minor_ticks=minor_ticks)
 
             traptemp_plot = Plot(plotdir / name, True)
             add_or_ignore_plot(traptemp_plot, core_session)
