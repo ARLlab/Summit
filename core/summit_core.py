@@ -282,7 +282,7 @@ def find_closest_date(date, list_of_dates):
     return match, delta
 
 
-def create_daily_ticks(days_in_plot):
+def create_daily_ticks(days_in_plot, minors_per_day=4):
     """
     Takes a number of days to plot back, and creates major (1 day) and minor (6 hour) ticks.
 
@@ -298,7 +298,9 @@ def create_daily_ticks(days_in_plot):
     date_limits['left'] = date_limits['right'] - dt.timedelta(days=days_in_plot)
 
     major_ticks = [date_limits['right'] - dt.timedelta(days=x) for x in range(0, days_in_plot + 1)]
-    minor_ticks = [date_limits['right'] - dt.timedelta(hours=x * 6) for x in range(0, days_in_plot * 4 + 1)]
+
+    minor_ticks = [date_limits['right'] - dt.timedelta(hours=x * 6)
+                   for x in range(0, days_in_plot * minors_per_day + 1)]
 
     return date_limits, major_ticks, minor_ticks
 
