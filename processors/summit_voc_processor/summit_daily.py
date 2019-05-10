@@ -320,7 +320,7 @@ def summit_daily_plot(dates, compound_dict, limits=None, minor_ticks=None, major
 
     f1.subplots_adjust(bottom=.20)
 
-    plot_name = f'{fn_list}_last_week.png'
+    plot_name = f'{fn_list}.png'
     f1.savefig(plot_name, dpi=150)
     plt.close(f1)
 
@@ -329,7 +329,8 @@ def summit_daily_plot(dates, compound_dict, limits=None, minor_ticks=None, major
 
 async def plot_dailies(logger):
     """
-    TODO:
+    Loads dailies for the last 3 weeks and plots with ticks for every three days and minor ticks for every day.
+    Plots are registered with the core database so they're uploaded to the Taylor drive.
 
     :param logger: logger, to log events to
     :return: Boolean, True if it ran without error and created data, False if not
@@ -342,7 +343,7 @@ async def plot_dailies(logger):
 
         try:
             os.chdir(plotdir)
-        except:
+        except FileNotFoundError:
             os.mkdir(plotdir)
 
     except ImportError as e:
@@ -378,7 +379,6 @@ async def plot_dailies(logger):
     try:
         logger.info('Running plot_dailies()')
 
-        logger.info('Running plot_new_data()')
         date_ago = datetime.now() - dt.timedelta(
             days=daily_config.days_to_plot + 1)  # set a static for retrieving data at beginning of plot cycle
 
