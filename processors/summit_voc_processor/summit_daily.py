@@ -218,12 +218,15 @@ async def check_load_dailies(logger):
             else:
                 if file.size > file_in_db.size:
                     logger.info(f'File {file_in_db.name} added to process additional data.')
+                    logger.info(f'Original size: {file_in_db.size}, New Size: {file.size}.')
                     new_files.append(file_in_db)
 
         if new_files:
             for file in new_files:
                 dailies = read_daily_file(file.path)
-                file.entries.extend([d for d in dailies if d not in file.entries])
+                file_daily_dates = [d.date for d in file.entries]
+                file.entries.extend([d for d in dailies if d.date not in file_daily_dates])
+                file.size = file.path.stat().st_size
                 session.merge(file)
 
             session.commit()
