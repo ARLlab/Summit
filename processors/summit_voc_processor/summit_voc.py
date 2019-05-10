@@ -349,6 +349,8 @@ class LogFile(Base):
     GCstarttemp = Column(Float)
     traptempinject_end = Column(Float)
     traptempbakeout_end = Column(Float)
+    WTA_hottemp = Column(Float)
+    WTB_hottemp = Column(Float)
     GCoventemp = Column(Float)
     status = Column(String)
 
@@ -938,6 +940,95 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
     f1.subplots_adjust(bottom=.20)
 
     plot_name = f'{fn_list}_last_week.png'
+    f1.savefig(plot_name, dpi=150)
+    plt.close(f1)
+
+    return plot_name
+
+
+def summit_log_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None,
+                    y_label_str='Temperature (\xb0C)'):
+    """
+    :param dates: list, of Python datetimes; if set, this applies to all compounds.
+        If None, each compound supplies its own date values
+    :param compound_dict: dict, {'compound_name':[dates, mrs]}
+        keys: str, the name to be plotted and put into filename
+        values: list, len(list) == 2, two parallel lists that are...
+            dates: list, of Python datetimes. If None, dates come from dates input parameter (for all compounds)
+            mrs: list, of [int/float/None]s; these are the mixing ratios to be plotted
+    :param limits: dict, optional dictionary of limits including ['top','bottom','right','left']
+    :param minor_ticks: list, of major tick marks
+    :param major_ticks: list, of minor tick marks
+    :return: None
+
+    This plots stuff.
+
+    Example with all dates supplied:
+        plot_last_week((None, {'Ethane':[[date, date, date], [1, 2, 3]],
+                                'Propane':[[date, date, date], [.5, 1, 1.5]]}))
+
+    Example with single date list supplied:
+        plot_last_week([date, date, date], {'ethane':[None, [1, 2, 3]],
+                                'propane':[None, [.5, 1, 1.5]]})
+    """
+
+    import matplotlib.pyplot as plt
+    from matplotlib.dates import DateFormatter
+    from pandas.plotting import register_matplotlib_converters
+    register_matplotlib_converters()
+
+    f1 = plt.figure()
+    ax = f1.gca()
+
+    if dates is None:  # dates supplied by individual compounds
+        for compound, val_list in compound_dict.items():
+            if val_list[0] and val_list[1]:
+                assert len(val_list[0]) > 0 and len(val_list[0]) == len(
+                    val_list[1]), 'Supplied dates were empty or lengths did not match'
+                ax.plot(val_list[0], val_list[1], '-o')
+            else:
+                pass
+
+    else:
+        for compound, val_list in compound_dict.items():
+            ax.plot(dates, val_list[1], '-o')
+
+    compounds_safe = []
+    for k, _ in compound_dict.items():
+        """Create a filename-safe list using the given legend items"""
+        compounds_safe.append(k.replace('-', '_')
+                                .replace('/', '_')
+                                .replace(' ', '_').lower())
+
+    comp_list = ', '.join(compound_dict.keys())  # use real names for plot title
+    fn_list = '_'.join(compounds_safe)  # use 'safe' names for filename
+
+    if limits is not None:
+        ax.set_xlim(right=limits.get('right'))
+        ax.set_xlim(left=limits.get('left'))
+        ax.set_ylim(top=limits.get('top'))
+        ax.set_ylim(bottom=limits.get('bottom'))
+
+    if major_ticks is not None:
+        ax.set_xticks(major_ticks, minor=False)
+    if minor_ticks is not None:
+        ax.set_xticks(minor_ticks, minor=True)
+
+    date_form = DateFormatter("%Y-%m-%d")
+    ax.xaxis.set_major_formatter(date_form)
+
+    [i.set_linewidth(2) for i in ax.spines.values()]
+    ax.tick_params(axis='x', labelrotation=30)
+    ax.tick_params(axis='both', which='major', size=8, width=2, labelsize=15)
+    f1.set_size_inches(11.11, 7.406)
+
+    ax.set_ylabel(y_label_str, fontsize=20)
+    ax.set_title(f'{comp_list}', fontsize=24, y=1.02)
+    ax.legend(compound_dict.keys())
+
+    f1.subplots_adjust(bottom=.20)
+
+    plot_name = f'{fn_list}.png'
     f1.savefig(plot_name, dpi=150)
     plt.close(f1)
 
