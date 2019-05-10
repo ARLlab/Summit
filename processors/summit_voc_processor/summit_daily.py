@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from datetime import datetime
 
@@ -171,12 +172,6 @@ def read_daily_file(filepath):
     return dailies
 
 
-def summit_daily_plot():
-    pass
-
-    #maybe map a parameter object that has the parameter and limits to it? Some hard-coding seems inevitable.
-
-
 async def check_load_dailies(logger):
     """
     TODO:
@@ -243,6 +238,95 @@ async def check_load_dailies(logger):
         return False
 
 
+def summit_daily_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None,
+                    y_label_str='Temperature (\xb0C)'):
+    """
+    :param dates: list, of Python datetimes; if set, this applies to all compounds.
+        If None, each compound supplies its own date values
+    :param compound_dict: dict, {'compound_name':[dates, mrs]}
+        keys: str, the name to be plotted and put into filename
+        values: list, len(list) == 2, two parallel lists that are...
+            dates: list, of Python datetimes. If None, dates come from dates input parameter (for all compounds)
+            mrs: list, of [int/float/None]s; these are the mixing ratios to be plotted
+    :param limits: dict, optional dictionary of limits including ['top','bottom','right','left']
+    :param minor_ticks: list, of major tick marks
+    :param major_ticks: list, of minor tick marks
+    :return: None
+
+    This plots stuff.
+
+    Example with all dates supplied:
+        plot_last_week((None, {'Ethane':[[date, date, date], [1, 2, 3]],
+                                'Propane':[[date, date, date], [.5, 1, 1.5]]}))
+
+    Example with single date list supplied:
+        plot_last_week([date, date, date], {'ethane':[None, [1, 2, 3]],
+                                'propane':[None, [.5, 1, 1.5]]})
+    """
+
+    import matplotlib.pyplot as plt
+    from matplotlib.dates import DateFormatter
+    from pandas.plotting import register_matplotlib_converters
+    register_matplotlib_converters()
+
+    f1 = plt.figure()
+    ax = f1.gca()
+
+    if dates is None:  # dates supplied by individual compounds
+        for compound, val_list in compound_dict.items():
+            if val_list[0] and val_list[1]:
+                assert len(val_list[0]) > 0 and len(val_list[0]) == len(
+                    val_list[1]), 'Supplied dates were empty or lengths did not match'
+                ax.plot(val_list[0], val_list[1], '-o')
+            else:
+                pass
+
+    else:
+        for compound, val_list in compound_dict.items():
+            ax.plot(dates, val_list[1], '-o')
+
+    compounds_safe = []
+    for k, _ in compound_dict.items():
+        """Create a filename-safe list using the given legend items"""
+        compounds_safe.append(k.replace('-', '_')
+                                .replace('/', '_')
+                                .replace(' ', '_').lower())
+
+    comp_list = ', '.join(compound_dict.keys())  # use real names for plot title
+    fn_list = '_'.join(compounds_safe)  # use 'safe' names for filename
+
+    if limits is not None:
+        ax.set_xlim(right=limits.get('right'))
+        ax.set_xlim(left=limits.get('left'))
+        ax.set_ylim(top=limits.get('top'))
+        ax.set_ylim(bottom=limits.get('bottom'))
+
+    if major_ticks is not None:
+        ax.set_xticks(major_ticks, minor=False)
+    if minor_ticks is not None:
+        ax.set_xticks(minor_ticks, minor=True)
+
+    date_form = DateFormatter("%Y-%m-%d")
+    ax.xaxis.set_major_formatter(date_form)
+
+    [i.set_linewidth(2) for i in ax.spines.values()]
+    ax.tick_params(axis='x', labelrotation=30)
+    ax.tick_params(axis='both', which='major', size=8, width=2, labelsize=15)
+    f1.set_size_inches(11.11, 7.406)
+
+    ax.set_ylabel(y_label_str, fontsize=20)
+    ax.set_title(f'{comp_list}', fontsize=24, y=1.02)
+    ax.legend(compound_dict.keys())
+
+    f1.subplots_adjust(bottom=.20)
+
+    plot_name = f'{fn_list}_last_week.png'
+    f1.savefig(plot_name, dpi=150)
+    plt.close(f1)
+
+    return plot_name
+
+
 async def plot_dailies(logger):
     """
     TODO:
@@ -252,7 +336,15 @@ async def plot_dailies(logger):
     """
 
     try:
-        from summit_core import connect_to_db, core_dir
+        import datetime as dt
+        from summit_core import connect_to_db, core_dir, TempDir, Config, Plot, add_or_ignore_plot, create_daily_ticks
+        plotdir = core_dir / 'plots'
+
+        try:
+            os.chdir(plotdir)
+        except:
+            os.mkdir(plotdir)
+
     except ImportError as e:
         logger.error(f'ImportError occurred in plot_dailies()')
         send_processor_email(PROC, exception=e)
@@ -267,9 +359,131 @@ async def plot_dailies(logger):
         return False
 
     try:
+        core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+        Plot.__table__.create(core_engine, checkfirst=True)
+        Config.__table__.create(core_engine, checkfirst=True)
+
+        daily_config = core_session.query(Config).filter(Config.processor == PROC).one_or_none()
+
+        if not daily_config:
+            daily_config = Config(processor=PROC, days_to_plot=21)  # use all default values except processor on init
+            core_session.add(daily_config)
+            core_session.commit()
+
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented connecting to the core database in plot_new_data()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
         logger.info('Running plot_dailies()')
 
-        # TODO
+        logger.info('Running plot_new_data()')
+        date_ago = datetime.now() - dt.timedelta(
+            days=daily_config.days_to_plot + 1)  # set a static for retrieving data at beginning of plot cycle
+
+        date_limits, major_ticks, minor_ticks = create_daily_ticks(daily_config.days_to_plot, minors_per_day=2)
+
+        dailies = session.query(Daily).filter(Daily.date >= date_ago).all()
+
+        dailydict = {}
+        for param in daily_parameters:
+            dailydict[param] = [getattr(d, param) for d in dailies]
+
+
+        with TempDir(plotdir):  ## PLOT i-butane, n-butane, acetylene
+
+            name = summit_daily_plot(dailydict.get('date'), ({'Ads Xfer A': [None, dailydict.get('ads_xfer_a')],
+                                                              'Ads Xfer B': [None, dailydict.get('ads_xfer_b')],
+                                                              'Valves Temp': [None, dailydict.get('valves_temp')],
+                                                              'GC Xfer Temp': [None, dailydict.get('gc_xfer_temp')],
+                                                              'Catalyst': [None, dailydict.get('catalyst')]}),
+                                     limits={'right': date_limits.get('right', None),
+                                             'left': date_limits.get('left', None),
+                                             'bottom': 0,
+                                             'top': 475},
+                                     major_ticks=major_ticks,
+                                     minor_ticks=minor_ticks)
+
+            hot_plot = Plot(plotdir / name, True)
+            add_or_ignore_plot(hot_plot, core_session)
+
+            name = summit_daily_plot(dailydict.get('date'), ({'CJ1 Temp': [None, dailydict.get('cj1')],
+                                                              'CJ2 Temp': [None, dailydict.get('cj2')],
+                                                              'Standard Temp': [None, dailydict.get('std_temp')]}),
+                                     limits={'right': date_limits.get('right', None),
+                                             'left': date_limits.get('left', None),
+                                             'bottom': 10,
+                                             'top': 40},
+                                     major_ticks=major_ticks,
+                                     minor_ticks=minor_ticks)
+
+            room_plot = Plot(plotdir / name, True)
+            add_or_ignore_plot(room_plot, core_session)
+
+            name = summit_daily_plot(dailydict.get('date'), ({'H2 Gen Pressure': [None, dailydict.get('h2_gen_p')],
+                                                              'Line Pressure': [None, dailydict.get('line_p')],
+                                                              'Zero Pressure': [None, dailydict.get('zero_p')],
+                                                              'FID Pressure': [None, dailydict.get('fid_p')]}),
+                                     limits={'right': date_limits.get('right', None),
+                                             'left': date_limits.get('left', None),
+                                             'bottom': 0,
+                                             'top': 60},
+                                     y_label_str='Pressure (PSI)',
+                                     major_ticks=major_ticks,
+                                     minor_ticks=minor_ticks)
+
+            pressure_plot = Plot(plotdir / name, True)
+            add_or_ignore_plot(pressure_plot, core_session)
+
+            name = summit_daily_plot(dailydict.get('date'),
+                                     ({'Inlet Short Temp': [None, dailydict.get('inlet_short_temp')]}),
+                                     limits={'right': date_limits.get('right', None),
+                                             'left': date_limits.get('left', None),
+                                             'bottom': 0,
+                                             'top': 60},
+                                     major_ticks=major_ticks,
+                                     minor_ticks=minor_ticks)
+
+            inlet_plot = Plot(plotdir / name, True)
+            add_or_ignore_plot(inlet_plot, core_session)
+
+            name = summit_daily_plot(dailydict.get('date'), ({'Battery V': [None, dailydict.get('battv')],
+                                                              '12Va': [None, dailydict.get('v12a')],
+                                                              '15Va': [None, dailydict.get('v15a')],
+                                                              '15Vb': [None, dailydict.get('v15b')],
+                                                              '24V': [None, dailydict.get('v24')],
+                                                              '5Va': [None, dailydict.get('v5a')]}),
+                                     limits={'right': date_limits.get('right', None),
+                                             'left': date_limits.get('left', None),
+                                             'bottom': 0,
+                                             'top': 30},
+                                     y_label_str='Voltage (v)',
+                                     major_ticks=major_ticks,
+                                     minor_ticks=minor_ticks)
+
+            voltage_plot = Plot(plotdir / name, True)
+            add_or_ignore_plot(voltage_plot, core_session)
+
+            name = summit_daily_plot(dailydict.get('date'), ({'MFC1': [None, dailydict.get('mfc1')],
+                                                              'MFC2': [None, dailydict.get('mfc2')],
+                                                              'MFC3a': [None, dailydict.get('mfc3a')],
+                                                              'MFC3b': [None, dailydict.get('mfc3b')],
+                                                              'MFC4': [None, dailydict.get('mfc4')],
+                                                              'MFC5': [None, dailydict.get('mfc5')]}),
+                                     limits={'right': date_limits.get('right', None),
+                                             'left': date_limits.get('left', None),
+                                             'bottom': -.1,
+                                             'top': 4},
+                                     y_label_str='Flow (Ml/min)',
+                                     major_ticks=major_ticks,
+                                     minor_ticks=minor_ticks)
+
+            flow_plot = Plot(plotdir / name, True)
+            add_or_ignore_plot(flow_plot, core_session)
+
+        core_session.close()
+        core_engine.dispose()
 
         session.close()
         engine.dispose()
