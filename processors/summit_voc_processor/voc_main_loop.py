@@ -656,6 +656,155 @@ async def plot_new_data(logger):
         return False
 
 
+async def plot_logdata(logger):
+    """
+    Loads dailies for the last 3 weeks and plots with ticks for every three days and minor ticks for every day.
+    Plots are registered with the core database so they're uploaded to the Taylor drive.
+
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
+
+    try:
+        import datetime as dt
+        from datetime import datetime
+        from summit_core import connect_to_db, TempDir, Config, Plot, add_or_ignore_plot, create_daily_ticks
+        from summit_core import voc_dir, core_dir
+        from summit_voc import LogFile, summit_log_plot
+        from summit_voc import log_params_list as log_parameters
+        plotdir = voc_dir / 'plots'
+
+        try:
+            os.chdir(plotdir)
+        except FileNotFoundError:
+            os.mkdir(plotdir)
+
+    except ImportError as e:
+        logger.error(f'ImportError occurred in plot_logdata()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        engine, session = connect_to_db('sqlite:///summit_voc.sqlite', voc_dir)
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented connecting to the database in plot_logdata()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+        Plot.__table__.create(core_engine, checkfirst=True)
+        Config.__table__.create(core_engine, checkfirst=True)
+
+        log_config = core_session.query(Config).filter(Config.processor == 'Log Plotting').one_or_none()
+
+        if not log_config:
+            log_config = Config(processor='Log Plotting', days_to_plot=21)  # use all default values except processor on init
+            core_session.add(log_config)
+            core_session.commit()
+
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented connecting to the core database in plot_logdata()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        logger.info('Running plot_logdata()')
+
+        date_ago = datetime.now() - dt.timedelta(
+            days=log_config.days_to_plot + 1)  # set a static for retrieving data at beginning of plot cycle
+
+        date_limits, major_ticks, minor_ticks = create_daily_ticks(log_config.days_to_plot, minors_per_day=1)
+
+        major_ticks = [t for ind, t in enumerate(major_ticks) if ind % 3 == 0]  # use every third daily tick
+
+        logs = session.query(LogFile).filter(LogFile.date >= date_ago).order_by(LogFile.date).all()
+
+        logdict = {}
+        for param in log_parameters:
+            logdict[param] = [getattr(l, param) for l in logs]
+
+        with TempDir(plotdir):  ## PLOT i-butane, n-butane, acetylene
+
+            name = summit_log_plot(logdict.get('date'),
+                                   ({'Chamber Temp Start': [None, logdict.get('chamber_temp_start')],
+                                     'H20 Trap A, Sample Start': [None, logdict.get('WTA_temp_start')],
+                                     'H20 Trap B, Sample Start': [None, logdict.get('WTB_temp_start')],
+                                     'Ads Trap A, Sample Start': [None, logdict.get('adsA_temp_start')],
+                                     'Ads Trap B, Sample Start': [None, logdict.get('adsB_temp_start')],
+                                     'Chamber Temp End': [None, logdict.get('chamber_temp_end')],
+                                     'H20 Trap A, Sample End': [None, logdict.get('WTA_temp_end')],
+                                     'H20 Trap B, Sample End': [None, logdict.get('WTB_temp_end')],
+                                     'Ads Trap A, Sample End': [None, logdict.get('adsA_temp_end')],
+                                     'Ads Trap B, Sample End': [None, logdict.get('adsB_temp_end')]}),
+                                     limits={'right': date_limits.get('right', None),
+                                             'left': date_limits.get('left', None),
+                                             'bottom': -40,
+                                             'top': 40},
+                                     major_ticks=major_ticks,
+                                     minor_ticks=minor_ticks)
+
+            traps_plot = Plot(plotdir / name, True)
+            add_or_ignore_plot(traps_plot, core_session)
+
+            name = summit_log_plot(logdict.get('date'),
+                                   ({'Sample Pressure (PSI)': [None, logdict.get('sampleflow2')],
+                                     'Sample Flow (V)': [None, logdict.get('samplepressure2')]}),
+                                     limits={'right': date_limits.get('right', None),
+                                             'left': date_limits.get('left', None),
+                                             'bottom': 0,
+                                             'top': 10},
+                                     y_label_str='',
+                                     major_ticks=major_ticks,
+                                     minor_ticks=minor_ticks)
+
+            sample_plot = Plot(plotdir / name, True)
+            add_or_ignore_plot(sample_plot, core_session)
+
+            name = summit_log_plot(logdict.get('date'),
+                                   ({'H20 Trap A Hot Temp': [None, logdict.get('WTA_hottemp')],
+                                     'H20 Trap B Hot Temp': [None, logdict.get('WTB_hottemp')]}),
+                                   limits={'right': date_limits.get('right', None),
+                                           'left': date_limits.get('left', None),
+                                           'bottom': 0,
+                                           'top': 10},
+                                   y_label_str='',
+                                   major_ticks=major_ticks,
+                                   minor_ticks=minor_ticks)
+
+            hot_water_plot = Plot(plotdir / name, True)
+            add_or_ignore_plot(hot_water_plot, core_session)
+
+            name = summit_log_plot(logdict.get('date'),
+                                   ({'Trap Temp, Flash Heat': [None, logdict.get('traptempFH')],
+                                     'Trap Temp, Inject': [None, logdict.get('traptempinject_end')],
+                                     'Trap Temp, Bakeout': [None, logdict.get('traptempbakeout_end')]}),
+                                     limits={'right': date_limits.get('right', None),
+                                             'left': date_limits.get('left', None),
+                                             'bottom': 0,
+                                             'top': 75},
+                                     y_label_str='Pressure (PSI)',
+                                     major_ticks=major_ticks,
+                                     minor_ticks=minor_ticks)
+
+            traptemp_plot = Plot(plotdir / name, True)
+            add_or_ignore_plot(traptemp_plot, core_session)
+
+        core_session.close()
+        core_engine.dispose()
+
+        session.close()
+        engine.dispose()
+        return True
+
+    except Exception as e:
+        logger.error(f'Exception {e.args} occurred in plot_logdata()')
+        send_processor_email(PROC, exception=e)
+        session.close()
+        engine.dispose()
+        return False
+
+
 async def load_excel_corrections(sheet_name, logger):
     """
     Load the datasheet from another drive.
@@ -831,6 +980,9 @@ async def main():
         await asyncio.create_task(add_compound_windows(logger))
         new_logs = await asyncio.create_task(check_load_logs(logger))
         new_lines = await asyncio.create_task(check_load_pas(logger))
+
+        if new_logs:
+            await asyncio.create_task(plot_logdata(logger))
 
         if new_logs or new_lines:
             await asyncio.create_task(load_crfs(logger))
