@@ -286,7 +286,8 @@ def create_daily_ticks(days_in_plot, minors_per_day=4):
     """
     Takes a number of days to plot back, and creates major (1 day) and minor (6 hour) ticks.
 
-    :param days_in_plot: number of days to be displayed on the plot
+    :param days_in_plot: int, number of days to be displayed on the plot
+    :param minors_per_day: int, number of minor ticks per day
     :return: date_limits, major_ticks, minor_ticks
     """
     from datetime import datetime
@@ -299,7 +300,7 @@ def create_daily_ticks(days_in_plot, minors_per_day=4):
 
     major_ticks = [date_limits['right'] - dt.timedelta(days=x) for x in range(0, days_in_plot + 1)]
 
-    minor_ticks = [date_limits['right'] - dt.timedelta(hours=x * 6)
+    minor_ticks = [date_limits['right'] - dt.timedelta(hours=x * (24 / minors_per_day))
                    for x in range(0, days_in_plot * minors_per_day + 1)]
 
     return date_limits, major_ticks, minor_ticks
