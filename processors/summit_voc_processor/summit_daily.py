@@ -213,7 +213,6 @@ async def check_load_dailies(logger):
             else:
                 if file.size > file_in_db.size:
                     logger.info(f'File {file_in_db.name} added to process additional data.')
-                    logger.info(f'Original size: {file_in_db.size}, New Size: {file.size}.')
                     new_files.append(file_in_db)
 
         if new_files:
