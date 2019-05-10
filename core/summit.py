@@ -14,6 +14,7 @@ from methane_main_loop import main as methane_processor
 from picarro_main_loop import main as picarro_processor
 from error_main_loop import check_for_new_data, check_existing_errors
 from summit_daily import check_load_dailies as daily_processor
+from summit_daily import plot_dailies
 from summit_core import check_send_plots
 from summit_errors import send_processor_email
 import asyncio
@@ -36,10 +37,13 @@ async def main():
 		Processors that are passed a logger will log to /core, others will log to their individual directories/files.
 		"""
 
+		dailies = await asyncio.create_task(daily_processor(logger))
+		if dailies:
+			daily_plots = await asyncio.create_task(plot_dailies(logger))
+
 		vocs = await asyncio.create_task(voc_processor())
 		methane = await asyncio.create_task(methane_processor())
 		picarro = await asyncio.create_task(picarro_processor())
-		dailies = await asyncio.create_task(daily_processor(logger))
 
 		if vocs or methane or picarro:
 			await asyncio.create_task(check_send_plots(logger))
@@ -50,7 +54,8 @@ async def main():
 			errors = await asyncio.create_task(check_existing_errors(logger, active_errors=errors))
 
 		print('Sleeping...')
-		await asyncio.sleep(9*60)
+		for i in range(20):
+			await asyncio.sleep(30)
 
 
 if __name__ == '__main__':

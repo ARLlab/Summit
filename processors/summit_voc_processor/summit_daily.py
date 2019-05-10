@@ -382,14 +382,15 @@ async def plot_dailies(logger):
         date_ago = datetime.now() - dt.timedelta(
             days=daily_config.days_to_plot + 1)  # set a static for retrieving data at beginning of plot cycle
 
-        date_limits, major_ticks, minor_ticks = create_daily_ticks(daily_config.days_to_plot, minors_per_day=2)
+        date_limits, major_ticks, minor_ticks = create_daily_ticks(daily_config.days_to_plot, minors_per_day=1)
 
-        dailies = session.query(Daily).filter(Daily.date >= date_ago).all()
+        major_ticks = [t for ind, t in enumerate(major_ticks) if ind % 3 == 0]  # use every third daily tick
+
+        dailies = session.query(Daily).filter(Daily.date >= date_ago).order_by(Daily.date).all()
 
         dailydict = {}
         for param in daily_parameters:
             dailydict[param] = [getattr(d, param) for d in dailies]
-
 
         with TempDir(plotdir):  ## PLOT i-butane, n-butane, acetylene
 
@@ -414,7 +415,7 @@ async def plot_dailies(logger):
                                      limits={'right': date_limits.get('right', None),
                                              'left': date_limits.get('left', None),
                                              'bottom': 10,
-                                             'top': 40},
+                                             'top': 50},
                                      major_ticks=major_ticks,
                                      minor_ticks=minor_ticks)
 
@@ -428,7 +429,7 @@ async def plot_dailies(logger):
                                      limits={'right': date_limits.get('right', None),
                                              'left': date_limits.get('left', None),
                                              'bottom': 0,
-                                             'top': 60},
+                                             'top': 75},
                                      y_label_str='Pressure (PSI)',
                                      major_ticks=major_ticks,
                                      minor_ticks=minor_ticks)
@@ -437,7 +438,7 @@ async def plot_dailies(logger):
             add_or_ignore_plot(pressure_plot, core_session)
 
             name = summit_daily_plot(dailydict.get('date'),
-                                     ({'Inlet Short Temp': [None, dailydict.get('inlet_short_temp')]}),
+                                     ({'Inlet Short Temp': [None, dailydict.get('inlet_short')]}),
                                      limits={'right': date_limits.get('right', None),
                                              'left': date_limits.get('left', None),
                                              'bottom': 0,
@@ -473,8 +474,8 @@ async def plot_dailies(logger):
                                                               'MFC5': [None, dailydict.get('mfc5')]}),
                                      limits={'right': date_limits.get('right', None),
                                              'left': date_limits.get('left', None),
-                                             'bottom': -.1,
-                                             'top': 4},
+                                             'bottom': -1,
+                                             'top': 3.5},
                                      y_label_str='Flow (Ml/min)',
                                      major_ticks=major_ticks,
                                      minor_ticks=minor_ticks)
