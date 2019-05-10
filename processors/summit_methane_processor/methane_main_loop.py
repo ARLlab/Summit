@@ -282,9 +282,22 @@ async def match_peaks_to_samples(logger):
 
         unmatched_samples = session.query(Sample).filter(Sample.peak_id == None, Sample.run_id != None).all()
 
-        runs_w_unmatched_samples = (session.query(GcRun)
-                                    .filter(GcRun.id.in_({s.run_id for s in unmatched_samples}))
-                                    .all())  # create set of runs that require processing
+        whole_set = list({s.run_id for s in unmatched_samples})
+        # SQLite can't take in clauses with > 1000 variables, so chunk to sets of 500
+        if len(whole_set) > 500:  # subdivide set
+            def split_set(lst, n):
+                for i in range(0, len(lst), n):
+                    yield (lst[i:i + n])
+
+            sets = split_set(whole_set, 500)
+        else:
+            sets = [whole_set]
+
+        runs_w_unmatched_samples = []
+        for set in sets:
+            runs_w_unmatched_samples.extend((session.query(GcRun)
+                                            .filter(GcRun.id.in_(set))
+                                            .all()))  # create set of runs that require processing
 
         for run in runs_w_unmatched_samples:
             # loop through runs containing samples that haven't been matched with peaks
