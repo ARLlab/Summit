@@ -307,11 +307,11 @@ def log_event_quantification(logger, event):
     logger.debug(f'CalEvent for date {event.date}, of duration {event.duration} quantified:')
     logger.debug('Result Sets Below (Mean, Median, StDev)')
     logger.debug(f'CO: {event.co_result["mean"]:.03f}, CO2: {event.co2_result["mean"]:.03f},' +
-                 ' CH4: {event.ch4_result["mean"]:.03f}')
+                 f' CH4: {event.ch4_result["mean"]:.03f}')
     logger.debug(f'CO: {event.co_result["median"]:.03f}, CO2: {event.co2_result["median"]:.03f},' +
-                 ' CH4: {event.ch4_result["median"]:.03f}')
+                 f' CH4: {event.ch4_result["median"]:.03f}')
     logger.debug(f'CO: {event.co_result["stdev"]:.03f}, CO2: {event.co2_result["stdev"]:.03f},' +
-                 ' CH4: {event.ch4_result["stdev"]:.03f}')
+                 f' CH4: {event.ch4_result["stdev"]:.03f}')
 
     return
 
