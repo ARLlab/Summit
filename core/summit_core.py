@@ -339,13 +339,24 @@ def add_or_ignore_plot(plot, core_session):
 
 
 async def send_files_sftp(filepaths):
-    con = connect_to_sftp()
-    con.chdir(taylor_basepath)
+    bools = []
+    try:
+        con = connect_to_sftp()
+        con.chdir(taylor_basepath)
 
-    for file in filepaths:
-        con.put(str(file), file.name)
-    con.close()
-    return
+        for file in filepaths:
+            try:
+                con.put(str(file), file.name)
+                bools.append(True)
+            except:
+                bools.append(False)
+
+        con.close()
+    except:
+        while len(bools) < len(filepaths):
+            bools.append(False)
+
+    return bools
 
 
 async def check_send_plots(logger):
@@ -367,11 +378,14 @@ async def check_send_plots(logger):
 
         if plots_to_upload:
             paths_to_upload = [p.path for p in plots_to_upload]
-            await send_files_sftp(paths_to_upload)
-            logger.info(f'Plots uploaded to website.')
+            successes = await send_files_sftp(paths_to_upload)
 
-        for plot in plots_to_upload:
-            session.delete(plot)
+            for plot, success in zip(plots_to_upload, successes):
+                if success:
+                    logger.info(f'Plot {plot.name} uploaded to website.')
+                    session.delete(plot)
+                else:
+                    logger.warning(f'Plot {plot.name} failed to upload.')
 
         session.commit()
 
