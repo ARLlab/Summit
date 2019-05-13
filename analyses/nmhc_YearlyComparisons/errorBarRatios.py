@@ -11,7 +11,7 @@ This code was written in Spyder via Anaconda Distribution [Python 3.7]
 import time
 start = time.time()
 
-## Import Libraries
+# Import Libraries
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -36,23 +36,23 @@ dailyMeanA = np.full((np.size(numYears),366),np.nan)
 from isleapyear import isleapyear
 for i in numYears:                                          # MAIN LOOP: Iterates over years
 
-    ## Date Variables for given year
+    # Date Variables for given year
     nmhcDate = nmhcDateAll.loc[(nmhcDateAll >= i) & (nmhcDateAll < (i+1))].values    # gathers current year
     nmhcDate = 1 + ((nmhcDate - i) * (365 + isleapyear(i)) * 24 * 60 * 60)           # convert to seconds
 
-    methaneDate= ch4Date.loc[(ch4Date >= i) & (ch4Date < (i+1))].values
-    methaneDate = 1 + (methaneDate - i) * (365 + isleapyear(i))* 24 * 60* 60
+    methaneDate = ch4Date.loc[(ch4Date >= i) & (ch4Date < (i+1))].values
+    methaneDate = 1 + (methaneDate - i) * (365 + isleapyear(i)) * 24 * 60 * 60
 
-    ## Yearly compound values
+    # Yearly compound values
     ethane = nmhcData.loc[(nmhcDateAll >= i) & (nmhcDateAll < (i+1)),'ethane'].values
     ace = nmhcData.loc[(nmhcDateAll >= i) & (nmhcDateAll < (i+1)),'acetylene'].values
     methane = methaneData.loc[(ch4Date >= i) & (ch4Date < (i+1)),'MR'].values
 
-    ## Preallocate Ratio Matrices
+    # Preallocate Ratio Matrices
     ethaneMethane = np.zeros(np.size(ethane))
     aceMethane= np.zeros(np.size(ace))
 
-    ## Create Ratio Vectors
+    # Create Ratio Vectors
     for j,value in np.ndenumerate(ethane):        # LOOP: Ethane values
         high = nmhcDate[j] + hrs3                 # current Ethane timestep in seconds + 3 hours
         low = nmhcDate[j] - hrs3                  # current ethane timestep in seconds - 3 hours
