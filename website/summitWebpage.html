@@ -69,8 +69,8 @@
       </div>
 
       <!-- Header text & Affiliated Links -->
-      <h2 class="title">Atmospheric Trace Gases at GEOSummit</h2>
-      <h5> Near Real Time Data from a Picarro Analyzer & GC-FID of Methane, CO, CO2, and Selected VOC's </h4>
+      <h2 class="title">Atmospheric CO, CO2, Methane, and VOCs at Summit Station, Greenland</h2>
+      <h5> Near Real Time Data from a Picarro Analyzer & GC-FID</h4>
         <div class="value-bars row">
           <div class="four columns value-bar">
             <a class="button button-primary" href="http://instaar.colorado.edu/arl/index.html" >ARL Homepage</a>
@@ -127,12 +127,21 @@
 
     <!-- Introduction -->
     <div class="docs-section-intro" id="intro">
-        <p> In 2004, NOAA's Global Monitoring Division in collaboration with the Atmospheric Research Laboratory at the Institute of Arctic and Alpine Research at the University of Colorado, Boulder, began a program
-          for measurements of Volatile Organic Compounds (VOC) in air samples collected at remote locations around the globe.
-          This program is one of the core components of the World Meteorological Organization (WMO) Global Atmospheric Watch (GAW) program for Volatile Organic Compounds.</p>
+      <h4 class="docs-header" id="intro">Background & Project Motivation</h4>
+        <p> Summit Station, Greenland, is research facility funded by the U.S. National Science Foundation and operated in collaboration with the Government of Greenland.  The station hosts a diverse array of Geoscience and Astrophysics research projects.  With its location on the crest of the Greenland Icecap, at 3209 m above sea level and far distance from civilization, it is the only high altitude and remote atmospheric observatory in the Arctic.  Further information about the station and science programs can be found at <a href="https://www.geosummit.org/.">the GEOSummit Website.</a></p>
 
-          <p> This site presents preliminary results of atmospheric near-real time monitoring at GEOSummit in Greenland, the central monitoring location for the larger VOC project. The monitoring is conducted by researchers at the Institute of Arctic and Alpine Research (INSTAAR) at the University of Colorado.
-          Atmospheric data is gathered from a Picarro instrument and from a GC-FID instrument. Graphs with near-real time resolution are continually uploaded from the Summit monitoring system and presented below.</p>
+        <p>Summit Station has hosted a number of campaign-type snow and atmospheric experiments since the late 1990s.  Continuous atmospheric monitoring of atmospheric trace gases began at Summit Station with the onset of its year-round operation in 2000.  Subsequently, Summit Station was developed into a NOAA Global Monitoring Division (GMD) Baseline Observatory, and as such has hosted a wide suite of atmospheric gas, aerosol, and radiation measurements
+          (<a href="https://www.esrl.noaa.gov/gmd/obop/sum/summary.html">ESRL</a>)</p>
+
+        <p> The Institute of Arctic and Alpine Research at the University of Colorado has been conducting snow photochemical and atmospheric research at Summit Station since 2003.  From 2004 onward, measurements of volatile organic compounds (VOCs) have been quantified in weekly collected glass flasks within the  NOAA Global Greenhouse Gas Reference Network (<a href="http://instaar.colorado.edu/arl/Global_VOC.html">Global VOCs</a>). During 2008-2010, including the International Polar Year, VOCs were monitored continuously at ~3 hour time resolution at the site with support from NASA.  These measurements, and new methane monitoring, commenced in 2012 under the umbrella of the NSF Arctic Observing Network program.  This monitoring has been continuous and uninterrupted since.  A particular focus of the ongoing research project is the study of atmospheric implications of increasing Arctic wildfires from climate warming
+          (<a href="https://www.nsf.gov/awardsearch/showAward?AWD_ID=1822406">NSF Award</a>). The VOC monitoring is also a core component of the World Meteorological Organization (WMO) Global Atmospheric Watch (GAW) program for VOCs (<a href="http://www.wmo.int/pages/prog/arep/gaw/gaw_home_en.html">WMO</a>)</p>
+    </div>
+
+    <!-- Monitoring Methods -->
+    <div class="docs-section" id="moni">
+      <h4 class="docs-header" id="moni">Monitoring Methods</h4>
+      <p> This website presents preliminary real-time results of atmospheric methane, carbon monoxide, and carbon dioxide that are measured with a Picarro G-2401 instrument and averaged to 1-5 minute time resolution. Methane is also analyzed by gas chromatography with loop injection, packed column separation, and flame ionization detection.  VOCs are analyzed eight times a day by pre-concentration onto a micro-adsorbent trap, followed by thermal desorption and gas chromatography separation on an Al2O3 PLOT column followed by flame ionization detection.
+        Currently quantified compounds include ethane, ethene, propane, propene, i-butane, acetylene, n-butane, i-pentane, n-pentane, hexane, benzene, and toluene.  Calibration gases for carbon monoxide, carbon dioxide, and methane are referenced to the NOAA GMD scale.  The VOC calibration is tied to the WMO-GAW.  All data are processed with automated scripts. Graphs with near-real time resolution are continually uploaded from the Summit monitoring system and presented below. </p>
     </div>
 
     <!-- Main Data Section -->
@@ -141,45 +150,30 @@
         <h4> Near Real Time Data from Summit Picarro Analyzer & GC-FID </h4>
 
         <h4 class="docs-header" id="CO">Carbon Monoxide</h4>
-        <p> The Picarro Analyzer was just recently installed at the GEOSummit location by Jacques,thus we have no past data to display except the current near real time data being presented here. The system provides data on carbon monoxide, carbon dioxide, and methane concentrations. </p>
-        <p> Carbon Monoxide is present in the atmosphere at relatively low concentrations, with a lifespan of several months. Motor vehicles account
-        for a large portion of carbon monoxide emissions, but natural sources include volcanoes and bushfires. At the GEOSummit station, there are little to no emmissions from motor vechicles. Carbon monoxide typically oxidizes to carbon dioxide before it can mix completely in the troposphere,
-        thus it can display local elevated concentrations at source points. </p>
         <img class="value-img" alt="<Data not displaying: Picarro Carbon Monoxide>" src="summit_plots/summit_co_last_week.png">
 
         <h4 class="docs-header" id="CO2">Carbon Dioxide</h4>
-        <p> Carbon Dioxide enters the atmosphere through burning fossil fuels, trees and other biomass, waste, and from some chemical reactions.
-        In 2017, CO2 accounted for about 81.6 percent of all U.S greenhouse gas emissions from human activities. (<a href="https://www.epa.gov/ghgemissions/overview-greenhouse-gases">EPA</a>)
-        It is absorbed by plants as part of Earth's carbon cycle, and thus removed from the atmosphere.  </p>
         <img class="value-img" alt="<Data not displaying: Picarro Carbon Dioxide>" src="summit_plots/summit_co2_last_week.png">
 
         <h4 class="docs-header" id="ch4">Methane [Picarro]</h4>
-        <p> Methane is a potent greenhouse gas. It has an atmospheric lifetime of about a decade and is distributed globally.
-          Methane emissions can occur during the production of coal, natural gas, and oil; as well as from livestock and agricultural practices. Human's account for 50-65 percent of total methane emissions. (<a href="https://www.ipcc.ch/report/ar5/wg1/">IPCC</a>)
-          In the Summit, Greenland location it mainly is emitted by ...</p>
         <img class="value-img" alt="<Data not displaying: Methane Plot (Picarro)>" src="summit_plots/summit_ch4_last_week.png">
+        <p>The Picarro analyzer was just installed in May 2019, as such, past data is currently limited.</p>
 
         <h4 class="docs-header" id="ch4_GC">Methane [GC-FID]</h4>
-        <p> In addition to the Picarro Analyzer, methane is also measured by the GC-FID at Summit. All times are reported in Mountain Standard Time (MST). Data during Daylight Savings Time (March-November)
-            will have to be corrected by adding one hour.</p>
         <img class="value-img" alt="<Data not displaying: Methane Plot>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/methane_last_week.png">
         <a class="button" href="http://instaar.colorado.edu/arl/res_parameters/pastData.html#ch4_GC_all">Past Data [2012-2018]</a>
 
         <h5 class="docs-header" id="voc">Selected Volatile Organic Compounds</h5>
 
         <h5 class="docs-subheader">Ethane & Propane</h5>
-        <img class="value-img" alt="<Data not displaying: ethane & propane>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/ethane_propane_last_week.png">
-        <p>Some selected volatile organic compounds (VOC's) are also analyzed by the GC-FID. Ethane and propane have atmospheric lifetimes of about 2 months and about 2 weeks, respectively. They contribute to formation of ground-level ozone on a regional and continental scale. Oil and gas production and processing activities are the main source of ethane and propane.
-          Propane can also be released to the atmosphere from storage and distribution of liquified petroleum gas.</p>
+        <img class="value-img" alt="<Data not displaying: ethane & propane>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/ethane_propane_last_week.png"
         <a class="button" href="http://instaar.colorado.edu/arl/res_parameters/pastData.html#ethane_all">Past Data [2008-2018]</a>
 
         <h5 class="docs-subheader">Butane(s) & Acetylene</h5>
         <img class="value-img" alt="<Data not displaying: butane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/i_butane_n_butane_acetylene_last_week.png">
-        <p>Butanes and acetylene contribute to formation of ozone on local to regional scales. Butanes are emitted from gasoline vapors, vehicle exhaust, and oil and gas production.
-        Acetylene is predominantly emmitted from the buring of carbon, making it a good tracer for forest fires. </p>
         <a class="button" href="http://instaar.colorado.edu/arl/res_parameters/pastData.html#acetylene_all">Past Data [2008-2018]</a>
         <h5 class="docs-subheader">Pentane(s)</h5>
-        <p>Pentanes are also contributors to ozone formation on local to regional scales. Because i-pentane and n-pentane are released in different relative quantities by different sources, the i/n pentane ratio can be used to separate the influence of urban emissions from oil
+        <p>Because i-pentane and n-pentane are released in different relative quantities by different sources, the i/n pentane ratio can be used to separate the influence of urban emissions from oil
           and gas emissions (<a href="http://pubs.acs.org/doi/abs/10.1021/es304119a">Gilman, 2013</a>; <a href="https://www.elementascience.org/articles/10.12952/journal.elementa.000035/">Thompson, 2014</a>).
           An i/n pentane ratio of 0.8 - 0.9 is typical of raw oil and gas emissions, whereas a ratio from 2-4 is characteristic of vehicle and urban emissions. </p>
         <img class="value-img" alt="<Data not displaying: pentane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/i_pentane_n_pentane_last_week.png">
@@ -187,47 +181,24 @@
         <a class="button" href="http://instaar.colorado.edu/arl/res_parameters/pastData.html#ipentane_all">Past Data [2008-2018]</a>
 
         <h5 class="docs-subheader">Benzene and Toluene</h5>
-        <p> Benzene and toluene contribute to ozone formation and may be hazardous to health if breathed at high levels. Sources of toluene include paints, solvents, gasoline vapors and vehicle exhaust. Sources of benzene include gasoline vapors, vehicle exhaust, and oil and gas production activities.
-            All times are reported in Mountain Standard Time (MST). Data during Daylight Savings Time (March-November) will have to be corrected by adding one hour.</p>
         <img class="value-img" alt="<Data not displaying: Benzene & Toluene>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/benzene_toluene_last_week.png">
         <a class="button" href="http://instaar.colorado.edu/arl/res_parameters/pastData.html#benzene_all">Past Data [2008-2018]</a>
-
-    </div>
-
-    <!-- Project Motivation -->
-    <div class="docs-section" id="motv">
-      <h4 class="docs-header" id="mov">Project Motivation</h4>
-      <p> The data presented on this page has been used for a large variety of research purposes. Many of the compounds presented act
-      as tracers for natural and human created events. For example, ethane is used as a tracer of emmissions from oil and natural gas development. More information on the project can
-      be found on the project's <a href="http://instaar.colorado.edu/arl/Global_VOC.html">home page.</a></p>
-    </div>
-
-    <!-- Monitoring Methods -->
-    <div class="docs-section" id="moni">
-      <h4 class="docs-header" id="moni">Monitoring Methods</h4>
-      <p> Carbon Monoxide, Carbon Dioxide, and Methane [Picarro] are measured by a Picarro Analyzer. This device works by ...  </p>
-      <p> Methane [Summit GC] is monitored by loop injection of 10 ml samples and gas chromatography with flame ionization detection (GC-FID).
-        Samples are collected at 20-min intervals. </p>
-      <p> VOCs are monitored by preconcentration of 500 ml-samples onto a micro-adsorbent trap, with subsequent thermal desorption, capillary column gas chromatography separation, and flame ionization detection.
-        Samples are collected at 2-hour intervals. Currently quantified compounds include ethane, ethene, propane, propene, i-butane, acetylene, n-butane, i-pentane, n-pentane, hexane,
-        benzene, and toluene</p>
     </div>
 
     <!-- Data Requests & Contacts-->
     <div class="docs-section" id="dataR">
       <h4 class="docs-header" id="dataR">Data Requests & Contacts</h4>
-      <p><b> Data requests should be directed to the University of Colorado Boulder
-        INSTAAR Atmospheric Research Lab lead by Dr. Detlev Helmig. Attn: (detlev.helmig@colorado.edu) </b></p>
+      <p><b> Further information and data requests should be directed to the project Principal Investigator Detlev Helmig, Atmospheric Research Lab, INSTAAR, University of Colorado, Boulder. Attn: (detlev.helmig@colorado.edu) </b></p>
       <a class="button button-primary" href="https://instaar.colorado.edu/" >INSTAAR Homepage</a>
       <a class="button button-primary" href="http://instaar.colorado.edu/arl/detlev.html" >Detlev Helmig</a>
-      <p> Other team members working on this project include:</p>
-        <li>Jacques Hueber - Professional Scientist</li>
-        <li>Brendan Blanchard - Professional Research Assistant</li>
-        <li>Hélène Angot - Postdoctoral Associate</li>
-        <li>Louisa Emmons (NCAR, Boulder)</li>
-        <li>Maria Val Martin (University of Sheffield, UK)</li>
-        <li>Christine Wiedinmyer (CIRES, CU Boulder)</li>
-        <li>Jashan Chopra - Undergraduate Assistant</li>
+      <p>Other project team members include:</p>
+        <li>Louisa Emmons - Co-Principal Investigator, NCAR, Boulder</li>
+        <li>Maria Val Martin - Co-Principal Investigator, University of Sheffield, UK</li>
+        <li>Christine Wiedinmyer - Co-Principal Investigator, CIRES, CU Boulder</li>
+        <li>Jacques Hueber - Professional Scientist, INSTAAR</li>
+        <li>Brendan Blanchard - Professional Research Assistant, INSTAAR</li>
+        <li>Hélène Angot - Postdoctoral Associate, INSTAAR</li>
+        <li>Jashan Chopra - Undergraduate Assistant, INSTAAR</li>
     </div>
 
     <!-- Logos -->
@@ -240,7 +211,6 @@
         <img alt="<NSF Logo>" src="http://instaar.colorado.edu/arl/res_parameters/images/NSF_logo.png" style="max-width: 400px;">
       </div>
     </div>
-
 
     <!-- Closer -->
     <div class="closer" id="close">
