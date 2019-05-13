@@ -38,7 +38,7 @@ column_to_instance_names = {'alarm_status': 'ALARM_STATUS', 'instrument_status':
                             'co2_wet': 'CO2_sync', 'co2': 'CO2_dry_sync', 'ch4_wet': 'CH4_sync',
                             'ch4': 'CH4_dry_sync', 'h2o': 'H2O_sync'}
 
-mpv_converter = {1: 'ambient', 2: 'low_std', 4: 'mid_std', 3: 'high_std'}
+mpv_converter = {0: 'no_sequence', 1: 'ambient', 2: 'low_std', 4: 'mid_std', 3: 'high_std'}
 
 standards = {'low_std': {'co': 69.6, 'co2': 390.24, 'ch4': 1838.5},
              'mid_std': {'co': 117.4, 'co2': 408.65, 'ch4': 1925.5},
