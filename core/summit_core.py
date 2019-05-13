@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
 
 Base = declarative_base()
 
@@ -76,8 +76,6 @@ class Config(Base):
 class TempDir:
     """
     Context manager for working in a directory.
-    Pulled from: (https://pythonadventures.wordpress.com/2013/12/15/chdir-
-                    a-context-manager-for-switching-working-directories/)
     """
 
     def __init__(self, path):
@@ -322,6 +320,10 @@ def five_minute_medians(dates, vals):
 
 
 def connect_to_sftp():
+    """
+    Uses paramiko to create a connection to the Taylor drive. Relies on authetication information from a JSON file.
+    :return: SFTP_Client
+    """
     import paramiko
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -331,6 +333,12 @@ def connect_to_sftp():
 
 
 def add_or_ignore_plot(plot, core_session):
+    """
+    Queries database and adds a plot only if one with the same path doesn't already exist.
+    :param plot: Plot, to be added to database
+    :param core_session: sqlalchemy.Session object
+    :return: None
+    """
     plots_in_db = [p[0] for p in core_session.query(Plot._path).all()]
 
     if str(plot.path.resolve()) not in plots_in_db:
@@ -339,6 +347,11 @@ def add_or_ignore_plot(plot, core_session):
 
 
 async def send_files_sftp(filepaths):
+    """
+    Send a list of files to the JSON-loaded remote directory.
+    :param filepaths: list, of pathlib Path objects
+    :return: list, of booleans of which plots uploaded sucessfully
+    """
     bools = []
     try:
         con = connect_to_sftp()
@@ -360,6 +373,11 @@ async def send_files_sftp(filepaths):
 
 
 async def check_send_plots(logger):
+    """
+    Look through all plots staged to be uploaded and remove them if successfully uploaded.
+    :param logger: logging logger to log to
+    :return: boolean, True if ran without errors
+    """
     try:
         from summit_errors import send_processor_email
     except ImportError as e:
