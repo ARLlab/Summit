@@ -51,7 +51,7 @@
           <div class="textSlides"> Summit Site Layout </div>
         </div>
         <div class="mySlides fade">
-          <img src="https://d32ogoqmya1dw8.cloudfront.net/images/NAGTWorkshops/geomorph/vignettes/greenland_elevation_map.gif" style="width:100%"></img>
+          <img src="https://d32ogoqmya1dw8.cloudfront.net/images/NAGTWorkshops/geomorph/vignettes/greenland_elevation_map.gif" style="width:30%"></img>
           <div class="textSlides"> Summit Location </div>
         </div>
         <!-- Slideshow javascript click --->
@@ -91,37 +91,27 @@
         <ul class="navbar-list">
           <li class="navbar-item"><a class="navbar-link" href="#intro">Introduction</a></li>
           <li class="navbar-item"><a class="navbar-link" href="#moni">Methods</a></li>
-          <li class="navbar-item"><a class="navbar-link" href="#data">Data</a></li>
+          <li class="navbar-item"><a class="navbar-link" href="#CO">Carbon Monoxide</a></li>
+          <li class="navbar-item"><a class="navbar-link" href="#CO2">Carbon Dioxide</a></li>
+          <li class="navbar-item"><a class="navbar-link" href="#ch4">Methane</a></li>
+          <li class="navbar-item"><a class="navbar-link" href="#voc">Volatile Compounds</a></li>
         </ul>
       </div>
     </nav>
 
-    <!-- Custom Compound Navbar -->
-    <div class="value-bars row">
-      <div class="three columns value-bar">
-        <a href="#CO">
-        <img class="value-image" src="http://instaar.colorado.edu/arl/res_parameters/images/CO.png" </img>
-        </a>
-        <h5 class="compoundText">Carbon Monoxide</h5>
-      </div>
-      <div class="three columns value-bar">
-        <a href="#CO2">
-        <img class="value-image" src="http://instaar.colorado.edu/arl/res_parameters/images/CO2.png" </img>
-        </a>
-        <h5 class="compoundText">Carbon Dioxide</h5>
-      </div>
-      <div class="three columns value-bar">
-        <a href="#ch4">
-        <img class="value-image" src="http://instaar.colorado.edu/arl/res_parameters/images/Methane.png" </img>
-        </a>
-        <h5 class="compoundText">Methane</h5>
-      </div>
-      <div class="three columns value-bar">
-        <a href="#voc">
-        <img class="value-image" src="http://instaar.colorado.edu/arl/res_parameters/images/VOC.png" </img>
-        </a>
-        <h5 class="compoundText">Volatile Compounds</h5>
-      </div>
+    <!-- Logos -->
+    <div class="docs-section" id="logo">
+      <div class="value-bars row">
+        <div class="six columns value-bar">
+          <div class="illustration">
+            <img alt="<INSTAAR Logo>" src="http://instaar.colorado.edu/arl/res_parameters/images/instaar_logo_transparent.png" style="max-width: 300px;">
+          </div>
+        </div>
+        <div class="six columns value-bar">
+          <div class="illustration">
+            <img alt="<NSF Logo>" src="http://instaar.colorado.edu/arl/res_parameters/images/NSF_logo.png" style="max-width: 300px;">
+          </div>
+        </div>
     </div>
 
     <!-- Introduction -->
@@ -148,10 +138,10 @@
 
         <h4> Near Real Time Data from Summit Picarro Analyzer & GC-FID </h4>
 
-        <h4 class="docs-header" id="CO">Carbon Monoxide</h4>
+        <h4 class="docs-header" id="CO">Carbon Monoxide [Picarro]</h4>
         <img class="value-img" alt="<Data not displaying: Picarro Carbon Monoxide>" src="summit_plots/summit_co_last_week.png">
 
-        <h4 class="docs-header" id="CO2">Carbon Dioxide</h4>
+        <h4 class="docs-header" id="CO2">Carbon Dioxide [Picarro]</h4>
         <img class="value-img" alt="<Data not displaying: Picarro Carbon Dioxide>" src="summit_plots/summit_co2_last_week.png">
 
         <h4 class="docs-header" id="ch4">Methane [Picarro]</h4>
@@ -162,7 +152,7 @@
         <img class="value-img" alt="<Data not displaying: Methane Plot>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/methane_last_week.png">
         <a class="button" href="http://instaar.colorado.edu/arl/res_parameters/pastData.html#ch4_GC_all">Past Data [2012-2018]</a>
 
-        <h5 class="docs-header" id="voc">Selected Volatile Organic Compounds</h5>
+        <h5 class="docs-header" id="voc">Selected Volatile Organic Compounds [GC-FID]</h5>
 
         <h5 class="docs-subheader">Ethane & Propane</h5>
         <img class="value-img" alt="<Data not displaying: ethane & propane>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/ethane_propane_last_week.png"
@@ -172,9 +162,6 @@
         <img class="value-img" alt="<Data not displaying: butane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/i_butane_n_butane_acetylene_last_week.png">
         <a class="button" href="http://instaar.colorado.edu/arl/res_parameters/pastData.html#acetylene_all">Past Data [2008-2018]</a>
         <h5 class="docs-subheader">Pentane(s)</h5>
-        <p>Because i-pentane and n-pentane are released in different relative quantities by different sources, the i/n pentane ratio can be used to separate the influence of urban emissions from oil
-          and gas emissions (<a href="http://pubs.acs.org/doi/abs/10.1021/es304119a">Gilman, 2013</a>; <a href="https://www.elementascience.org/articles/10.12952/journal.elementa.000035/">Thompson, 2014</a>).
-          An i/n pentane ratio of 0.8 - 0.9 is typical of raw oil and gas emissions, whereas a ratio from 2-4 is characteristic of vehicle and urban emissions. </p>
         <img class="value-img" alt="<Data not displaying: pentane block>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/i_pentane_n_pentane_last_week.png">
         <img class="value-img" alt="<Data not displaying: ipentane/npentane ratio>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/i_n_pentane_ratio_last_week.png">
         <a class="button" href="http://instaar.colorado.edu/arl/res_parameters/pastData.html#ipentane_all">Past Data [2008-2018]</a>
@@ -200,21 +187,13 @@
         <li>Jashan Chopra - Undergraduate Assistant, INSTAAR</li>
     </div>
 
-    <!-- Logos -->
-    <div class="docs-section" id="logo">
-      <h4 class="docs-header">Partner Logos</h4>
-      <div class="illustration">
-        <img alt="<INSTAAR Logo>" src="http://instaar.colorado.edu/arl/res_parameters/images/instaar_logo_transparent.png" style="max-width: 400px;">
-      </div>
-      <div class="illustration">
-        <img alt="<NSF Logo>" src="http://instaar.colorado.edu/arl/res_parameters/images/NSF_logo.png" style="max-width: 400px;">
-      </div>
-    </div>
-
     <!-- Closer -->
     <div class="closer" id="close">
       <p class="closer-text">Website Developed by Jashan Chopra - 2019</p>
       <p class="closer-text2">Adapted from the <a href="http://getskeleton.com/">Skeleton Framework</a></p>
+
+      <!-- Free page Counter -->
+      <a href='https://www.counters-free.net/'>View Page Statistics</a><script type='text/javascript' src='https://www.freevisitorcounters.com/auth.php?id=d74d8ee53454e194404200cd1767f2f97b2a109a'></script><script type="text/javascript" src="https://www.freevisitorcounters.com/en/home/counter/527001/t/2"></script>
     </div>
 
   </div>
