@@ -338,10 +338,12 @@ def add_or_ignore_plot(plot, core_session):
     return
 
 
-async def send_file_sftp(filepath):
+async def send_files_sftp(filepaths):
     con = connect_to_sftp()
     con.chdir(taylor_basepath)
-    con.put(str(filepath), filepath.name)
+
+    for file in filepaths:
+        con.put(str(file), file.name)
     con.close()
     return
 
@@ -364,11 +366,14 @@ async def check_send_plots(logger):
         plots_to_upload = session.query(Plot).filter(Plot.staged == True).all()
 
         if plots_to_upload:
-            for plot in plots_to_upload:
-                await send_file_sftp(plot.path)
-                logger.info(f'Plot {plot.name} uploaded to website.')
-                session.delete(plot)
-            session.commit()
+            paths_to_upload = [p.path for p in plots_to_upload]
+            await send_files_sftp(paths_to_upload)
+            logger.info(f'Plots uploaded to website.')
+
+        for plot in plots_to_upload:
+            session.delete(plot)
+
+        session.commit()
 
         session.close()
         engine.dispose()
