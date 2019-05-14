@@ -37,19 +37,23 @@ taylor_basepath = '/data/web/htdocs/instaar/groups/arl/res_parameters/summit_plo
 
 processor_dirs = [voc_dir, picarro_dir, methane_dir, error_dir, core_dir]
 
-data_file_paths = json.loads((core_dir / 'file_locations.json').read_text())
+data_file_paths = json.loads((core_dir / 'file_locations_newtest.json').read_text())
 
 for k, v in data_file_paths.items():
     data_file_paths[k] = Path(v)  # Pathify stored string paths
 
 methane_LOG_path = data_file_paths.get('methane_LOG')
-methane_logs_path = data_file_paths.get('methane_logs')
-
 voc_LOG_path = data_file_paths.get('voc_LOG')
+
+methane_logs_path = data_file_paths.get('methane_logs')
 voc_logs_path = data_file_paths.get('voc_logs')
 daily_logs_path = data_file_paths.get('daily_logs')
-
 picarro_logs_path = data_file_paths.get('picarro_logs')
+
+methane_logs_sync = data_file_paths.get('methane_logs_sync')
+voc_logs_sync = data_file_paths.get('voc_logs_sync')
+daily_logs_sync = data_file_paths.get('daily_logs_sync')
+picarro_logs_sync = data_file_paths.get('picarro_logs_sync')
 
 taylor_auth = data_file_paths.get('taylor_server_auth')
 
