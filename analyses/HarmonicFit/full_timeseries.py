@@ -18,5 +18,5 @@ from fileInput import fileLoad
 from isleapyear import isleapyear
 from ratio_calc import ratioCalc
 
-ratioCalc()     # call this function to get the ratio information
+ethaneMethane, aceMethane = ratioCalc()     # call this function to get the ratio information
 

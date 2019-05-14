@@ -17,19 +17,16 @@ def ratioCalc():
     from isleapyear import isleapyear
 
     # Import Data Sets
-    nmhcData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.XLS")
-    methaneData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\Methane.XLSX")
+    nmhcData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.xlsx")
+    methaneData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\Methane.xlsx")
 
     numYears = np.linspace(2012, 2018, num=((2018-2012)+1))     # Total Number of Years in Dataset
     nmhcDateAll = nmhcData.loc[:, 'DecYear']                    # nmhc dates
     ch4Date = methaneData.loc[:, 'DecYear']                     # methane dates
 
-    hrs3 = 3 * 60 * 60
+    hrs3 = 3 * 60 * 60                                          # three hours in seconds
 
-    dailyMeanE = np.full((np.size(numYears), 366), np.nan)
-    dailyMeanA = np.full((np.size(numYears), 366), np.nan)
-
-    for i in numYears                                           # MAIN LOOP
+    for i in numYears:                                          # MAIN LOOP
 
         # Date Variables for given year
         nmhcDate = nmhcDateAll.loc[(nmhcDateAll >= i) & (nmhcDateAll < (i + 1))].values     # gathers current year
@@ -44,8 +41,8 @@ def ratioCalc():
         methane = methaneData.loc[(ch4Date >= i) & (ch4Date < (i + 1)), 'MR'].values
 
         # Preallocate Ratio Matrices
-        ethaneMethane = np.zeros(np.size(ethane))
-        aceMethane = np.zeros(np.size(ace))
+        ethaneMethane = np.zeros((np.size(numYears), np.size(ethane)))      # Columns are for each year
+        aceMethane = np.zeros((np.size(numYears), np.size(ace)))            # Rows are for the actual ratio values
 
         # Create Ratio Vectors
         for j, value in np.ndenumerate(ethane):  # LOOP: Ethane values
@@ -54,15 +51,15 @@ def ratioCalc():
 
             # Get the average of all methane values between high and low
             methaneAverage = np.mean(methane[(methaneDate[:] <= high) & (methaneDate[:] >= low)])
-            ethaneMethane[j] = value / methaneAverage       # Puts ratios in matrix for plotting
+            ethaneMethane[np.where(numYears == i), j] = value / methaneAverage       # Fills out matrix
 
         for k, value in np.ndenumerate(ace):    # LOOP: Acetylene Values
             high = nmhcDate[k] + hrs3           # Same process as above
             low = nmhcDate[k] - hrs3
             methaneAverage = np.mean(methane[(methaneDate[:] <= high) & (methaneDate[:] >= low)])
-            aceMethane[k] = value / methaneAverage
+            aceMethane[np.where(numYears == i), k] = value / methaneAverage
 
-        return ethaneMethane, aceMethane
+    return ethaneMethane, aceMethane
 
 
 
