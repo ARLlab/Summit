@@ -432,11 +432,14 @@ class MovedFile(Base):
     _path = Column(String, unique=True)
     _name = Column(String)
     location = Column(String)
+    size = Column(Integer)
+    type = Column(String)
 
-    def __init__(self, path, type, location):
+    def __init__(self, path, type, location, size):
         self.path = path
         self.type = type
         self.location = location  # either 'sync' or 'data'
+        self.size = size
 
     @property
     def path(self):
@@ -454,12 +457,13 @@ class MovedFile(Base):
 
 async def move_log_files(logger):
     """
-    Runs continuously and sleeps for five minutes at a time. Comb the directories for new data files
+    Runs continuously and sleeps for five minutes at a time. Comb the directories for new data files and move any that
+    are new or have been updated. This WILL NOT handle turning over a new year in the daily files well, as they have no
+    year in the filename. I can't fix that.
 
     :param logger: logging logger to log to
     :return: boolean, True if ran without errors
     """
-
 
     while True:
         try:
@@ -471,6 +475,7 @@ async def move_log_files(logger):
 
         try:
             engine, session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+            MovedFile.__table__.create(engine, checkfirst=True)
         except Exception as e:
             logger.error(f'Exception {e.args} prevented connection to the database in move_log_files()')
             send_processor_email('Core', exception=e)
@@ -482,21 +487,31 @@ async def move_log_files(logger):
             sync_paths = [methane_logs_sync, voc_logs_sync, daily_logs_sync, picarro_logs_sync]
             data_paths = [methane_logs_path, voc_logs_path, daily_logs_path, picarro_logs_path]
             data_types = ['methane', 'voc', 'daily', 'picarro']
+            file_types = ['.txt', '.txt', '.txt', '.dat']
 
-            for sync_path, type, data_path in zip(sync_paths, data_types, data_paths):
-                sync_files = [MovedFile(sync_path/file.name, 'type', 'sync') for file in os.scandir(sync_path)]
+            for sync_path, type, data_path, file_type in zip(sync_paths, data_types, data_paths, file_types):
+                sync_files = [MovedFile(path, type, 'sync', check_filesize(path))
+                              for path in get_all_data_files(sync_path, file_type)]
                 data_files = (session.query(MovedFile)
                                      .filter(MovedFile.location == 'data')
                                      .filter(MovedFile.type == type)
                                      .all())
-                moved_data_paths = [d.path for d in data_files]
+                moved_data_files = [d.name for d in data_files]
 
                 for file in sync_files:
-                    if file.path not in moved_data_paths:
+                    if file.name not in moved_data_files:
                         copy(file.path, data_path)  # will overwrite
                         file.path = data_path/file.name
                         file.location = 'data'
                         session.merge(file)
+                        logger.info(f'File {file.name} moved to data directory.')
+                    else:
+                        matched_file = search_for_attr_value(data_files, 'name', file.name)
+                        if file.size > matched_file.size:
+                            copy(file.path, data_path)  # will overwrite
+                            matched_file.size = check_filesize(matched_file.path)
+                            session.merge(matched_file)
+                            logger.info(f'File {matched_file.name} updated in data directory.')
 
             session.commit()
 
