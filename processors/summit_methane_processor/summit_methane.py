@@ -408,7 +408,7 @@ def plottable_sample(sample):
 	if not valid_sample(sample):
 		return False
 	else:
-		if sample.peak.mr is None or not (1750 < sample.peak.mr < 2200):
+		if sample.peak.mr is None or not (1850 < sample.peak.mr < 2050):
 			return False
 		else:
 			return True
