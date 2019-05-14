@@ -3,6 +3,8 @@ import datetime as dt
 import pandas as pd
 from summit_errors import send_processor_email
 
+from pandas.errors import EmptyDataError
+
 # async def fake_move_data(directory, sleeptime):
 # 	"""
 # 	Moves files from /test_data to /data to simulate incoming data transfers.
@@ -100,11 +102,15 @@ async def check_load_new_data(logger):
         for file in files_to_process:
             try:
                 df = pd.read_csv(file.path, delim_whitespace=True)
+            except EmptyDataError as e:
+                logger.error(f'Exception {e.args} occurred while reading {file.name}')
+                send_processor_email(PROC, exception=e)
+                continue
             except Exception as e:
                 logger.error(f'Exception {e.args} occurred in check_load_new_data() while reading a file.'
                              + f'The file was {file.name}')
                 send_processor_email(PROC, exception=e)
-                return False
+                continue
 
             # CO2 stays in ppm
             df['CO_sync'] *= 1000  # convert CO to ppb
