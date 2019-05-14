@@ -7,9 +7,13 @@ along all of the years where the data is present, and then performs harmonic fit
 Goals:
 1) Import spreadsheet data
 2) Create and output ratio numpy arrays
+    - Ratios
+    - Date Array
 3) Turn into a function
 
 """
+
+
 def ratioCalc():
 
     import numpy as np
@@ -26,6 +30,12 @@ def ratioCalc():
 
     hrs3 = 3 * 60 * 60                                          # three hours in seconds
 
+
+    # Preallocate Ratio Matrices
+    ethaneMethane = np.full((np.size(numYears), 1033), np.nan)  # Columns are for each year
+    aceMethane = np.full((np.size(numYears), 1033), np.nan)     # Rows are for the actual ratio values
+    datesFinal = np.full((np.size(numYears), 1033), np.nan)     # Dates for these ratio arrays
+
     for i in numYears:                                          # MAIN LOOP
 
         # Date Variables for given year
@@ -39,10 +49,6 @@ def ratioCalc():
         ethane = nmhcData.loc[(nmhcDateAll >= i) & (nmhcDateAll < (i + 1)), 'ethane'].values
         ace = nmhcData.loc[(nmhcDateAll >= i) & (nmhcDateAll < (i + 1)), 'acetylene'].values
         methane = methaneData.loc[(ch4Date >= i) & (ch4Date < (i + 1)), 'MR'].values
-
-        # Preallocate Ratio Matrices
-        ethaneMethane = np.zeros((np.size(numYears), np.size(ethane)))      # Columns are for each year
-        aceMethane = np.zeros((np.size(numYears), np.size(ace)))            # Rows are for the actual ratio values
 
         # Create Ratio Vectors
         for j, value in np.ndenumerate(ethane):  # LOOP: Ethane values
@@ -59,7 +65,15 @@ def ratioCalc():
             methaneAverage = np.mean(methane[(methaneDate[:] <= high) & (methaneDate[:] >= low)])
             aceMethane[np.where(numYears == i), k] = value / methaneAverage
 
-    return ethaneMethane, aceMethane
+        nmhcDate = (nmhcDate / 60 / 60 / 24)
+        location = datesFinal > np.Inf
+        location[np.where(numYears == i), 0:np.size(nmhcDate)] = True
+        np.place(datesFinal, location, nmhcDate)
+
+    return ethaneMethane, aceMethane, datesFinal
+
+if __name__ == '__main__':
+    ethaneMethane, aceMethane, datesFinal = ratioCalc()
 
 
 
