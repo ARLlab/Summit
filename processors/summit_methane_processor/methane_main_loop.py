@@ -72,8 +72,12 @@ async def check_load_pa_log(logger):
         core_session.merge(ch4_config)
         core_session.commit()
 
-        pa_file_contents = pa_filepath.read_text().split('\n')[ch4_config.pa_startline-3:]
-        # pad start to avoid missing samples
+        line_to_start = ch4_config.pa_startline - 3 # pad start to avoid missing samples
+        if line_to_start < 0:
+            line_to_start = 0
+
+        pa_file_contents = pa_filepath.read_text().split('\n')[line_to_start:]
+
 
         ch4_config.pa_startline = ch4_config.pa_startline + len(pa_file_contents) - 1
 
