@@ -15,27 +15,19 @@ from picarro_main_loop import main as picarro_processor
 from error_main_loop import check_for_new_data, check_existing_errors
 from summit_daily import check_load_dailies as daily_processor
 from summit_daily import plot_dailies
-from summit_core import check_send_plots
+from summit_core import check_send_plots, move_log_files
 from summit_errors import send_processor_email
 import asyncio
 
 
-async def main():
-	try:
-		from summit_core import methane_dir as rundir
-		from summit_core import configure_logger
-		logger = configure_logger(rundir, __name__)
-		errors = []  # initiate with no errors
-
-	except Exception as e:
-		print(f'Error {e.args} prevented logger configuration.')
-		send_processor_email('MAIN', exception=e)
-		return
+async def main(logger):
 
 	while True:
 		"""
 		Processors that are passed a logger will log to /core, others will log to their individual directories/files.
 		"""
+
+		errors = []  # initiate with no errors
 
 		dailies = await asyncio.create_task(daily_processor(logger))
 		if dailies:
@@ -59,5 +51,19 @@ async def main():
 
 
 if __name__ == '__main__':
+
+	try:
+		from summit_core import methane_dir as rundir
+		from summit_core import configure_logger
+		logger = configure_logger(rundir, __name__)
+
+	except Exception as e:
+		print(f'Error {e.args} prevented logger configuration.')
+		send_processor_email('MAIN', exception=e)
+		raise e
+
 	loop = asyncio.get_event_loop()
-	loop.run_until_complete(main())
+	loop.create_task(move_log_files(logger))
+	loop.create_task(main(logger))
+
+	loop.run_forever()

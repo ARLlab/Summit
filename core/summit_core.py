@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 from pathlib import Path
 from datetime import datetime
 
@@ -421,3 +422,92 @@ async def check_send_plots(logger):
         session.close()
         engine.dispose()
         return False
+
+
+class MovedFile(Base):
+    __tablename__ = 'files'
+
+    id = Column(Integer, primary_key=True)
+
+    _path = Column(String, unique=True)
+    _name = Column(String)
+    location = Column(String)
+
+    def __init__(self, path, type, location):
+        self.path = path
+        self.type = type
+        self.location = location  # either 'sync' or 'data'
+
+    @property
+    def path(self):
+        return Path(self._path)
+
+    @path.setter
+    def path(self, value):
+        self._path = str(value)
+        self._name = value.name
+
+    @property
+    def name(self):
+        return self._name
+
+
+async def move_log_files(logger):
+    """
+    Runs continuously and sleeps for five minutes at a time. Comb the directories for new data files
+
+    :param logger: logging logger to log to
+    :return: boolean, True if ran without errors
+    """
+
+
+    while True:
+        try:
+            from summit_errors import send_processor_email
+            from shutil import copy
+        except ImportError as e:
+            logger.error('ImportError occurred in move_log_files()')
+            return False
+
+        try:
+            engine, session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+        except Exception as e:
+            logger.error(f'Exception {e.args} prevented connection to the database in move_log_files()')
+            send_processor_email('Core', exception=e)
+            return False
+
+        try:
+            logger.info('Running move_log_files()')
+
+            sync_paths = [methane_logs_sync, voc_logs_sync, daily_logs_sync, picarro_logs_sync]
+            data_paths = [methane_logs_path, voc_logs_path, daily_logs_path, picarro_logs_path]
+            data_types = ['methane', 'voc', 'daily', 'picarro']
+
+            for sync_path, type, data_path in zip(sync_paths, data_types, data_paths):
+                sync_files = [MovedFile(sync_path/file.name, 'type', 'sync') for file in os.scandir(sync_path)]
+                data_files = (session.query(MovedFile)
+                                     .filter(MovedFile.location == 'data')
+                                     .filter(MovedFile.type == type)
+                                     .all())
+                moved_data_paths = [d.path for d in data_files]
+
+                for file in sync_files:
+                    if file.path not in moved_data_paths:
+                        copy(file.path, data_path)  # will overwrite
+                        file.path = data_path/file.name
+                        file.location = 'data'
+                        session.merge(file)
+
+            session.commit()
+
+            session.close()
+            engine.dispose()
+            for i in range(5):
+                await asyncio.sleep(60)
+
+        except Exception as e:
+            logger.error(f'Exception {e.args} occurred in move_log_files().')
+            send_processor_email('Core', exception=e)
+            session.close()
+            engine.dispose()
+            return False
