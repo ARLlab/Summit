@@ -474,6 +474,7 @@ class GcRun(Base):
         self.data_con = None
         self.crfs = None  # begins with no crf, will be found later
         self.type = sample_types.get(self.sampletype, None)
+        self.peaks = NmhcLine.peaklist
 
         self.date = self.log_con.date + (self.nmhc_con.date - self.log_con.date) / 2
 
@@ -780,10 +781,6 @@ def match_log_to_pa(LogFiles, NmhcLines):
 def get_dates_peak_info(session, compound, info, date_start=None, date_end=None):
     """
 
-    TODO: This can be made into a much more comprehensive function, essentially a get_date_peak_table()?
-        It should take a list of peak info and a list of compounds and return them as a long-ass tuple.
-        It'll involve something akin to dynamic aliases. See i/n pentane section of plot_new_data() in voc_main_loop.py
-
     :param session: An active sqlalchemy session object
     :param compound: string, the compound to be retrieved
     :param info: string, the item from ['mr','pa', 'rt'] to be retrieved
@@ -799,65 +796,61 @@ def get_dates_peak_info(session, compound, info, date_start=None, date_end=None)
 
     if date_start is None and date_end is None:
         try:
-            peak_info = (session.query(peak_attr, GcRun.date)
-                         .join(LogFile, LogFile.id == Peak.log_id)
-                         .join(GcRun, GcRun.id == LogFile.id)
+            peak_info = (session.query(GcRun.date, peak_attr)
+                         .join(Peak, GcRun.id == Peak.run_id)
                          .filter(Peak.name == compound, GcRun.type == 'ambient')
-                         .order_by(LogFile.date))  # get everything
-            info, dates = zip(*peak_info.all())
+                         .order_by(GcRun.date))  # get everything
+            dates, info = zip(*peak_info.all())
         except ValueError:
             info = None
             dates = None
 
-        return info, dates
+        return dates, info
 
     elif date_start is None:
         try:
-            peak_info = (session.query(peak_attr, GcRun.date)
-                         .join(LogFile, LogFile.id == Peak.log_id)
-                         .join(GcRun, GcRun.id == LogFile.id)
+            peak_info = (session.query(GcRun.date, peak_attr)
+                         .join(Peak, GcRun.id == Peak.run_id)
                          .filter(Peak.name == compound, GcRun.type == 'ambient')
-                         .filter(LogFile.date < date_end)
-                         .order_by(LogFile.date))  # get only before the end date given
+                         .filter(GcRun.date < date_end)
+                         .order_by(GcRun.date))  # get only before the end date given
 
-            info, dates = zip(*peak_info.all())
+            dates, info = zip(*peak_info.all())
         except ValueError:
             info = None
             dates = None
 
-        return info, dates
+        return dates, info
 
     elif date_end is None:
         try:
-            peak_info = (session.query(peak_attr, GcRun.date)
-                         .join(LogFile, LogFile.id == Peak.log_id)
-                         .join(GcRun, GcRun.id == LogFile.id)
+            peak_info = (session.query(GcRun.date, peak_attr)
+                         .join(Peak, GcRun.id == Peak.run_id)
                          .filter(Peak.name == compound, GcRun.type == 'ambient')
-                         .filter(LogFile.date > date_start)
-                         .order_by(LogFile.date))
+                         .filter(GcRun.date > date_start)
+                         .order_by(GcRun.date))
 
-            info, dates = zip(*peak_info.all())  # get only after the start date given
+            dates, info = zip(*peak_info.all())  # get only after the start date given
         except ValueError:
             info = None
             dates = None
 
-        return info, dates
+        return dates, info
 
     else:
         try:
-            peak_info = (session.query(peak_attr, GcRun.date)
-                         .join(LogFile, LogFile.id == Peak.log_id)
-                         .join(GcRun, GcRun.id == LogFile.id)
+            peak_info = (session.query(GcRun.date, peak_attr)
+                         .join(Peak, GcRun.id == Peak.run_id)
                          .filter(Peak.name == compound, GcRun.type == 'ambient')
-                         .filter(LogFile.date.between(date_start, date_end))
-                         .order_by(LogFile.date))  # get between date bookends (inclusive beginning!)
+                         .filter(GcRun.date.between(date_start, date_end))
+                         .order_by(GcRun.date))  # get between date bookends (inclusive beginning!)
 
-            info, dates = zip(*peak_info.all())
+            dates, info = zip(*peak_info.all())
         except ValueError:
             info = None
             dates = None
 
-        return info, dates
+        return dates, info
 
 
 def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None,
