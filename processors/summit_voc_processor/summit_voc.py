@@ -172,6 +172,9 @@ class Peak(Base):
     log_id = Column(Integer, ForeignKey('logfiles.id'))
     log_con = relationship('LogFile', foreign_keys=[log_id], back_populates='peaks')
 
+    run_id = Column(Integer, ForeignKey('gcruns.id'))
+    run_con = relationship('GcRun', foreign_keys=[run_id], back_populates='peaks')
+
     def __init__(self, name, pa, rt):
         self.name = name.lower()
         self.pa = pa
@@ -448,7 +451,7 @@ class GcRun(Base):
     nmhcline_id = Column(Integer, ForeignKey('nmhclines.id'))
     nmhc_con = relationship('NmhcLine', uselist=False, foreign_keys=[nmhcline_id], back_populates='run_con')
 
-    peaks = association_proxy('nmhc_con', 'peaklist')
+    peaks = relationship('Peak', back_populates='run_con')
     date_end = association_proxy('nmhc_con', 'date')  # pass date from NMHC to GcRun
 
     logfile_id = Column(Integer, ForeignKey('logfiles.id'))

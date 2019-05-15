@@ -8,9 +8,8 @@ Created for use with plotting nmhc Data from Summit GC
 
 def isleapyear(yr):
     
-    ## Import Library
+    # Import Library
     import pandas as pd
-    import numpy as np
     
     # Month and Day do not matter, just required. Converts to dataframe
     placeholder = pd.DataFrame({'year': [yr], 'month': [1], 'day':[1]})
