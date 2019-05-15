@@ -517,6 +517,8 @@ async def move_log_files(logger):
 
             session.close()
             engine.dispose()
+            import gc
+            gc.collect()
             for i in range(5):
                 await asyncio.sleep(60)
 
