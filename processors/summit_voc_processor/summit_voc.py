@@ -52,10 +52,10 @@ compound_windows_1 = (
      'ethene': (2.04, 2.152),
      'propane': (2.85, 3.1),
      'propene': (5.75, 5.95),
-     'i-butane': (7.3, 7.6),
-     '4b': (0, 0),  # don't address 4b, acetylene, or n-butane for now
-     'acetylene': (0, 0),
-     'n-butane': (0, 0),
+     'i-butane': (7.3, 7.68),
+     '4b': (.3, .5),  # 4b, acet and n-butane are not addressed by RT, but rather RT difference from i-but
+     'acetylene': (.6, .725),
+     'n-butane': (.56, .6),
      '5a': (9.5, 10.3),
      '5b': (11.25, 11.65),
      '5c': (12.48, 12.55),
@@ -72,9 +72,9 @@ compound_windows_2 = (
      'propane': (2.6, 3.1),
      'propene': (5.32, 5.58),
      'i-butane': (6.85, 7.1),
-     '4b': (0, 0),  # don't address 4b, acetylene, or n-butane for now
-     'acetylene': (0, 0),
-     'n-butane': (0, 0),
+     '4b': (.25, .4),  # 4b, acet and n-butane are not addressed by RT, but rather RT difference from i-but
+     'acetylene': (.425, .51),
+     'n-butane': (.51, .6),
      '5a': (9, 9.5),
      '5b': (10.6, 11.1),
      '5c': (11.75, 11.95),
