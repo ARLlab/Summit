@@ -591,6 +591,10 @@ async def plot_new_data(logger):
         return False
 
 
+async def read_excel_sheet(logger):
+    pass
+
+
 async def main():
     """
     Configure a logger and run processes in order, only proceeding if new data is created that warrants running the next
