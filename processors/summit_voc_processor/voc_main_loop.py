@@ -534,8 +534,9 @@ async def plot_new_data(logger):
 			logger.info('New data found to be plotted.')
 
 			with TempDir(plotdir):  ## PLOT ethane and propane
-				ethane_mrs, ethane_dates = get_dates_peak_info(session, 'ethane', 'mr', date_start=date_ago)
-				propane_mrs, propane_dates = get_dates_peak_info(session, 'propane', 'mr', date_start=date_ago)
+				ethane_dates, ethane_mrs = get_dates_peak_info(session, 'ethane', 'mr', date_start=date_ago)
+				propane_dates, propane_mrs = get_dates_peak_info(session, 'propane', 'mr', date_start=date_ago)
+
 				name = summit_voc_plot(None, ({'Ethane': [ethane_dates, ethane_mrs],
 											   'Propane': [propane_dates, propane_mrs]}),
 									   limits={'right': date_limits.get('right', None),
@@ -548,9 +549,9 @@ async def plot_new_data(logger):
 				add_or_ignore_plot(ethane_plot, core_session)
 
 			with TempDir(plotdir):  ## PLOT i-butane, n-butane, acetylene
-				ibut_mrs, ibut_dates = get_dates_peak_info(session, 'i-butane', 'mr', date_start=date_ago)
-				nbut_mrs, nbut_dates = get_dates_peak_info(session, 'n-butane', 'mr', date_start=date_ago)
-				acet_mrs, acet_dates = get_dates_peak_info(session, 'acetylene', 'mr', date_start=date_ago)
+				ibut_dates, ibut_mrs  = get_dates_peak_info(session, 'i-butane', 'mr', date_start=date_ago)
+				nbut_dates, nbut_mrs  = get_dates_peak_info(session, 'n-butane', 'mr', date_start=date_ago)
+				acet_dates, acet_mrs  = get_dates_peak_info(session, 'acetylene', 'mr', date_start=date_ago)
 
 				name = summit_voc_plot(None, ({'i-Butane': [ibut_dates, ibut_mrs],
 											   'n-Butane': [nbut_dates, nbut_mrs],
@@ -571,11 +572,11 @@ async def plot_new_data(logger):
 				npentane = aliased(Peak)
 
 				data = (session.query(GcRun.date, ipentane.mr, npentane.mr)
-						.join(ipentane, ipentane.log_id == LogFile.id)
-						.join(npentane, npentane.log_id == LogFile.id)
+						.join(ipentane, ipentane.run_id == GcRun.id)
+						.join(npentane, npentane.run_id == GcRun.id)
 						.filter(ipentane.name == 'i-pentane')
 						.filter(npentane.name == 'n-pentane')
-						.order_by(LogFile.date)
+						.order_by(GcRun.date)
 						.all())
 
 				pentane_dates = [d.date for d in data]
@@ -615,8 +616,8 @@ async def plot_new_data(logger):
 					add_or_ignore_plot(in_pent_ratio_plot, core_session)
 
 			with TempDir(plotdir):  ## PLOT benzene and toluene
-				benz_mrs, benz_dates = get_dates_peak_info(session, 'benzene', 'mr', date_start=date_ago)
-				tol_mrs, tol_dates = get_dates_peak_info(session, 'toluene', 'mr', date_start=date_ago)
+				benz_dates, benz_mrs = get_dates_peak_info(session, 'benzene', 'mr', date_start=date_ago)
+				tol_dates, tol_mrs = get_dates_peak_info(session, 'toluene', 'mr', date_start=date_ago)
 
 				name = summit_voc_plot(None, ({'Benzene': [benz_dates, benz_mrs],
 											   'Toluene': [tol_dates, tol_mrs]}),
