@@ -65,15 +65,12 @@ def ratioCalc():
             methaneAverage = np.mean(methane[(methaneDate[:] <= high) & (methaneDate[:] >= low)])
             aceMethane[np.where(numYears == i), k] = value / methaneAverage
 
-        nmhcDate = (nmhcDate / 60 / 60 / 24)
+        nmhcDate = (nmhcDate / 60 / 60 / 24) + (i-2012) * (365 + isleapyear(i))
         location = datesFinal > np.Inf
         location[np.where(numYears == i), 0:np.size(nmhcDate)] = True
         np.place(datesFinal, location, nmhcDate)
 
     return ethaneMethane, aceMethane, datesFinal
-
-if __name__ == '__main__':
-    ethaneMethane, aceMethane, datesFinal = ratioCalc()
 
 
 
