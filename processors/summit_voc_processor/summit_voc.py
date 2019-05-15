@@ -1081,13 +1081,32 @@ def name_summit_peaks(nmhcline, rt_windows):
     ibut = search_for_attr_value(nmhcline.peaklist, 'name', 'i-butane')
 
     find_nbut = True
-    find_acet = True  # default to both needing to be found
+    find_acet = True  # default to all needing to be found
+    find_4b = True
 
     if ibut is not None:
         ibut_rt = ibut.rt
 
+        if find_4b:
+            b4_limits = rt_windows.get('4b')
+            if b4_limits:
+                b4_pool = [peak for peak in nmhcline.peaklist if
+                             b4_limits[0] < (peak.rt - ibut_rt) < b4_limits[1]]
+            else:
+                b4_pool = None
+            if not b4_pool:
+                pass
+            else:
+                b4 = max(b4_pool, key=lambda peak: peak.pa)  # get largest peak in possible peaks
+                b4.name = '4b'
+
         if find_acet:
-            acet_pool = [peak for peak in nmhcline.peaklist if .6 < (peak.rt - ibut_rt) < .7]
+            acet_limits = rt_windows.get('acetylene')
+            if acet_limits:
+                acet_pool = [peak for peak in nmhcline.peaklist if
+                             acet_limits[0] < (peak.rt - ibut_rt) < acet_limits[1]]
+            else:
+                acet_pool = None
             if not acet_pool:
                 pass
             else:
@@ -1095,7 +1114,11 @@ def name_summit_peaks(nmhcline, rt_windows):
                 acet.name = 'acetylene'
 
         if find_nbut:
-            nbut_pool = [peak for peak in nmhcline.peaklist if .55 < (peak.rt - ibut_rt) < .60]
+            nbut_limits = rt_windows.get('n-butane')
+            if nbut_limits:
+                nbut_pool = [peak for peak in nmhcline.peaklist if .55 < (peak.rt - ibut_rt) < .60]
+            else:
+                nbut_pool = None
             if not nbut_pool:
                 pass
             else:
