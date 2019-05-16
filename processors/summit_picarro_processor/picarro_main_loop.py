@@ -212,7 +212,7 @@ async def find_cal_events(logger):
 				event_data = session.query(Datum).filter(Datum.id.in_(data['id'].iloc[prev_ind:ind])).all()
 				cal_events.append(CalEvent(event_data, standard))
 
-				if num == len(indices):  # if it's the last index, get all ahead of it as the last event
+				if num == (len(indices) - 1):  # if it's the last index, get all ahead of it as the last event
 					event_data = session.query(Datum).filter(Datum.id.in_(data['id'].iloc[ind:])).all()
 					cal_events.append(CalEvent(event_data, standard))
 
