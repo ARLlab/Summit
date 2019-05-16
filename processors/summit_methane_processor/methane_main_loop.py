@@ -414,6 +414,8 @@ async def quantify_samples(logger):
 
         ct = 0
         for run in unquantified_runs:
+
+            # TODO: Move the majority of this to class methods for GcRuns; will make editing integrations WAY easier
             samples = run.samples
 
             standard = (session.query(Standard)
@@ -454,13 +456,16 @@ async def quantify_samples(logger):
                             amb = calc_ch4_mr(amb, standard2, standard)
 
                     run.standard_rsd = (s.stdev([standard1.peak.pa, standard2.peak.pa]) /
-                                        s.median([standard1.peak.pa, standard2.peak.pa])
-                                        * 100)
+                                        s.median([standard1.peak.pa, standard2.peak.pa]))
 
-                all_run_mrs = [amb.peak.mr for amb in ambients]
+                from summit_methane import plottable_sample
 
-                run.median = s.median(all_run_mrs)
-                run.rsd = s.stdev(all_run_mrs) / run.median * 100
+                all_run_mrs = [amb.peak.mr for amb in ambients if plottable_sample(amb)]
+                # do basic filtering for calculating run medians
+                if all_run_mrs:
+                    run.median = s.median(all_run_mrs)
+                    if len(all_run_mrs) > 1:
+                        run.rsd = s.stdev(all_run_mrs) / run.median
 
                 session.merge(run)
                 # merge only the run, it contains and cascades samples, palines and peaks that were changed
@@ -500,7 +505,7 @@ async def plot_new_data(logger):
         from summit_core import core_dir, Config
         from summit_core import methane_dir as rundir
         from summit_core import connect_to_db, create_daily_ticks, TempDir, Plot, add_or_ignore_plot
-        from summit_methane import Sample, Base, plottable_sample, summit_methane_plot
+        from summit_methane import Sample, GcRun, Base, plottable_sample, summit_methane_plot
     except ImportError as e:
         logger.error('ImportError occurred in plot_new_data()')
         send_processor_email(PROC, exception=e)
@@ -536,16 +541,23 @@ async def plot_new_data(logger):
 
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
-        ambient_samples = (session.query(Sample)
-                           # .filter(Sample.date.between(datetime(2019, 1, 1), datetime(2019, 6, 1)))
-                           .filter(Sample.sample_type == 3)
-                           .order_by(Sample.date)
-                           .all())
+        runs_with_medians = (session.query(GcRun)
+                                    .filter(GcRun.median != None)
+                                    .filter(GcRun.standard_rsd < .02)
+                                    .filter(GcRun.rsd < .02)
+                                    .order_by(GcRun.date)
+                                    .all())
 
-        ambient_samples[:] = [sample for sample in ambient_samples if plottable_sample(sample)]
+        # ambient_samples = (session.query(Sample)
+        #                    # .filter(Sample.date.between(datetime(2019, 1, 1), datetime(2019, 6, 1)))
+        #                    .filter(Sample.sample_type == 3)
+        #                    .order_by(Sample.date)
+        #                    .all())
+        #
+        # ambient_samples[:] = [sample for sample in ambient_samples if plottable_sample(sample)]
         # remove gross outliers and non-valid samples
 
-        last_ambient_date = ambient_samples[-1].date
+        last_ambient_date = runs_with_medians[-1].date
         # get date after filtering, ie don't plot if there's no new data getting plotted
 
         date_limits, major_ticks, minor_ticks = create_daily_ticks(ch4_config.days_to_plot)
@@ -555,8 +567,8 @@ async def plot_new_data(logger):
             ch4_config.last_data_date = last_ambient_date
             core_session.merge(ch4_config)
 
-            ambient_dates = [amb.date for amb in ambient_samples]
-            ambient_mrs = [amb.peak.mr for amb in ambient_samples]
+            ambient_dates = [run.date for run in runs_with_medians]
+            ambient_mrs = [run.median for run in runs_with_medians]
 
             with TempDir(rundir / 'plots'):
                 name = summit_methane_plot(None, {'Methane': [ambient_dates, ambient_mrs]},
