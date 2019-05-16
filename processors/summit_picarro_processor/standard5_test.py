@@ -12,6 +12,8 @@ def main():
 
     :param N/A -- Perhaps logger once incorperated into full code
     :return: boolean, did it run?
+
+    !! Note: To view the plots, comment out line 36 and set a breakpoint directly after plt.show() on line 131
     """
 
     # Import Required Functions
@@ -31,7 +33,7 @@ def main():
     mpv_data = pd.DataFrame(session
                             .query(Datum.id, Datum.date)            # Gets the datum ID & Date
                             .filter(Datum.mpv_position == MPV)      # Filters them for valve pos #5
-    #                       .filter(Datum.cal_id == None)           # only if not already any cal event
+                            .filter(Datum.cal_id == None)           # only if not already any cal event
                             .all())                                 # actually gathers the data
 
     mpv_data['date'] = pd.to_datetime(mpv_data['date'])             # Convert to PD datetime version
