@@ -65,7 +65,7 @@ async def load_excel_corrections(logger):
 
     data = data.set_index([0])  # set first row of df to the index
     data.index = data.index.str.lower()
-    data = data[data.columns[:-1]]  # drop last row of DF (the one with 'END' in it)
+    data = data[data.columns[:-1]]  # drop last row (column?) of DF (the one with 'END' in it)
 
     engine, session = connect_to_db('sqlite:///summit_voc.sqlite', rundir)
 
