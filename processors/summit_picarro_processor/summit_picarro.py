@@ -286,7 +286,7 @@ def find_cal_by_type(standards, std_type):
 def find_cal_indices(datetimes):
     """
     Cal events are any time a standard is injected and being quantified by the system. Here, they're separated as though
-    any calibration data that's more than 10s away from the previous cal data is a new event.
+    any calibration data that's more than 60s away from the previous cal data is a new event.
 
     :param epoch_time: array of epoch times for all of the supplied data
     :return: list of cal events indices, where each index is the beginning of a new cal event
