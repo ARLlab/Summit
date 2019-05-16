@@ -1,9 +1,11 @@
 # Import libraries & functions
 import datetime as dt
 import pandas as pd
+import matplotlib.pyplot as plt
 
 
 def main():
+
     """
     This function creates calibration events with a valve position of 5, and places them in the
     Picarro Database for future analysis.
@@ -16,6 +18,7 @@ def main():
     from summit_core import connect_to_db
     from summit_picarro import Base, Datum, CalEvent, find_cal_indices
     from summit_picarro import filter_postcal_data
+    from matplotlib.pyplot import figure
 
     # Connect to the database
     rundir = r'C:\Users\ARL\Desktop'                                                    # location of DB
@@ -28,7 +31,7 @@ def main():
     mpv_data = pd.DataFrame(session
                             .query(Datum.id, Datum.date)            # Gets the datum ID & Date
                             .filter(Datum.mpv_position == MPV)      # Filters them for valve pos #5
-                            .filter(Datum.cal_id == None)           # only if not already any cal event
+    #                       .filter(Datum.cal_id == None)           # only if not already any cal event
                             .all())                                 # actually gathers the data
 
     mpv_data['date'] = pd.to_datetime(mpv_data['date'])             # Convert to PD datetime version
@@ -59,18 +62,77 @@ def main():
                           .all())                                                   # actually gathers the data
             cal_events.append(CalEvent(event_data, standard))                       # appends cal events list
 
-            if num == len(indices):                                                 # last index, gets the rest
+            if num == (len(indices) - 1):                                           # last index, gets the rest
                 event_data = (session
                               .query(Datum)
                               .filter(Datum.id.in_(data['id'].iloc[ind:]))          # index to end of list
                               .all())
                 cal_events.append(CalEvent(event_data, standard))                   # appends cal events list
 
+                # Create a plot of this cal event
+                coPlot, co2Plot, ch4Plot, datePlot = [], [], [], []
+                for x in event_data:
+                    coPlot.append(x.co); co2Plot.append(x.co2); ch4Plot.append(x.ch4);      # Raw Numbers
+                    if datePlot == []:
+                        timestep = x.date.timestamp()
+                        datePlot.append(timestep)
+                    else:
+                        timestep = x.date.timestamp() - datePlot[0]            # likely a better way
+                        datePlot.append(timestep)                                           # to do this
+
+                ev = cal_events[len(indices)]
+                for cpd in ['co', 'co2', 'ch4']:
+                    time = (ev.date - ev.dates[0]).seconds
+                    ev.calc_result(cpd, time)
+
+                datePlot[0] = 0  # start it at 0
+
+                figure(1)
+                table_vals = [[list(ev.co_result.values())[0]], [list(ev.co_result.values())[1]],
+                              [list(ev.co_result.values())[2]]]
+                the_table = plt.table(cellText=table_vals, cellColours=None,
+                                      cellLoc='right', colWidths=[0.3]*3,
+                                      rowLabels=['mean', 'median', 'stdev'], rowColours=None, rowLoc='left',
+                                      colLabels=['value'], colColours=None, colLoc='center',
+                                      loc='lower right', bbox=None)
+                plt.plot(datePlot, coPlot, label='co')
+                plt.xlabel('Time since start of cal_event [seconds]')
+                plt.ylabel('Compounds')
+                plt.title('CO')
+
+                figure(2)
+                table_vals = [[list(ev.co2_result.values())[0]], [list(ev.co2_result.values())[1]],
+                              [list(ev.co2_result.values())[2]]]
+                the_table = plt.table(cellText=table_vals, cellColours=None,
+                                      cellLoc='right', colWidths=[0.3] * 3,
+                                      rowLabels=['mean', 'median', 'stdev'], rowColours=None, rowLoc='left',
+                                      colLabels=['value'], colColours=None, colLoc='center',
+                                      loc='upper right', bbox=None)
+                plt.plot(datePlot, co2Plot, label='co2')
+                plt.xlabel('Time since start of cal_event [seconds]')
+                plt.ylabel('Compounds')
+                plt.title('CO2')
+
+                figure(3)
+                table_vals = [[list(ev.ch4_result.values())[0]], [list(ev.ch4_result.values())[1]],
+                              [list(ev.ch4_result.values())[2]]]
+                the_table = plt.table(cellText=table_vals, cellColours=None,
+                                      cellLoc='right', colWidths=[0.3] * 3,
+                                      rowLabels=['mean', 'median', 'stdev'], rowColours=None, rowLoc='left',
+                                      colLabels=['value'], colColours=None, colLoc='center',
+                                      loc='upper right', bbox=None)
+                plt.plot(datePlot, ch4Plot, label='ch4')
+                plt.xlabel('Time since start of cal_event [seconds]')
+                plt.ylabel('Compounds')
+                plt.title('ch4')
+
+                plt.show()
+
             prev_ind = ind                                                          # set previous index as current
 
         # Calculate the CO, CO2, and Methane results with Brendan's functions
         for ev in cal_events:
-            # TODO: Is this filtering actually necesarry - likely yes
+            # TODO: Is this filtering actually necesarry - might as well
             filter_postcal_data(ev, session)                            # filter following min of ambient data
 
             if ev.date - ev.dates[0] < dt.timedelta(seconds=90):        # events under 90 seconds are dumped
