@@ -1,5 +1,4 @@
 # Import libraries & functions
-import asyncio
 import datetime as dt
 import pandas as pd
 
@@ -15,8 +14,8 @@ def main():
 
     # Import Required Functions
     from summit_core import connect_to_db
-    from summit_picarro import Base, Datum, CalEvent, mpv_converter, find_cal_indices
-    from summit_picarro import log_event_quantification, filter_postcal_data            # dont think i need these
+    from summit_picarro import Base, Datum, CalEvent, find_cal_indices
+    from summit_picarro import filter_postcal_data
 
     # Connect to the database
     rundir = r'C:\Users\ARL\Desktop'                                                    # location of DB
@@ -43,6 +42,14 @@ def main():
 
         cal_events = []                                             # preallocation of cal events
         prev_ind = 0                                                # prev_ind is initially the first index
+
+        # If indicies is empty, but there is still data, create a single event
+        if not len(indices) and len(data):
+            event_data = (session
+                          .query(Datum)
+                          .filter(Datum.id.in_(data['id']))
+                          .all())
+            cal_events.append(CalEvent(event_data, standard))
 
         # Seperate cal events from gathered indicies and place in cal_events
         for num, ind in enumerate(indices):
