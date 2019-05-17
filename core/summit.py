@@ -1,5 +1,21 @@
 """
-This will be the main script for all processing.
+This is the main script for all processing.
+
+The main() functions of individual modules are loaded as whole processors, so VOCs are run all at once, the Picarro is
+run all at once, etc.
+
+The system path is first extended to account for loading modules from their own directories; so long as the relative
+structure is the same and the parent folder is named "Summit" (per cloning from Git), or "summmit_master",
+the original directory name, the will find the correct directories and add them to the system path.
+
+Log and data files are sync to several folders in the FTP directory, and move_log_files() moves these to Summit/data/...
+
+move_log_files() runs asynchronously, every five minutes, and is scheduled prior to main(), so it works independently.
+It checks for and transfers any new files before sleeping for another five minutes.
+
+All other processors run sequentially (as defined in main()), every 10 minutes.
+
+Sleeps are blocked into 30s periods to permit keyboard interrupts and easy restarts of the whole processing sequence.
 """
 
 import sys
