@@ -61,9 +61,6 @@ async def check_load_pa_log(logger):
         return False
 
     try:
-        lines_in_db = session.query(PaLine).all()
-        dates_in_db = [l.date for l in lines_in_db]
-
         if check_filesize(pa_filepath) <= ch4_config.filesize:
             logger.info('PA file did not change size.')
             return False
@@ -78,7 +75,6 @@ async def check_load_pa_log(logger):
 
         pa_file_contents = pa_filepath.read_text().split('\n')[line_to_start:]
 
-
         ch4_config.pa_startline = ch4_config.pa_startline + len(pa_file_contents) - 1
 
         pa_file_contents[:] = [line for line in pa_file_contents if line]
@@ -90,11 +86,14 @@ async def check_load_pa_log(logger):
         if not pa_lines:
             logger.info('No new PaLines found.')
             return False
-
         else:
             ct = 0  # count committed logs
+            line_dates = [line.date for line in pa_lines]
+            dates_already_in_db = session.query(PaLine.date).filter(PaLine.date.in_(line_dates)).all()
+            dates_already_in_db[:] = [l.date for l in dates_already_in_db]
+
             for line in pa_lines:
-                if line.date not in dates_in_db:
+                if line.date not in dates_already_in_db:
                     session.add(line)
                     logger.info(f'PaLine for {line.date} added.')
                     ct += 1
