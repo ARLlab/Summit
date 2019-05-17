@@ -480,7 +480,7 @@ async def plot_new_data(logger):
 		from summit_voc import Base, GcRun, summit_voc_plot, get_dates_peak_info
 		from datetime import datetime
 		import datetime as dt
-		plotdir = rundir / '../summit_master/summit_master/static/img/coding'  # local flask static folder
+		plotdir = rundir / 'plots'  # local flask static folder
 	except ImportError as e:
 		logger.error('Import error occurred in plot_new_data()')
 		send_processor_email(PROC, exception=e)
@@ -738,7 +738,7 @@ async def plot_logdata(logger):
 
 		with TempDir(plotdir):  ## PLOT i-butane, n-butane, acetylene
 
-			name = 'trap_chamber_starts_ends.png'
+			name = 'trap_starts_ends.png'
 			summit_log_plot(name, dates,
 							({'H20 Trap A, Sample Start': [None, logdict.get('WTA_temp_start')],
 							  'H20 Trap B, Sample Start': [None, logdict.get('WTB_temp_start')],
@@ -832,6 +832,7 @@ async def plot_logdata(logger):
 			gcheadstend_plot = Plot(plotdir / name, True)
 			add_or_ignore_plot(gcheadstend_plot, core_session)
 
+		core_session.commit()
 		core_session.close()
 		core_engine.dispose()
 
