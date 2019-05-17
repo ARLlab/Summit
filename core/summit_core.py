@@ -521,8 +521,8 @@ async def move_log_files(logger):
 			import gc
 			gc.collect()
 
-			for i in range(5):
-				await asyncio.sleep(60)
+			for i in range(10):
+				await asyncio.sleep(30)
 
 		except Exception as e:
 			logger.error(f'Exception {e.args} occurred in move_log_files().')
