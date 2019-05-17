@@ -66,13 +66,8 @@ async def check_load_new_data(logger):
 		return False
 
 	try:
-		# TODO : The below seems to be causing a lot of memory usage; query only necessary info; don't se all() here
 		db_files = session.query(DataFile)
-		db_data = session.query(Datum)
-
 		db_filenames = [d.name for d in db_files.all()]
-		db_dates = [d.date for d in db_data.all()]  # TODO : this is 500K plus objects!
-		# Todo: Instead, Get a list of dates to be commited, and then use in_(dates_to_commit) to filter
 
 		all_available_files = get_all_data_files(data_path, '.dat')
 
@@ -126,8 +121,12 @@ async def check_load_new_data(logger):
 				data_list.append(Datum(line))
 
 			if data_list:
+				data_dates = [d.date for d in data_list]
+				dates_already_in_db = session.query(Datum.date).filter(Datum.date.in_(data_dates)).all()
+				dates_already_in_db[:] = [d.date for d in dates_already_in_db]
+
 				for d in data_list:
-					if d.date not in db_dates:
+					if d.date not in dates_already_in_db:
 						d.file_id = file.id  # relate Datum to the file it originated in
 						session.add(d)
 			else:
