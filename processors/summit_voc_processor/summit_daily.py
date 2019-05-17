@@ -482,6 +482,7 @@ async def plot_dailies(logger):
             flow_plot = Plot(plotdir / name, True)
             add_or_ignore_plot(flow_plot, core_session)
 
+        core_session.commit()
         core_session.close()
         core_engine.dispose()
 
