@@ -8,7 +8,7 @@ def check_cols_methane(name):
     Mini Function passed to pd.read_excel(usecols=function)
     :return: Returns True for columns 22, 27, and 29
     """
-    return True if name == 'Decimal Year' or name == 'Run median' or name == 'Daily Median' else False
+    return True if name in ['SampleDay', 'SampleHour', 'Decimal Year', 'Run median', 'Daily Median'] else False
 
 
 def main():
@@ -53,5 +53,25 @@ def main():
     return run_median, run_median_dates, daily_median, daily_median_dates
 
 
+def brendan_test():
+    filename = r'/home/brendan/PycharmProjects/Summit/processors/summit_methane_processor/SUM_CH4_insitu_2019.xlsx'
+    # Brendan's path
+
+    data = pd.read_excel(filename, usecols=check_cols_methane, sheet_name='data_2019')
+    data = data[data['SampleDay'] != 0]  # filter out not-yet-present data
+
+    counts = data.groupby(['SampleDay', 'SampleHour']).size().reset_index().rename(columns={0: 'counts'})
+    #  get number of data points for each day/hour combo
+
+    print(counts)
+
+    print(counts.where(counts['counts'] != 5).dropna(how='all', axis='rows'))  # warn these exist
+
+    unique_runs = counts.index.tolist()
+    # returns a list of tuples where each tuple is a unique (day,hour) combo
+
+
+
 if __name__ == '__main__':
-    main()
+    # main()
+    brendan_test()
