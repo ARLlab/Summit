@@ -35,12 +35,12 @@ async def check_load_logs(logger):
 
 	try:
 		logger.info('Running check_load_logs()')
-		log_files = session.query(LogFile).order_by(LogFile.id).all()  # list of all present log objects
 
 		logfns = [file.name for file in os.scandir(logpath) if 'l.txt' in file.name]
 
 		if logfns:
-			logs_in_db = [log.filename for log in log_files]  # log names
+			logs_in_db = session.query(LogFile).filter(LogFile.filename.in_(logfns))
+			logs_in_db[:] = [l.filename for l in logs_in_db]
 
 			logs_to_load = []
 			for log in logfns:
@@ -120,9 +120,6 @@ async def check_load_pas(logger):
 		return False
 
 	try:
-		nmhc_lines = session.query(NmhcLine).order_by(NmhcLine.id).all()
-		line_dates = [line.date for line in nmhc_lines]
-
 		if pa_path.is_file():
 			with TempDir(rundir):
 				new_file_size = check_filesize(pa_path)
@@ -178,12 +175,16 @@ async def check_load_pas(logger):
 						new_lines[ind] = name_summit_peaks(line, rt_windows)
 
 				ct = 0
-				for item in new_lines:
-					if item.date not in line_dates:  # prevents duplicates in db
-						line_dates.append(item.date)  # prevents duplicates in one load
-						session.merge(item)
-						logger.info(f'PA Line {item} added.')
-						ct += 1
+				if new_lines:
+					line_dates = [line.date for line in new_lines]
+					lines_in_db = session.query(NmhcLine.date).filter(NmhcLine.date.in_(line_dates)).all()
+					lines_in_db[:] = [l.date for l in lines_in_db]
+					for item in new_lines:
+						if item.date not in line_dates:  # prevents duplicates in db
+							line_dates.append(item.date)  # prevents duplicates in one load
+							session.merge(item)
+							logger.info(f'PA Line {item} added.')
+							ct += 1
 
 				if ct:
 					voc_config.pa_startline = new_startline
@@ -368,9 +369,6 @@ async def create_gc_runs(logger):
 			engine.dispose()
 			return False
 
-		gc_runs = session.query(GcRun).order_by(GcRun.id).all()
-		run_dates = [run.date_end for run in gc_runs]
-
 		gc_runs = match_log_to_pa(log_files, nmhc_lines)
 
 		if not gc_runs:
@@ -379,9 +377,13 @@ async def create_gc_runs(logger):
 			engine.dispose()
 			return False
 		else:
+			run_dates = [run.date for run in gc_runs]
+			run_dates_in_db = session.query(GcRun).filter(GcRun.date.in_(run_dates)).all()
+			run_dates_in_db[:] = [run.date for run in run_dates_in_db]
+
 			for run in gc_runs:
-				if run.date_end not in run_dates:
-					run_dates.append(run.date_end)
+				if run.date not in run_dates_in_db:
+					run_dates.append(run.date)
 					session.merge(run)
 					logger.info(f'GC Run {run} added.')
 
