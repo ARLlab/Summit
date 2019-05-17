@@ -595,10 +595,14 @@ async def plot_new_data(logger):
 						else:
 							inpent_ratio.append(i / n)
 
+					top_plot_limit = max(max(ipent_mrs), max(npent_mrs)) * 1.05
+					# set the plot max as 5% above the max value
+
 					name = summit_voc_plot(pentane_dates, ({'i-Pentane': [None, ipent_mrs],
 															'n-Pentane': [None, npent_mrs]}),
 										   limits={'right': date_limits.get('right', None),
 												   'left': date_limits.get('left', None),
+												   'top': top_plot_limit,
 												   'bottom': 0},
 										   			# 'top': np.amax(ipent_mrs) + .01
 										   major_ticks=major_ticks,
