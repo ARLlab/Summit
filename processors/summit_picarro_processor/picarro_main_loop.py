@@ -427,7 +427,7 @@ async def plot_new_data(logger):
 			co2_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
 			add_or_ignore_plot(co2_plot, core_session)
 
-			name = summit_picarro_plot(None, ({'Summit CH4': [dates, ch4]}),
+			name = summit_picarro_plot(None, ({'Summit Methane [Picarro]': [dates, ch4]}),
 									   limits={'right': date_limits.get('right', None),
 											   'left': date_limits.get('left', None),
 											   'bottom': 1850,

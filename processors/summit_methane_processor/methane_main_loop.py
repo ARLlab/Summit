@@ -571,7 +571,7 @@ async def plot_new_data(logger):
             ambient_mrs = [run.median for run in runs_with_medians]
 
             with TempDir(rundir / 'plots'):
-                name = summit_methane_plot(None, {'Methane': [ambient_dates, ambient_mrs]},
+                name = summit_methane_plot(None, {'Summit Methane [GC]': [ambient_dates, ambient_mrs]},
                                     limits={'bottom': 1850, 'top': 2050,
                                             'right': date_limits.get('right', None),
                                             'left': date_limits.get('left', None)},
