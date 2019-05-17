@@ -597,6 +597,7 @@ async def plot_new_data(logger):
 										   limits={'right': date_limits.get('right', None),
 												   'left': date_limits.get('left', None),
 												   'bottom': 0},
+										   			# 'top': np.amax(ipent_mrs) + .01
 										   major_ticks=major_ticks,
 										   minor_ticks=minor_ticks)
 
