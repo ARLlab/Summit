@@ -134,7 +134,6 @@ def main():
 
         # Calculate the CO, CO2, and Methane results with Brendan's functions
         for ev in cal_events:
-            # TODO: Is this filtering actually necesarry - might as well
             filter_postcal_data(ev, session)                            # filter following min of ambient data
 
             if ev.date - ev.dates[0] < dt.timedelta(seconds=90):        # events under 90 seconds are dumped
@@ -143,7 +142,7 @@ def main():
             # otherwise, iterate over each compound and calculate results
             else:
                 for cpd in ['co', 'co2', 'ch4']:
-                    time = 21                                           # TODO: Should time intervals be different?
+                    time = 21
                     ev.calc_result(cpd, time)                           # results are calced (time) seconds back
 
                 session.merge(ev)                                       # merge results with session
