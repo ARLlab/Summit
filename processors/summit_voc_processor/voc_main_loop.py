@@ -482,9 +482,12 @@ async def plot_new_data(logger):
 		from summit_core import core_dir, Plot, Config
 		from summit_core import connect_to_db, TempDir, create_daily_ticks, add_or_ignore_plot
 		from summit_voc import Base, GcRun, summit_voc_plot, get_dates_peak_info
+		from pathlib import Path
 		from datetime import datetime
 		import datetime as dt
 		plotdir = rundir / 'plots'  # local flask static folder
+		remotedir = r'/data/web/htdocs/instaar/groups/arl/summit/plots'
+
 	except ImportError as e:
 		logger.error('Import error occurred in plot_new_data()')
 		send_processor_email(PROC, exception=e)
@@ -549,7 +552,7 @@ async def plot_new_data(logger):
 									   major_ticks=major_ticks,
 									   minor_ticks=minor_ticks)
 
-				ethane_plot = Plot(plotdir / name, True)
+				ethane_plot = Plot(plotdir / name, remotedir, True)
 				add_or_ignore_plot(ethane_plot, core_session)
 
 			with TempDir(plotdir):  ## PLOT i-butane, n-butane, acetylene
@@ -566,7 +569,7 @@ async def plot_new_data(logger):
 									   major_ticks=major_ticks,
 									   minor_ticks=minor_ticks)
 
-				c4_plot = Plot(plotdir / name, True)
+				c4_plot = Plot(plotdir / name, remotedir, True)
 				add_or_ignore_plot(c4_plot, core_session)
 
 			with TempDir(plotdir):  ## PLOT i-pentane and n-pentane, & ratio
@@ -611,7 +614,7 @@ async def plot_new_data(logger):
 										   major_ticks=major_ticks,
 										   minor_ticks=minor_ticks)
 
-					in_pent_plot = Plot(plotdir / name, True)
+					in_pent_plot = Plot(plotdir / name, remotedir, True)
 					add_or_ignore_plot(in_pent_plot, core_session)
 
 					name = summit_voc_plot(pentane_dates, ({'i/n Pentane ratio': [None, inpent_ratio]}),
@@ -623,7 +626,7 @@ async def plot_new_data(logger):
 										   minor_ticks=minor_ticks,
 										   y_label_str='')
 
-					in_pent_ratio_plot = Plot(plotdir / name, True)
+					in_pent_ratio_plot = Plot(plotdir / name, remotedir, True)
 					add_or_ignore_plot(in_pent_ratio_plot, core_session)
 
 			with TempDir(plotdir):  ## PLOT benzene and toluene
@@ -638,7 +641,7 @@ async def plot_new_data(logger):
 									   major_ticks=major_ticks,
 									   minor_ticks=minor_ticks)
 
-				benz_tol_plot = Plot(plotdir / name, True)
+				benz_tol_plot = Plot(plotdir / name, remotedir, True)
 				add_or_ignore_plot(benz_tol_plot, core_session)
 
 			voc_config.last_data_date = dates[-1]
@@ -688,12 +691,14 @@ async def plot_logdata(logger):
 
 	try:
 		import datetime as dt
+		from pathlib import Path
 		from datetime import datetime
 		from summit_core import connect_to_db, TempDir, Config, Plot, add_or_ignore_plot, create_daily_ticks
 		from summit_core import voc_dir, core_dir
 		from summit_voc import LogFile, summit_log_plot
 		from summit_voc import log_params_list as log_parameters
 		plotdir = core_dir / 'plots/log'
+		remotedir = r'/data/web/htdocs/instaar/groups/arl/summit/protected/plots'
 
 		try:
 			os.chdir(plotdir)
@@ -772,7 +777,7 @@ async def plot_logdata(logger):
 							major_ticks=major_ticks,
 							minor_ticks=minor_ticks)
 
-			traps_plot = Plot(plotdir / name, True)
+			traps_plot = Plot(plotdir / name, remotedir, True)
 			add_or_ignore_plot(traps_plot, core_session)
 
 			name = 'sample_flow_and_pressure.png'
@@ -787,7 +792,7 @@ async def plot_logdata(logger):
 							major_ticks=major_ticks,
 							minor_ticks=minor_ticks)
 
-			sample_plot = Plot(plotdir / name, True)
+			sample_plot = Plot(plotdir / name, remotedir, True)
 			add_or_ignore_plot(sample_plot, core_session)
 
 			name = 'water_trap_hot_temps.png'
@@ -802,7 +807,7 @@ async def plot_logdata(logger):
 							major_ticks=major_ticks,
 							minor_ticks=minor_ticks)
 
-			hot_water_plot = Plot(plotdir / name, True)
+			hot_water_plot = Plot(plotdir / name, remotedir, True)
 			add_or_ignore_plot(hot_water_plot, core_session)
 
 			name = 'trap_temps_inject_flashheat.png'
@@ -818,7 +823,7 @@ async def plot_logdata(logger):
 							major_ticks=major_ticks,
 							minor_ticks=minor_ticks)
 
-			traptemp_plot = Plot(plotdir / name, True)
+			traptemp_plot = Plot(plotdir / name, remotedir, True)
 			add_or_ignore_plot(traptemp_plot, core_session)
 
 			name = 'gc_oven_start_end.png'
@@ -832,7 +837,7 @@ async def plot_logdata(logger):
 							major_ticks=major_ticks,
 							minor_ticks=minor_ticks)
 
-			ovenstend_plot = Plot(plotdir / name, True)
+			ovenstend_plot = Plot(plotdir / name, remotedir, True)
 			add_or_ignore_plot(ovenstend_plot, core_session)
 
 			name = 'gc_head_start_end.png'
@@ -846,7 +851,7 @@ async def plot_logdata(logger):
 							major_ticks=major_ticks,
 							minor_ticks=minor_ticks)
 
-			gcheadstend_plot = Plot(plotdir / name, True)
+			gcheadstend_plot = Plot(plotdir / name, remotedir, True)
 			add_or_ignore_plot(gcheadstend_plot, core_session)
 
 		core_session.commit()

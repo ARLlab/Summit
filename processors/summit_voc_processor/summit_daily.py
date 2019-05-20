@@ -336,9 +336,11 @@ async def plot_dailies(logger):
     """
 
     try:
+        from pathlib import Path
         import datetime as dt
         from summit_core import connect_to_db, core_dir, TempDir, Config, Plot, add_or_ignore_plot, create_daily_ticks
         plotdir = core_dir / 'plots/daily'
+        remotedir = r'/data/web/htdocs/instaar/groups/arl/summit/protected/plots'
 
         try:
             os.chdir(plotdir)
@@ -405,7 +407,7 @@ async def plot_dailies(logger):
                                      major_ticks=major_ticks,
                                      minor_ticks=minor_ticks)
 
-            hot_plot = Plot(plotdir / name, True)
+            hot_plot = Plot(plotdir / name, remotedir, True)
             add_or_ignore_plot(hot_plot, core_session)
 
             name = summit_daily_plot(dailydict.get('date'), ({'CJ1 Temp': [None, dailydict.get('cj1')],
@@ -418,7 +420,7 @@ async def plot_dailies(logger):
                                      major_ticks=major_ticks,
                                      minor_ticks=minor_ticks)
 
-            room_plot = Plot(plotdir / name, True)
+            room_plot = Plot(plotdir / name, remotedir, True)
             add_or_ignore_plot(room_plot, core_session)
 
             name = summit_daily_plot(dailydict.get('date'), ({'H2 Gen Pressure': [None, dailydict.get('h2_gen_p')],
@@ -433,7 +435,7 @@ async def plot_dailies(logger):
                                      major_ticks=major_ticks,
                                      minor_ticks=minor_ticks)
 
-            pressure_plot = Plot(plotdir / name, True)
+            pressure_plot = Plot(plotdir / name, remotedir, True)
             add_or_ignore_plot(pressure_plot, core_session)
 
             name = summit_daily_plot(dailydict.get('date'),
@@ -445,7 +447,7 @@ async def plot_dailies(logger):
                                      major_ticks=major_ticks,
                                      minor_ticks=minor_ticks)
 
-            inlet_plot = Plot(plotdir / name, True)
+            inlet_plot = Plot(plotdir / name, remotedir, True)
             add_or_ignore_plot(inlet_plot, core_session)
 
             name = summit_daily_plot(dailydict.get('date'), ({'Battery V': [None, dailydict.get('battv')],
@@ -462,7 +464,7 @@ async def plot_dailies(logger):
                                      major_ticks=major_ticks,
                                      minor_ticks=minor_ticks)
 
-            voltage_plot = Plot(plotdir / name, True)
+            voltage_plot = Plot(plotdir / name, remotedir, True)
             add_or_ignore_plot(voltage_plot, core_session)
 
             name = summit_daily_plot(dailydict.get('date'), ({'MFC1': [None, dailydict.get('mfc1')],
@@ -479,7 +481,7 @@ async def plot_dailies(logger):
                                      major_ticks=major_ticks,
                                      minor_ticks=minor_ticks)
 
-            flow_plot = Plot(plotdir / name, True)
+            flow_plot = Plot(plotdir / name, remotedir, True)
             add_or_ignore_plot(flow_plot, core_session)
 
         core_session.commit()

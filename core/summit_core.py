@@ -133,10 +133,12 @@ class Plot(Base):
 
 	staged = Column(Boolean)
 	_path = Column(String, unique=True)
+	remote_path = Column(String)
 	_name = Column(String)
 
-	def __init__(self, path, staged):
+	def __init__(self, path, remote_path, staged):
 		self.path = path
+		self.remote_path = remote_path
 		self.staged = staged
 
 	@property
@@ -351,16 +353,16 @@ def add_or_ignore_plot(plot, core_session):
 	return
 
 
-async def send_files_sftp(filepaths):
+async def send_files_sftp(filepaths, remote_path):
 	"""
-	Send a list of files to the JSON-loaded remote directory.
+	Send a list of files to the provided remote path.
 	:param filepaths: list, of pathlib Path objects
 	:return: list, of booleans of which plots uploaded sucessfully
 	"""
 	bools = []
 	try:
 		con = connect_to_sftp()
-		con.chdir(taylor_basepath)
+		con.chdir(remote_path)
 
 		for file in filepaths:
 			try:
@@ -397,18 +399,23 @@ async def check_send_plots(logger):
 		return False
 
 	try:
-		plots_to_upload = session.query(Plot).filter(Plot.staged == True).all()
+		plots_to_upload = session.query(Plot).filter(Plot.staged == True)
 
-		if plots_to_upload:
-			paths_to_upload = [p.path for p in plots_to_upload]
-			successes = await send_files_sftp(paths_to_upload)
+		remote_dirs = set([p.remote_path for p in plots_to_upload.all()])
 
-			for plot, success in zip(plots_to_upload, successes):
-				if success:
-					logger.info(f'Plot {plot.name} uploaded to website.')
-					session.delete(plot)
-				else:
-					logger.warning(f'Plot {plot.name} failed to upload.')
+		for remote_dir in remote_dirs:
+			plot_set = plots_to_upload.filter(Plot.remote_path == remote_dir).all()
+
+			if plot_set:
+				paths_to_upload = [p.path for p in plot_set]
+				successes = await send_files_sftp(paths_to_upload, remote_dir)
+
+				for plot, success in zip(plots_to_upload, successes):
+					if success:
+						logger.info(f'Plot {plot.name} uploaded to website.')
+						session.delete(plot)
+					else:
+						logger.warning(f'Plot {plot.name} failed to upload.')
 
 		session.commit()
 

@@ -320,15 +320,20 @@ async def plot_new_data(logger):
 	logger.info('Running plot_new_data()')
 
 	try:
+		from pathlib import Path
 		from summit_core import picarro_dir as rundir
 		from summit_core import create_daily_ticks, connect_to_db, TempDir, Plot, core_dir, Config, add_or_ignore_plot
 		from summit_picarro import Base, Datum, summit_picarro_plot
+
+		plotdir = rundir / 'plots'
+		remotedir = r'/data/web/htdocs/instaar/groups/arl/summit/plots'
+
 	except Exception as e:
 		logger.error('ImportError occurred in plot_new_data()')
 		send_processor_email(PROC, exception=e)
 		return False
 
-	plotdir = rundir / 'plots'
+
 
 	try:
 		engine, session = connect_to_db('sqlite:///summit_picarro.sqlite', rundir)
@@ -411,7 +416,7 @@ async def plot_new_data(logger):
 									   major_ticks=major_ticks,
 									   minor_ticks=minor_ticks)
 
-			co_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
+			co_plot = Plot(plotdir / name, remotedir, True)  # stage plots to be uploaded
 			add_or_ignore_plot(co_plot, core_session)
 
 			name = summit_picarro_plot(None, ({'Summit CO2': [dates, co2]}),
@@ -423,7 +428,7 @@ async def plot_new_data(logger):
 									   minor_ticks=minor_ticks,
 									   unit_string='ppmv')
 
-			co2_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
+			co2_plot = Plot(plotdir / name, remotedir, True)  # stage plots to be uploaded
 			add_or_ignore_plot(co2_plot, core_session)
 
 			name = summit_picarro_plot(None, ({'Summit Methane [Picarro]': [dates, ch4]}),
@@ -434,7 +439,7 @@ async def plot_new_data(logger):
 									   major_ticks=major_ticks,
 									   minor_ticks=minor_ticks)
 
-			ch4_plot = Plot(plotdir / name, True)  # stage plots to be uploaded
+			ch4_plot = Plot(plotdir / name, remotedir, True)  # stage plots to be uploaded
 			add_or_ignore_plot(ch4_plot, core_session)
 
 		logger.info('New data plots were created.')

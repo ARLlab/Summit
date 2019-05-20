@@ -501,10 +501,14 @@ async def plot_new_data(logger):
     """
 
     try:
+        from pathlib import Path
         from summit_core import core_dir, Config
         from summit_core import methane_dir as rundir
         from summit_core import connect_to_db, create_daily_ticks, TempDir, Plot, add_or_ignore_plot
         from summit_methane import Sample, GcRun, Base, plottable_sample, summit_methane_plot
+
+        remotedir = r'/data/web/htdocs/instaar/groups/arl/summit/plots'
+
     except ImportError as e:
         logger.error('ImportError occurred in plot_new_data()')
         send_processor_email(PROC, exception=e)
@@ -565,7 +569,7 @@ async def plot_new_data(logger):
                                     major_ticks=major_ticks,
                                     minor_ticks=minor_ticks)
 
-                methane_plot = Plot(rundir/'plots'/name, True)  # stage plots to be uploaded
+                methane_plot = Plot(rundir/'plots'/name, remotedir, True)  # stage plots to be uploaded
                 add_or_ignore_plot(methane_plot, core_session)
 
                 ch4_config.last_data_date = last_ambient_date
