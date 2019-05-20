@@ -596,7 +596,9 @@ async def plot_new_data(logger):
 						else:
 							inpent_ratio.append(i / n)
 
-					top_plot_limit = max(max(ipent_mrs), max(npent_mrs)) * 1.05
+					all_mrs = ipent_mrs + npent_mrs
+					all_mrs[:] = [mr for mr in all_mrs if mr]  # remove any 0s or NoneTypes before taking max of list
+					top_plot_limit = max(all_mrs) * 1.05
 					# set the plot max as 5% above the max value
 
 					name = summit_voc_plot(pentane_dates, ({'i-Pentane': [None, ipent_mrs],
@@ -665,6 +667,13 @@ async def plot_new_data(logger):
 	except Exception as e:
 		logger.error(f'Exception {e.args} occurred in plot_new_data()')
 		send_processor_email(PROC, exception=e)
+
+		session.close()
+		engine.dispose()
+
+		core_session.close()
+		core_engine.dispose()
+
 		return False
 
 
@@ -853,6 +862,10 @@ async def plot_logdata(logger):
 		send_processor_email(PROC, exception=e)
 		session.close()
 		engine.dispose()
+
+		core_session.close()
+		core_engine.dispose()
+
 		return False
 
 
