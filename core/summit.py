@@ -38,12 +38,12 @@ import asyncio
 
 async def main(logger):
 
+	errors = []  # initiate with no errors
+
 	while True:
 		"""
 		Processors that are passed a logger will log to /core, others will log to their individual directories/files.
 		"""
-
-		errors = []  # initiate with no errors
 
 		dailies = await asyncio.create_task(daily_processor(logger))
 		if dailies:
