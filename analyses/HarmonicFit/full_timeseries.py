@@ -59,7 +59,7 @@ numEqs = 4
 params, covar = sp.optimize.curve_fit(fourier, datesFinal[validData], ethaneMethane[validData], p0=([1.0] * numEqs))
 
 figure(1)
-plt.plot(datesFinal, fourier(datesFinal, *params), label='Fitted Wave')
+plt.plot(datesFinal, fourier(datesFinal, *params), '.', label='Fitted Wave')
 plt.legend()
 
 plt.show(1)
