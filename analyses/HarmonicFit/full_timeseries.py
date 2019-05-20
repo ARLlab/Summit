@@ -13,7 +13,6 @@ Goals:
 
 """
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
@@ -27,27 +26,41 @@ ethaneMethane = ethaneMethane.flatten('F')              # Flatten the arrays for
 aceMethane = aceMethane.flatten('F')
 datesFinal = datesFinal.flatten('F')
 
-figure(2)                                               # Acetylene Methane Ratio Timeseries
-plt.plot(datesFinal,aceMethane,'.',alpha=0.3)
-plt.title('Acetylene Methane from 2012 to 2018')
-plt.xlabel('Day of Year')
-plt.ylabel('Mixing Ratio [Parts per Billion]')
-
-
-# Function that SciPy will attempt to formulate
-def test_func(x, a, b):
-    return a * np.sin(b * x)
-
-
-validData = ~(np.isnan(datesFinal) | np.isnan(ethaneMethane))
-params, covar = sp.optimize.curve_fit(test_func, datesFinal[validData], ethaneMethane[validData])
-
-figure(1)
-plt.scatter(datesFinal, ethaneMethane, c='r', alpha=0.3, label='Background Data')
-plt.plot(datesFinal, test_func(datesFinal, params[0], params[1]), label='Sin Fitted Wave')
+# Plot the initial scatterplot data
+figure(1)                                                                           # Ethane
+plt.plot(datesFinal, ethaneMethane, '.', alpha=0.3, label='Background Data')
 plt.title('Ethane Methane Ratio [2012-2018]')
 plt.xlabel('Day of Year (Cumulative)')
 plt.ylabel('Mixing Ratio [Parts per Billion]')
 
-plt.show()
+figure(2)                                                                           # Methane
+plt.plot(datesFinal, aceMethane, '.', alpha=0.3, label='Background Data')
+plt.title('Acetylene Methane from 2012 to 2018')
+plt.xlabel('Day of Year')
+plt.ylabel('Mixing Ratio [Parts per Billion]')
+
+tau = 0.01                                                    # period for fourier transform?
+
+
+# Fourier transformation func for give number of degrees
+def fourier(x, *a):
+
+    eq = a[0] * np.cos(np.pi / tau * x)                         # general eq
+    for deg in range(1, len(a)):                                # depending on length of a, create that many eq's
+        eq += a[deg] * np.cos((deg+1) * np.pi / tau * x)        # add them up
+
+    return eq                                                   # return the final fourier eq
+
+
+validData = ~(np.isnan(ethaneMethane))                          # remove NaN values from data
+
+# Curve Fit using the Fourier equation, last piece is the number of equations given to fourier
+numEqs = 4
+params, covar = sp.optimize.curve_fit(fourier, datesFinal[validData], ethaneMethane[validData], p0=([1.0] * numEqs))
+
+figure(1)
+plt.plot(datesFinal, fourier(datesFinal, *params), label='Fitted Wave')
+plt.legend()
+
+plt.show(1)
 
