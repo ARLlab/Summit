@@ -14,9 +14,9 @@
   <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
 
   <!-- CSS -->
-  <link rel="stylesheet" href="http://instaar.colorado.edu/arl/res_parameters/normalize.css">
-  <link rel="stylesheet" href="http://instaar.colorado.edu/arl/res_parameters/skeleton.css">
-  <link rel="stylesheet" href="http://instaar.colorado.edu/arl/res_parameters/summit.css">
+  <link rel="stylesheet" href="CSS/normalize.css">
+  <link rel="stylesheet" href="CSS/skeleton.css">
+  <link rel="stylesheet" href="CSS/summit.css">
 
   <!-- Favicon
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
@@ -26,11 +26,11 @@
 <div class="container">
   <!-- Title / Header -->
   <section class="header">
-      <h2 class="title"> GEOSummit - GC & Picarro Dailies </h2>
-      <a class="button button-primary" href="http://instaar.colorado.edu/arl/res_parameters/summitWebpage.html" >Current Data Page</a>
+      <h2 class="title"> GEOSummit - GC Dailies </h2>
+      <a class="button button-primary" href="http://instaar.colorado.edu/arl/summit/summit.html" >Current Data Page</a>
   </section>
 
-  <!-- Navigation Bar -->
+  <!-- Navigation Bar 1 -->
   <div class="navbar-spacer"></div>
   <nav class="navbar">
     <div class="container">
@@ -45,25 +45,62 @@
     </div>
   </nav>
 
+  <!-- Navigation Bar 2 -->
+  <div class="navbar-spacer"></div>
+  <nav class="navbar">
+    <div class="container">
+      <ul class="navbar-list">
+        <li class="navbar-item"><a class="navbar-link" href="#7">GC Head</a></li>
+        <li class="navbar-item"><a class="navbar-link" href="#8">GC Oven</a></li>
+        <li class="navbar-item"><a class="navbar-link" href="#9">Sample Flow</a></li>
+        <li class="navbar-item"><a class="navbar-link" href="#10">Trap Temps</a></li>
+        <li class="navbar-item"><a class="navbar-link" href="#11">Water Trap</a></li>
+      </ul>
+    </div>
+  </nav>
+
   <!-- Graphs -->
   <div class="docs-section">
+    <h2 class="title">System Daily Parameters</h2>
     <h4 class="docs-header" id="1"> NMHC Battery Voltage </h4>
-    <img class="value-img" alt="<Image Not Displaying>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/battery_v_12va_15va_15vb_24v_5va.png">
+    <img class="value-img" alt="<Image Not Displaying>" src="plots/battery_v_12va_15va_15vb_24v_5va.png">
 
     <h4 class="docs-header" id="2"> NMHC Ads, Valves, Catalyst Temperatures </h4>
-    <img class="value-img" alt="<Image Not Displaying>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/ads_xfer_a_ads_xfer_b_valves_temp_gc_xfer_temp_catalyst.png">
+    <img class="value-img" alt="<Image Not Displaying>" src="plots/ads_xfer_a_ads_xfer_b_valves_temp_gc_xfer_temp_catalyst.png">
 
     <h4 class="docs-header" id="3"> NMHC CJ Temperatures </h4>
-    <img class="value-img" alt="<Image Not Displaying>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/cj1_temp_cj2_temp_standard_temp.png">
+    <img class="value-img" alt="<Image Not Displaying>" src="plots/cj1_temp_cj2_temp_standard_temp.png">
 
     <h4 class="docs-header" id="4"> NMHC Inlet Temperature </h4>
-    <img class="value-img" alt="<Image Not Displaying>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/inlet_short_temp.png">
+    <img class="value-img" alt="<Image Not Displaying>" src="plots/inlet_short_temp.png">
 
     <h4 class="docs-header" id="5"> NMHC Generator Pressures </h4>
-    <img class="value-img" alt="<Image Not Displaying>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/h2_gen_pressure_line_pressure_zero_pressure_fid_pressure.png">
+    <img class="value-img" alt="<Image Not Displaying>" src="plots/h2_gen_pressure_line_pressure_zero_pressure_fid_pressure.png">
 
     <h4 class="docs-header" id="6"> NMHC Flows</h4>
-    <img class="value-img" alt="<Image Not Displaying>" src="http://instaar.colorado.edu/arl/res_parameters/summit_plots/mfc1_mfc2_mfc3a_mfc3b_mfc4_mfc5.png">
+    <img class="value-img" alt="<Image Not Displaying>" src="plots/mfc1_mfc2_mfc3a_mfc3b_mfc4_mfc5.png">
   </div>
+
+  <div>
+    <h2 class="title">System Specifics </h2>
+    <h4 class="docs-header" id="7"> GC Head Start/End </h4>
+    <img class="value-img" alt="<Image Not Displaying>" src="plots/gc_head_start_end.png">
+
+    <h4 class="docs-header" id="8"> GC Oven Start/End </h4>
+    <img class="value-img" alt="<Image Not Displaying>" src="plots/gc_oven_start_end.png">
+
+    <h4 class="docs-header" id="9"> Sample Flow & Pressure </h4>
+    <img class="value-img" alt="<Image Not Displaying>" src="plots/sample_flow_and_pressure.png">
+
+    <h4 class="docs-header" id="10"> Trap Temperatures </h4>
+    <img class="value-img" alt="<Image Not Displaying>" src="plots/trap_temps_inject_flashheat.png">
+
+    <h4 class="docs-header" id="11"> Water Trap Temperatures </h4>
+    <img class="value-img" alt="<Image Not Displaying>" src="plots/water_trap_hot_temps.png">
+
+  </div>
+
+
+
 
 </div>
