@@ -125,9 +125,6 @@ async def check_load_pas(logger):
 				new_file_size = check_filesize(pa_path)
 
 			if new_file_size > voc_config.filesize:
-				voc_config.filesize = new_file_size
-				core_session.merge(voc_config)
-				core_session.commit()
 
 				with TempDir(rundir):
 					contents = pa_path.read_text().split('\n')
@@ -181,8 +178,8 @@ async def check_load_pas(logger):
 					lines_in_db[:] = [l.date for l in lines_in_db]
 
 					for item in new_lines:
-						if item.date not in line_dates:  # prevents duplicates in db
-							line_dates.append(item.date)  # prevents duplicates in one load
+						if item.date not in lines_in_db:  # prevents duplicates in db
+							lines_in_db.append(item.date)  # prevents duplicates in one load
 							session.merge(item)
 							logger.info(f'PA Line {item} added.')
 							ct += 1
@@ -190,6 +187,10 @@ async def check_load_pas(logger):
 				if ct:
 					voc_config.pa_startline = new_startline
 					core_session.merge(voc_config)
+
+					voc_config.filesize = new_file_size
+					core_session.merge(voc_config)
+
 					core_session.commit()
 					session.commit()
 				else:
