@@ -1159,8 +1159,9 @@ def correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger, sheetn
 
         if not run:
             logger.warning(f'A run matching the log with samplecode {code} was not found.')
-
-        line = nmhc_lines.filter(NmhcLine.id == run.nmhcline_id).one_or_none()
+            line = None
+        else:
+            line = nmhc_lines.filter(NmhcLine.id == run.nmhcline_id).one_or_none()
 
     correction_peaklist = []
 
