@@ -1055,12 +1055,12 @@ async def main():
 		if new_logs or new_lines:
 			await asyncio.create_task(load_crfs(logger))
 			if await asyncio.create_task(create_gc_runs(logger)):
-				if await asyncio.create_task(integrate_runs(logger)):
+				await asyncio.create_task(integrate_runs(logger))
 
-					if datetime.now().hour < 1 and datetime.now().minute > 30:  # run only between 12:30 and 1AM local
-						from summit_voc import sheet_slices
-						for sheet_name in sheet_slices.keys():
-							await asyncio.create_task(load_excel_corrections(sheet_name, logger))
+		if datetime.now().hour < 1 and datetime.now().minute > 30:  # run only between 12:30 and 1AM local
+			from summit_voc import sheet_slices
+			for sheet_name in sheet_slices.keys():
+				await asyncio.create_task(load_excel_corrections(sheet_name, logger))
 
 		await asyncio.create_task(plot_new_data(logger))
 
