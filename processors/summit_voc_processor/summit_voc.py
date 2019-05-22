@@ -575,13 +575,16 @@ class Datum(Base):
         elif self.type == 'ambient' or self.type == 'zero':
             for peak in self.peaks:
                 if peak.name in compound_list and peak.name in self.crfs.compounds.keys():
-                    crf = self.crfs.compounds[peak.name]
+                    if peak.pa is None:
+                        peak.mr = None
+                    else:
+                        crf = self.crfs.compounds[peak.name]
 
-                    peak.mr = ((peak.pa /
-                                (crf * compound_ecns.get(peak.name, None) * self.sampletime * self.sampleflow1))
-                               * 1000 * 1.5)
-                    # formula is (pa / (CRF * ECN * SampleTime * SampleFlow1)) * 1000 *1.5
-                    # 1000 * 1.5 normalizes to a sample volume of 2000s by convention
+                        peak.mr = ((peak.pa /
+                                    (crf * compound_ecns.get(peak.name, None) * self.sampletime * self.sampleflow1))
+                                   * 1000 * 1.5)
+                        # formula is (pa / (CRF * ECN * SampleTime * SampleFlow1)) * 1000 *1.5
+                        # 1000 * 1.5 normalizes to a sample volume of 2000s by convention
 
             return None
 
