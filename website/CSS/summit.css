@@ -111,9 +111,10 @@
   width: auto;
   margin-top: -2rem;
   padding: 2rem;
-  color: red;
+  color: #27b5ea;
+  background-color: rgba(0,0,0,0.5);
   font-weight: bold;
-  font-size: 18px;
+  font-size: 24px;
   transition: 1s ease;
   border-radius: 0 3px 3px 0;
   user-select: none; }
