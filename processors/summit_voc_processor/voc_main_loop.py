@@ -125,9 +125,6 @@ async def check_load_pas(logger):
 				new_file_size = check_filesize(pa_path)
 
 			if new_file_size > voc_config.filesize:
-				voc_config.filesize = new_file_size
-				core_session.merge(voc_config)
-				core_session.commit()
 
 				with TempDir(rundir):
 					contents = pa_path.read_text().split('\n')
@@ -181,8 +178,8 @@ async def check_load_pas(logger):
 					lines_in_db[:] = [l.date for l in lines_in_db]
 
 					for item in new_lines:
-						if item.date not in line_dates:  # prevents duplicates in db
-							line_dates.append(item.date)  # prevents duplicates in one load
+						if item.date not in lines_in_db:  # prevents duplicates in db
+							lines_in_db.append(item.date)  # prevents duplicates in one load
 							session.merge(item)
 							logger.info(f'PA Line {item} added.')
 							ct += 1
@@ -190,6 +187,10 @@ async def check_load_pas(logger):
 				if ct:
 					voc_config.pa_startline = new_startline
 					core_session.merge(voc_config)
+
+					voc_config.filesize = new_file_size
+					core_session.merge(voc_config)
+
 					core_session.commit()
 					session.commit()
 				else:
@@ -481,9 +482,12 @@ async def plot_new_data(logger):
 		from summit_core import core_dir, Plot, Config
 		from summit_core import connect_to_db, TempDir, create_daily_ticks, add_or_ignore_plot
 		from summit_voc import Base, GcRun, summit_voc_plot, get_dates_peak_info
+		from pathlib import Path
 		from datetime import datetime
 		import datetime as dt
 		plotdir = rundir / 'plots'  # local flask static folder
+		remotedir = r'/data/web/htdocs/instaar/groups/arl/summit/plots'
+
 	except ImportError as e:
 		logger.error('Import error occurred in plot_new_data()')
 		send_processor_email(PROC, exception=e)
@@ -548,7 +552,7 @@ async def plot_new_data(logger):
 									   major_ticks=major_ticks,
 									   minor_ticks=minor_ticks)
 
-				ethane_plot = Plot(plotdir / name, True)
+				ethane_plot = Plot(plotdir / name, remotedir, True)
 				add_or_ignore_plot(ethane_plot, core_session)
 
 			with TempDir(plotdir):  ## PLOT i-butane, n-butane, acetylene
@@ -565,7 +569,7 @@ async def plot_new_data(logger):
 									   major_ticks=major_ticks,
 									   minor_ticks=minor_ticks)
 
-				c4_plot = Plot(plotdir / name, True)
+				c4_plot = Plot(plotdir / name, remotedir, True)
 				add_or_ignore_plot(c4_plot, core_session)
 
 			with TempDir(plotdir):  ## PLOT i-pentane and n-pentane, & ratio
@@ -595,7 +599,9 @@ async def plot_new_data(logger):
 						else:
 							inpent_ratio.append(i / n)
 
-					top_plot_limit = max(max(ipent_mrs), max(npent_mrs)) * 1.05
+					all_mrs = ipent_mrs + npent_mrs
+					all_mrs[:] = [mr for mr in all_mrs if mr]  # remove any 0s or NoneTypes before taking max of list
+					top_plot_limit = max(all_mrs) * 1.05
 					# set the plot max as 5% above the max value
 
 					name = summit_voc_plot(pentane_dates, ({'i-Pentane': [None, ipent_mrs],
@@ -608,7 +614,7 @@ async def plot_new_data(logger):
 										   major_ticks=major_ticks,
 										   minor_ticks=minor_ticks)
 
-					in_pent_plot = Plot(plotdir / name, True)
+					in_pent_plot = Plot(plotdir / name, remotedir, True)
 					add_or_ignore_plot(in_pent_plot, core_session)
 
 					name = summit_voc_plot(pentane_dates, ({'i/n Pentane ratio': [None, inpent_ratio]}),
@@ -620,7 +626,7 @@ async def plot_new_data(logger):
 										   minor_ticks=minor_ticks,
 										   y_label_str='')
 
-					in_pent_ratio_plot = Plot(plotdir / name, True)
+					in_pent_ratio_plot = Plot(plotdir / name, remotedir, True)
 					add_or_ignore_plot(in_pent_ratio_plot, core_session)
 
 			with TempDir(plotdir):  ## PLOT benzene and toluene
@@ -635,7 +641,7 @@ async def plot_new_data(logger):
 									   major_ticks=major_ticks,
 									   minor_ticks=minor_ticks)
 
-				benz_tol_plot = Plot(plotdir / name, True)
+				benz_tol_plot = Plot(plotdir / name, remotedir, True)
 				add_or_ignore_plot(benz_tol_plot, core_session)
 
 			voc_config.last_data_date = dates[-1]
@@ -664,6 +670,13 @@ async def plot_new_data(logger):
 	except Exception as e:
 		logger.error(f'Exception {e.args} occurred in plot_new_data()')
 		send_processor_email(PROC, exception=e)
+
+		session.close()
+		engine.dispose()
+
+		core_session.close()
+		core_engine.dispose()
+
 		return False
 
 
@@ -678,12 +691,14 @@ async def plot_logdata(logger):
 
 	try:
 		import datetime as dt
+		from pathlib import Path
 		from datetime import datetime
 		from summit_core import connect_to_db, TempDir, Config, Plot, add_or_ignore_plot, create_daily_ticks
 		from summit_core import voc_dir, core_dir
 		from summit_voc import LogFile, summit_log_plot
 		from summit_voc import log_params_list as log_parameters
 		plotdir = core_dir / 'plots/log'
+		remotedir = r'/data/web/htdocs/instaar/groups/arl/summit/protected/plots'
 
 		try:
 			os.chdir(plotdir)
@@ -762,7 +777,7 @@ async def plot_logdata(logger):
 							major_ticks=major_ticks,
 							minor_ticks=minor_ticks)
 
-			traps_plot = Plot(plotdir / name, True)
+			traps_plot = Plot(plotdir / name, remotedir, True)
 			add_or_ignore_plot(traps_plot, core_session)
 
 			name = 'sample_flow_and_pressure.png'
@@ -777,7 +792,7 @@ async def plot_logdata(logger):
 							major_ticks=major_ticks,
 							minor_ticks=minor_ticks)
 
-			sample_plot = Plot(plotdir / name, True)
+			sample_plot = Plot(plotdir / name, remotedir, True)
 			add_or_ignore_plot(sample_plot, core_session)
 
 			name = 'water_trap_hot_temps.png'
@@ -792,7 +807,7 @@ async def plot_logdata(logger):
 							major_ticks=major_ticks,
 							minor_ticks=minor_ticks)
 
-			hot_water_plot = Plot(plotdir / name, True)
+			hot_water_plot = Plot(plotdir / name, remotedir, True)
 			add_or_ignore_plot(hot_water_plot, core_session)
 
 			name = 'trap_temps_inject_flashheat.png'
@@ -808,7 +823,7 @@ async def plot_logdata(logger):
 							major_ticks=major_ticks,
 							minor_ticks=minor_ticks)
 
-			traptemp_plot = Plot(plotdir / name, True)
+			traptemp_plot = Plot(plotdir / name, remotedir, True)
 			add_or_ignore_plot(traptemp_plot, core_session)
 
 			name = 'gc_oven_start_end.png'
@@ -822,7 +837,7 @@ async def plot_logdata(logger):
 							major_ticks=major_ticks,
 							minor_ticks=minor_ticks)
 
-			ovenstend_plot = Plot(plotdir / name, True)
+			ovenstend_plot = Plot(plotdir / name, remotedir, True)
 			add_or_ignore_plot(ovenstend_plot, core_session)
 
 			name = 'gc_head_start_end.png'
@@ -836,7 +851,7 @@ async def plot_logdata(logger):
 							major_ticks=major_ticks,
 							minor_ticks=minor_ticks)
 
-			gcheadstend_plot = Plot(plotdir / name, True)
+			gcheadstend_plot = Plot(plotdir / name, remotedir, True)
 			add_or_ignore_plot(gcheadstend_plot, core_session)
 
 		core_session.commit()
@@ -852,6 +867,10 @@ async def plot_logdata(logger):
 		send_processor_email(PROC, exception=e)
 		session.close()
 		engine.dispose()
+
+		core_session.close()
+		core_engine.dispose()
+
 		return False
 
 
@@ -1036,12 +1055,12 @@ async def main():
 		if new_logs or new_lines:
 			await asyncio.create_task(load_crfs(logger))
 			if await asyncio.create_task(create_gc_runs(logger)):
-				if await asyncio.create_task(integrate_runs(logger)):
+				await asyncio.create_task(integrate_runs(logger))
 
-					if datetime.now().hour < 1 and datetime.now().minute > 30:  # run only between 12:30 and 1AM local
-						from summit_voc import sheet_slices
-						for sheet_name in sheet_slices.keys():
-							await asyncio.create_task(load_excel_corrections(sheet_name, logger))
+		if datetime.now().hour < 1 and datetime.now().minute > 30:  # run only between 12:30 and 1AM local
+			from summit_voc import sheet_slices
+			for sheet_name in sheet_slices.keys():
+				await asyncio.create_task(load_excel_corrections(sheet_name, logger))
 
 		await asyncio.create_task(plot_new_data(logger))
 

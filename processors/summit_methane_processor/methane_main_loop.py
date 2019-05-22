@@ -501,10 +501,14 @@ async def plot_new_data(logger):
     """
 
     try:
+        from pathlib import Path
         from summit_core import core_dir, Config
         from summit_core import methane_dir as rundir
         from summit_core import connect_to_db, create_daily_ticks, TempDir, Plot, add_or_ignore_plot
         from summit_methane import Sample, GcRun, Base, plottable_sample, summit_methane_plot
+
+        remotedir = r'/data/web/htdocs/instaar/groups/arl/summit/plots'
+
     except ImportError as e:
         logger.error('ImportError occurred in plot_new_data()')
         send_processor_email(PROC, exception=e)
@@ -547,24 +551,12 @@ async def plot_new_data(logger):
                                     .order_by(GcRun.date)
                                     .all())
 
-        # ambient_samples = (session.query(Sample)
-        #                    # .filter(Sample.date.between(datetime(2019, 1, 1), datetime(2019, 6, 1)))
-        #                    .filter(Sample.sample_type == 3)
-        #                    .order_by(Sample.date)
-        #                    .all())
-        #
-        # ambient_samples[:] = [sample for sample in ambient_samples if plottable_sample(sample)]
-        # remove gross outliers and non-valid samples
-
         last_ambient_date = runs_with_medians[-1].date
         # get date after filtering, ie don't plot if there's no new data getting plotted
 
         date_limits, major_ticks, minor_ticks = create_daily_ticks(ch4_config.days_to_plot)
 
         if last_ambient_date > ch4_config.last_data_date:
-
-            ch4_config.last_data_date = last_ambient_date
-            core_session.merge(ch4_config)
 
             ambient_dates = [run.date for run in runs_with_medians]
             ambient_mrs = [run.median for run in runs_with_medians]
@@ -577,8 +569,11 @@ async def plot_new_data(logger):
                                     major_ticks=major_ticks,
                                     minor_ticks=minor_ticks)
 
-                methane_plot = Plot(rundir/'plots'/name, True)  # stage plots to be uploaded
+                methane_plot = Plot(rundir/'plots'/name, remotedir, True)  # stage plots to be uploaded
                 add_or_ignore_plot(methane_plot, core_session)
+
+                ch4_config.last_data_date = last_ambient_date
+                core_session.merge(ch4_config)
 
             logger.info('New data plots created.')
         else:

@@ -930,7 +930,7 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
     f1.set_size_inches(11.11, 7.406)
 
     ax.set_ylabel(y_label_str, fontsize=20)
-    ax.set_title(f'{comp_list}', fontsize=24, y=1.02)
+    ax.set_title(f'Summit {comp_list}', fontsize=24, y=1.02)
     ax.legend(compound_dict.keys())
 
     f1.subplots_adjust(bottom=.20)
@@ -1159,8 +1159,9 @@ def correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger, sheetn
 
         if not run:
             logger.warning(f'A run matching the log with samplecode {code} was not found.')
-
-        line = nmhc_lines.filter(NmhcLine.id == run.nmhcline_id).one_or_none()
+            line = None
+        else:
+            line = nmhc_lines.filter(NmhcLine.id == run.nmhcline_id).one_or_none()
 
     correction_peaklist = []
 

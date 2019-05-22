@@ -75,14 +75,14 @@ def matching_error(error_list, reason, processor):
 async def check_for_new_data(logger, active_errors=None):
     reason = 'no new data'
 
+    if not active_errors:
+        active_errors = []
+
     try:
-        if not active_errors:
-            active_errors = []
 
         logger.info('Running check_for_new_data()')
-        # TODO : The time limits generated below are gross estimates
-        # TODO: Not running picarro at the moment, ammend below
-        for proc, time_limit in zip(['voc', 'methane', 'picarro'], [dt.timedelta(hours=hr) for hr in [8, 3, 5]]):
+
+        for proc, time_limit in zip(['voc', 'methane', 'picarro'], [dt.timedelta(hours=hr) for hr in [8, 3, 2]]):
 
             last_data_time = get_last_processor_date(proc, logger)
 
@@ -115,8 +115,7 @@ async def check_existing_errors(logger, active_errors=None):
 
         for ind, err in enumerate(active_errors):
             if err.reason == 'no new data':
-                # TODO : NMHC no-new-data email appeared to resolve itself without sending a resolution
-                    # This may be resolved now, switch 'is "no_new_data"' ' to ' == "no_new_data"'
+
                 if err.is_resolved(processor=err.email_template.processor,
                                    last_data_time=err.email_template.last_data_time, logger=logger):
                     active_errors[ind] = None
