@@ -3,21 +3,7 @@ import datetime as dt
 from datetime import datetime
 import statistics as s
 from collections import namedtuple
-
 import pandas as pd
-
-"""
-Project-Wide TODO List:
-
-# 1) Figure out time difference in epoch
-# 	1.1) Make all dates tz-aware
-
-# 2) Configure relationship between Datums and DataFiles
-# 3) Configure relationship between CalEvents and Datums (and Datafiles?)
-4) Update VOC plots per recommendations
-5) Calibration event developmment and testing
-
-"""
 
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.ext.declarative import declarative_base
@@ -46,11 +32,6 @@ standards = {'low_std': {'co': 69.6, 'co2': 390.24, 'ch4': 1838.5},
 
 Point = namedtuple('Point', 'x y')
 Curve = namedtuple('Point', 'm intercept')
-
-
-# high_limit_dict = {'CH4': (2035, 2055, 2050.6),'CO2': (415, 435, 428.53),'CO': (160, 190, 174.6)}  # values are (high limit, low limit, cert value)
-# mid_limit_dict = {'CH4': (1905, 1935, 1925.5),'CO2': (390, 410, 408.65),'CO': (100, 130, 117.4)}
-# low_limit_dict = {'CH4': (1820, 1850, 1838.5),'CO2': (375, 395, 390.24),'CO': (60, 90, 69.6)}
 
 
 class DataFile(Base):
