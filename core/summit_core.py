@@ -60,6 +60,12 @@ taylor_auth = data_file_paths.get('taylor_server_auth')
 
 
 class Config(Base):
+	"""
+	Configs are a somewhat generic storage container for configuration information for each processor. Configs are kept
+	in the core database, and not every column is used by every processor. Some are used loosely, while others were
+	designed specifically for the processor they're used exclusively in. Default values are given so only the necessary
+	new values need to be given for init.
+	"""
 	__tablename__ = 'config'
 
 	id = Column(Integer, primary_key=True)
@@ -127,6 +133,12 @@ class JList(TypeDecorator):
 
 
 class Plot(Base):
+	"""
+	Plots are used to register created plots as ready to upload in the core database. When run, individual processors
+	will log Plots to the core database with their filepath, remote path they should be sent to, and staged == True if
+	they should be uploaded. check_send_plots() then loads these from the core database all at once and sends are staged
+	plots to their specified remote paths.
+	"""
 	__tablename__ = 'plots'
 
 	id = Column(Integer, primary_key=True)
