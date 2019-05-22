@@ -88,8 +88,9 @@ compound_windows_2 = (
 
 class CompoundWindow(Base):
     """
-    A CompoundWindow is the retention time specs for a compound.
-    It holds integration windows as a function of date.
+    A CompoundWindow is the retention times for a set a compounds, that applies to integrations between it's start and
+    end dates.
+    Integration windows are a (start, end) retention time tuple, and are kept as a mutable dictionary.
     """
 
     __tablename__ = 'compound_windows'
@@ -109,14 +110,6 @@ class Crf(Base):
     """
     A crf is a set of carbon response factors for compounds, tied to a datetime and standard.
     These are assigned to GcRuns, which allows them to be integrated.
-
-    Parameters:
-
-    date_start : datetime, first datetime (inclusive) that the crf should be applied for
-    date_end: datetime, last datetime that the crf is valid for (exclusive)
-    date_revision: datetime, the time this CRF was added into the file
-    standard: str, name of the standard this crf applies to
-    compounds: dict, of compounds and the corresponding crf for each
     """
 
     __tablename__ = 'crfs'
@@ -146,14 +139,9 @@ class Peak(Base):
     """
     A peak is just that, a signal peak in PeakSimple, Agilent, or another
     chromatography software.
-    name: str, the compound name (if identified)
-    mr: float, the mixing ratio (likely in ppbv) for the compound, if calculated; None if not
-    pa: float, representing the area under the peak as integrated
-    rt: float, retention time in minutes of the peak as integrated
-    rev: int, represents the # of changes made to this peak's value
-    qc: int, 0 = unreviewed, ...,  1 = final
-    flag: int, ADD TODO ::
-    int_notes, ADD TODO ::
+
+    Peaks are related to NmhcLines, Logs, GcRuns, and Datums to make accessing them at different data levels easy.
+    Revision and QC attributes have been added but are relatively unused at this point.
     """
 
     __tablename__ = 'peaks'
@@ -196,9 +184,8 @@ class NmhcLine(Base):
     """
     A line in NMHC_PA.LOG, which contains a datetime and some set of peaks.
 
-    date: datetime, from the Python datetime library representing the time it was recorded by PeakSimple
-    peaklist: list, a list of all the peak objects contained in the nmhc line.
-    status: str, assigned as single to start, and when matched to a log will be 'married'
+    When NmhcLines are matched to a LogFile, they create a GcRun (a complete run on the GC), and are considered
+    'married' so they cannot be re-matched.
     """
 
     __tablename__ = 'nmhclines'
@@ -210,10 +197,8 @@ class NmhcLine(Base):
 
     run_con = relationship('GcRun', uselist=False, back_populates='nmhc_con')
 
-    # log_id = Column(Integer, ForeignKey('logfiles.id'))
     log_con = relationship('LogFile', back_populates='line_con')
 
-    # data_id = Column(Integer, ForeignKey('data.id'))
     data_con = relationship('Datum', back_populates='line_con')
 
     correction_id = Column(Integer, ForeignKey('nmhc_corrections.id'))
@@ -235,9 +220,10 @@ class NmhcLine(Base):
 
 class NmhcCorrection(Base):
     """
-    Similar to an NmhcLine, but loaded manually, created with peak corrections.
+    Similar to an NmhcLine, but loaded manually and created with peak corrections from Excel spreadsheets.
 
-    status: str, either 'unapplied' or 'applied', rather than single/married as normal NmhcLines are.
+    Corrections can exist without a relationship to a line to prevent load-failures, but in general every Correction
+    should be applied to a line.
     """
 
     __tablename__ = 'nmhc_corrections'
@@ -245,7 +231,7 @@ class NmhcCorrection(Base):
     id = Column(Integer, primary_key=True)
     date = Column(DateTime, unique=True)
     peaklist = relationship('Peak', order_by=Peak.id)
-    flag = Column(Integer)  # undetermined flagging system... TODO:
+    flag = Column(Integer)  # undetermined flagging system...
     status = Column(String)
     samplecode = Column(Integer)
 
@@ -269,49 +255,8 @@ class NmhcCorrection(Base):
 
 class LogFile(Base):
     """
-    The output from the LabView VI, it consists of all the listed parameters
-    recorded in the file.
-
-    filename: str, the name of the logfile in question
-    date: datetime, the start of the 10-minute sampling period
-    sampletime: float, the duration of the sample collection in seconds
-    sampleflow1: float,
-    sampleflow2: float,
-    sampletype: int,
-    desorbtemp: float,
-    flashheattime: float,
-    injecttime: float,
-    bakeouttemp: float, temperature at bakeout
-    bakeouttime: float,
-    carrierflow: float,
-    samplenum: int,
-    WTinuse: int,
-    adsTinuse: int,
-    samplepressure1: float,
-    samplepressure2: float
-    GCHeadP: float,
-    GCHeadP1: float,
-    WTA_temp_start: float,
-    WTB_temp_start: float,
-    adsA_temp_start: float,
-    adsB_temp_start: float,
-    samplecode: int,
-    chamber_temp_end:, float,
-    WTA_temp_end: float,
-    WTB_temp_end: float,
-    adsA_temp_end: float,
-    adsB_temp_end: float,
-    traptempFH: float,
-    GCstarttemp: float,
-    traptempinject_end: float,
-    traptempbakeout_end: float,
-    WTA_hottemp: float,
-    WTB_hottemp: float,
-    GCoventemp: float,
-    status: str, can be 'single' or 'married'
-        A married status indicates the log has been matched to a pa line and is
-        part of a GcRun object; single indicates unmatched/available for matching
-
+    The output from the LabView VI, it consists of all the listed parameters recorded in the file, and is related to an
+    NmhcLine, and a GcRun (if all ran correctly), and a Datum if it's an integrated ambient sample.
     """
 
     __tablename__ = 'logfiles'
@@ -422,24 +367,11 @@ class LogFile(Base):
 
 class GcRun(Base):
     """
-    A run, which consists of the attributes taken from the NmhcLine and LogFile
-    that are used to create it. This is now a confirmed run, meaning it was executed
-    in PeakSimple and the VI.
+    A run consists of the attributes taken from the NmhcLine and LogFile that are used to create it. This is now a
+    confirmed run, meaning it was executed in PeakSimple and the VI without any fatal errors.
 
-    peaks: list; of Peaks, the peaks associated with the NmhcLine associated with this file
-    date_end: datetime, the date that the sample was recorded by PeakSimple
-        Roughly representative of the end of the 10-minute sampling window
-    date_start: datetime, the time the run-log was recorded by LabView
-        Roughly representative of the start of the 10-minute sampling window
-    log_params_list: See LogFile class for list (those added here do not include [date, status])
-
-    crf: object, contains a dict of compound response factors for calculating a mixing ratio
-
-    type: str, converted internally with a dict to give the sampletype a str-name
-        {0:'blank',1:'',2:'',...7:''}
-
-    When integrated, all the peak objects of a GcRun will gain a self.mr. These
-    are kept as part of a GcRun, but references to these should be under datum.
+    When integrated, all the peak objects of a GcRun will gain a mixing ratio, and a Datum will be created and related
+    to the GcRun it originated from.
     """
 
     __tablename__ = 'gcruns'
@@ -516,19 +448,12 @@ class GcRun(Base):
 
 class Datum(Base):
     """
-    A point of the plural data. This is a gc run that has been integrated, has a
-    mixing ratio (which can be None if it is a failed or QC removed run -- that we
-    took a measurement is valuable information to report). It has a flag, revision,
-    qc status, and .... TODO <<<
+    A Datum is an integrated GcRun. Integrating a GcRun automatically creates a Datum that only needs to be merged with
+    the session and committed. It shares the same relationships that the NmhcLine, LogFile and GcRun that created it
+    came with.
 
-    mr: float, the mixing ratio of the gas
-    unit: dict, ?
-    flag: object, ... TODO <<< num flags for separate data submission types, like a built-in for EBAS?
-    sig_fig: dict, ?
-    standard_used: object, ... TODO <<<
-    revision:
-    qc: str,
-    notes: str, any notes about the data quality, processing, or other
+    Datum are set apart from GcRuns by having mixing ratios (after integration/creation), and by sample type. Only
+    ambient samples and blanks will become Datums, since standards and trap blanks are not integrated by default.
     """
 
     __tablename__ = 'data'
@@ -581,7 +506,7 @@ class Datum(Base):
                         crf = self.crfs.compounds[peak.name]
 
                         peak.mr = ((peak.pa /
-                                    (crf * compound_ecns.get(peak.name, None) * self.sampletime * self.sampleflow1))
+                                    (crf * compound_ecns[peak.name] * self.sampletime * self.sampleflow1))
                                    * 1000 * 1.5)
                         # formula is (pa / (CRF * ECN * SampleTime * SampleFlow1)) * 1000 *1.5
                         # 1000 * 1.5 normalizes to a sample volume of 2000s by convention
