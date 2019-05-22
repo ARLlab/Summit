@@ -55,8 +55,9 @@ Curve = namedtuple('Point', 'm intercept')
 
 class DataFile(Base):
     """
-    A file containing synced 5-second data from the Picarro. Used mostly for tracking where data originated from for
-    manual inspection, etc.
+    A file containing synced 5-second data from the Picarro. Used mostly for tracking where data originated from, and
+    what files have already been loaded. The byte-size of a file is stored to track whether or not it has been loaded
+    in full yet.
     """
     __tablename__ = 'files'
 
@@ -91,6 +92,11 @@ class Datum(Base):
     """
     A piece of 5-second data, originating from a file written by the Picarro. Most fields are preserved from the
     original files, but CO2 is changed to CO2_wet (etc), and the standard versions (CO2, CH4) are the dry measurements.
+
+    A note about alarm_status:
+    Currently, 963 is the only known instrument output, which is meant to be "good data" from the manufacturer.
+    999 has been given to filtered measurements in the database, currently only applied to points after calibration
+    events that have not yet equilibrated from the standard flow.
     """
     __tablename__ = 'data'
 
