@@ -1,19 +1,3 @@
-"""
-Methane injections are tricky. A 65-minute run contains 8 samples and 2 standards in the order:
-
-sample x 2
-std
-sample x 4
-std
-sample x 2
-
-PeakSimple records the start time of the run, which is ~3.5 minutes after the hour it begins on. From here,
-the retention time of the peak is roughly 1 minute after the retention time of the peak. These number are subject to
-change, but the rough formula will be:
-
-sample_time = run_start_time + retention_time_in_minutes - 1_minute (sample concentration/equilibration before inject)
-"""
-
 from pathlib import Path
 import logging
 from datetime import datetime
@@ -27,8 +11,8 @@ from sqlalchemy.orm import relationship
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
 # retention times based on sample number
-sample_rts = {0: [2, 3],
-			  1: [8.3, 9.3],
+sample_rts = {0: [2, 3],  # TODO: Sample RTs should be treated similar to CompoundWindows in summit_voc
+			  1: [8.3, 9.3], # even though methane RTs are quite stable, large GC changes will still need to be handled
 			  2: [14.65, 15.65],
 			  3: [21, 22],
 			  4: [27.3, 28.3],
@@ -40,6 +24,13 @@ sample_rts = {0: [2, 3],
 
 
 class Standard(Base):
+	"""
+	A Standard is a container for the working standard on the methane GC. Standards have a start and end date, which
+	specifies to which samples it should be applied. Ambient mixing ratios are calculated by the peak area ratio of
+	a sample over the standard value, times the mixing ratio of the Standard that was in use during that period.
+
+	Once a Standard is applied to a sample, it is related to it in a many-one relationship.
+	"""
 	__tablename__ = 'standards'
 
 	id = Column(Integer, primary_key=True)
@@ -59,16 +50,11 @@ class Standard(Base):
 
 class Peak(Base):
 	"""
-	A peak is just that, a signal peak in PeakSimple, Agilent, or another chromatography software.
-
-	name: str, the compound name (if identified)
-	mr: float, the mixing ratio (likely in ppbv) for the compound, if calculated; None if not
-	pa: float, representing the area under the peak as integrated
-	rt: float, retention time in minutes of the peak as integrated
-	rev: int, represents the # of changes made to this peak's value
-	qc: int, 0 = unreviewed, ...,  1 = final
-	flag: int, ADD
-	int_notes, ADD
+	A peak is just that, a signal peak in PeakSimple, Agilent, or another chromatography software. It is intiated in the
+	creation of a PaLine, and gets related to the PaLine and any subsequent Samples or GcRuns that are matched to that
+	PaLine.
+	Peaks are created for ANY peak in a chromatogram, ie any rise above baseline above a low threshold for peak area.
+	Peaks that are identified as actual sample/standard results are then assigned to a Sample.
 	"""
 
 	__tablename__ = 'peaks'
@@ -107,6 +93,16 @@ class Peak(Base):
 
 
 class Sample(Base):
+	"""
+	There are 10 Samples in every GcRun. Samples are created from log information that is output by the LabView VI for
+	each run of the GC. Samples are later given a peak based on it's retention time and the order of the Samples.
+	A Sample is not given a Peak if there is no Peak in the PaLine that sits in the retention time window.
+
+	The quantifier of a Peak is a self-referencing relationship to the Sample that was used to calculate it's mixing
+	ratio. For instance, Samples 1, 2, 4, and 5 in each run should be quantified by Sample 3 for that run, as the third
+	sample is traditionally a standard injection. Samples 1, 2, 4, and 5 will therefore be related to Sample 3 in the
+	'samples' table.
+	"""
 	__tablename__ = 'samples'
 
 	id = Column(Integer, primary_key=True)
@@ -142,6 +138,10 @@ class Sample(Base):
 
 
 class PaLine(Base):
+	"""
+	A PaLine is a line in CH4.LOG that contains some number of peaks that were integrated by PeakSimple. A PaLine and
+	multiple Samples compose a GcRun.
+	"""
 	__tablename__ = 'palines'
 
 	id = Column(Integer, primary_key=True)
@@ -158,14 +158,12 @@ class PaLine(Base):
 
 class GcRun(Base):
 	"""
-	A GcRun will contain all the peaks from that chromatogram, or line in the PeakSimple log. Usually, 8xsample, 2xstd.
+	A GcRun is created from reading the LabView VI files at the same time as the Samples it contains. GcRuns will
+	contain 10 Samples assuming the VI is not changed, though each Sample may not have a Peak associated if the
+	injection failed or a peak could not be integrated.
 
-	Peaks less than PA == 2, should be tossed (?)
-
-	Standards within a run should have a stdev between the two, as well as some QC surrounding that.
-	Samples should also have a run median and stdev that can be used for QC.
-
-	If one standard in a run is poor, it should also re-quantify all samples from that run with the 'good' standard.
+	Once all the Samples in a GcRun have been given Peaks and quantified, a GcRun will be given a median, and stdev,
+	based on the quantified peaks it's related to.
 	"""
 
 	__tablename__ = 'runs'
