@@ -120,6 +120,9 @@ class Sample(Base):
     quantifier = relationship('Sample', remote_side=[id])  # relate a sample to it's quantifying sample if applicable
     quantifier_id = Column(Integer, ForeignKey('samples.id'))
 
+    correction = relationship('SampleCorrection', back_populates='sample')
+    correction_id = Column(Integer, ForeignKey('corrections.id'))
+
     flow = Column(Float)
     pressure = Column(Float)
     rh = Column(Float)
@@ -135,6 +138,19 @@ class Sample(Base):
         self.relax_p = relax_p
         self.sample_type = sample_type
         self.sample_num = sample_num
+
+
+class SampleCorrection(Base):
+
+    __tablename__ = 'corrections'
+
+    id = Column(Integer, primary_key=True)
+    sample_num = Column(Integer)
+
+    sample = relationship('Sample', uselist=False, back_populates='correction')
+
+    def __init__(self, sample_num, sample):
+        pass
 
 
 class PaLine(Base):
