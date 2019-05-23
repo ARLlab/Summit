@@ -518,7 +518,7 @@ async def plot_new_data(logger):
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
         Base.metadata.create_all(engine)
     except Exception as e:
-        logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
+        logger.error(f'Exception {e.args} prevented connection to the database in plot_new_data()')
         send_processor_email(PROC, exception=e)
         return False
 
