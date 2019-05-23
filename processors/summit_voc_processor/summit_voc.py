@@ -240,11 +240,13 @@ class NmhcCorrection(Base):
     def __init__(self, nmhcline, peaks, flag, samplecode):
         self.peaklist = peaks
         self.nmhcline = nmhcline
-        self.status = 'unapplied'  # all corrections are created as unapplied
         self.flag = flag
+        self.samplecode = samplecode
         if nmhcline:
             self.date = nmhcline.date
-        self.samplecode = samplecode
+            self.status = 'applied'
+        else:
+            self.status = 'unapplied'
 
     def __str__(self):
         return f'<NmhcCorrection for {self.date} with {len(self.peaklist)} peaks>'
