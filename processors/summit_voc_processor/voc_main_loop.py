@@ -583,6 +583,7 @@ async def plot_new_data(logger):
                         .join(npentane, npentane.run_id == GcRun.id)
                         .filter(ipentane.name == 'i-pentane')
                         .filter(npentane.name == 'n-pentane')
+                        .filter(GcRun.date >= date_ago)
                         .order_by(GcRun.date)
                         .all())
 
