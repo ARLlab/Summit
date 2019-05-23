@@ -15,7 +15,8 @@ PROC = 'Daily Processor'
 daily_parameters = ['date', 'ads_xfer_a', 'ads_xfer_b', 'valves_temp', 'gc_xfer_temp', 'cj1', 'catalyst', 'molsieve_a',
                     'molsieve_b', 'inlet_long', 'inlet_short', 'std_temp', 'cj2', 'battv', 'v12a', 'v12b', 'v15a',
                     'v15b', 'v24', 'v5a', 'mfc1', 'mfc4', 'mfc2', 'mfc5', 'mfc3a', 'mfc3b', 'h2_gen_p', 'line_p',
-                    'zero_p','fid_p']
+                    'zero_p', 'fid_p']
+
 
 class DailyFile(Base):
     __tablename__ = 'files'
@@ -161,7 +162,6 @@ def read_daily_line(line):
 
 
 def read_daily_file(filepath):
-
     contents = filepath.read_text().split('\n')
     contents = [line for line in contents if line]
 
@@ -238,7 +238,7 @@ async def check_load_dailies(logger):
 
 
 def summit_daily_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None,
-                    y_label_str='Temperature (\xb0C)'):
+                      y_label_str='Temperature (\xb0C)'):
     """
     :param dates: list, of Python datetimes; if set, this applies to all compounds.
         If None, each compound supplies its own date values
@@ -288,8 +288,8 @@ def summit_daily_plot(dates, compound_dict, limits=None, minor_ticks=None, major
     for k, _ in compound_dict.items():
         """Create a filename-safe list using the given legend items"""
         compounds_safe.append(k.replace('-', '_')
-                                .replace('/', '_')
-                                .replace(' ', '_').lower())
+                              .replace('/', '_')
+                              .replace(' ', '_').lower())
 
     comp_list = ', '.join(compound_dict.keys())  # use real names for plot title
     fn_list = '_'.join(compounds_safe)  # use 'safe' names for filename

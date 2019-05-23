@@ -134,7 +134,6 @@ async def check_existing_errors(logger, active_errors=None):
 
 
 async def main():
-
     try:
         from summit_core import configure_logger
         from summit_core import error_dir as rundir

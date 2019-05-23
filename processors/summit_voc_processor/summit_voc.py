@@ -40,12 +40,12 @@ compound_ecns = ({'ethane': 2, 'ethene': 1.9, 'propane': 3, 'propene': 2.9,
 # expected carbon numbers for mixing ratio calcs
 
 sheet_slices = {
-    'ambient':{'start': 43, 'end': 59, 'diff': 54},
-    'ba':{'start': 42, 'end': 57, 'diff': 43},
+    'ambient': {'start': 43, 'end': 59, 'diff': 54},
+    'ba': {'start': 42, 'end': 57, 'diff': 43},
     'bh': {'start': 42, 'end': 57, 'diff': 44},
     'blank': {'start': 42, 'end': 57, 'diff': 43},
     'trapblank': {'start': 42, 'end': 57, 'diff': 42}
-                }  # sheet indexes for pulling pas and rts
+}  # sheet indexes for pulling pas and rts
 
 compound_windows_1 = (
     {'ethane': (1.65, 1.85),  # compound retention windows for every named compound at Summit 'name':(low, high)
@@ -832,8 +832,8 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
     for k, _ in compound_dict.items():
         """Create a filename-safe list using the given legend items"""
         compounds_safe.append(k.replace('-', '_')
-                                .replace('/', '_')
-                                .replace(' ', '_').lower())
+                              .replace('/', '_')
+                              .replace(' ', '_').lower())
 
     comp_list = ', '.join(compound_dict.keys())  # use real names for plot title
     fn_list = '_'.join(compounds_safe)  # use 'safe' names for filename
@@ -921,9 +921,9 @@ def summit_log_plot(name, dates, compound_dict, limits=None, minor_ticks=None, m
     for k, _ in compound_dict.items():
         """Create a filename-safe list using the given legend items"""
         compounds_safe.append(k.replace('-', '_')
-                                .replace('/', '_')
-                                .replace(' ', '_')
-                                .replace(',', '').lower())
+                              .replace('/', '_')
+                              .replace(' ', '_')
+                              .replace(',', '').lower())
 
     comp_list = ', '.join(compound_dict.keys())  # use real names for plot title
 
@@ -1019,7 +1019,7 @@ def name_summit_peaks(nmhcline, rt_windows):
             b4_limits = rt_windows.compounds.get('4b')
             if b4_limits:
                 b4_pool = [peak for peak in nmhcline.peaklist if
-                             b4_limits[0] < (peak.rt - ibut_rt) < b4_limits[1]]
+                           b4_limits[0] < (peak.rt - ibut_rt) < b4_limits[1]]
             else:
                 b4_pool = None
             if not b4_pool:
@@ -1044,7 +1044,7 @@ def name_summit_peaks(nmhcline, rt_windows):
         if find_nbut:
             nbut_limits = rt_windows.compounds.get('n-butane')
             if nbut_limits:
-                nbut_pool = [peak for peak in nmhcline.peaklist 
+                nbut_pool = [peak for peak in nmhcline.peaklist
                              if nbut_limits[0] < (peak.rt - ibut_rt) < nbut_limits[1]]
             else:
                 nbut_pool = None
@@ -1110,4 +1110,4 @@ def correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger, sheetn
 
 def find_approximate_rt(peaklist, rt):
     peaklist = [peak for peak in peaklist if peak.rt]  # clean list for only those with RTs
-    return next((peak for peak in peaklist if rt-.011 < peak.rt < rt+.011), None)
+    return next((peak for peak in peaklist if rt - .011 < peak.rt < rt + .011), None)
