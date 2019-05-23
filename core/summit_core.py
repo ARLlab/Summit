@@ -269,6 +269,21 @@ def get_all_data_files(path, filetype):
     return files
 
 
+def merge_lists(a, b):
+    """
+    Generator to merge the lists a, and b, starting with the first element in a.
+    :param a: list, or other iterable
+    :param b: list, or other iterable
+    :return: list, joined from a and b, such that the return is [a[0], b[0], a[1], b[1], ...]
+    """
+    it_a = iter(a)
+    it_b = iter(b)
+    yield(next(it_a))
+    for a, b in zip(it_a, it_b):
+        yield b
+        yield a
+
+
 def search_for_attr_value(obj_list, attr, value):
     """
     Finds the first (not necesarilly the only) object in a list, where its
