@@ -18,6 +18,21 @@
   <link rel="stylesheet" href="CSS/skeleton.css">
   <link rel="stylesheet" href="CSS/summit.css">
 
+  <!-- jQuery -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script>
+    document.querySelector('.frameButton').addEventListener("click", loadFrame);
+
+    function loadFrame() {
+
+      window.document.querySelector('.frameContent').src = "{add link here}";
+
+      var container = window.document.querySelector('.frameContainer');
+      container.classList.add("frameLoaded");
+      container.scrollTop = 438;
+    }
+  </script>
+
   <!-- Favicon
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <link rel="icon" type="image/png" href="http://instaar.colorado.edu/arl/pictures/data/summit/summit1.jpg">
@@ -55,18 +70,7 @@
         <li class="navbar-item"><a class="navbar-link" href="#9">Sample Flow</a></li>
         <li class="navbar-item"><a class="navbar-link" href="#10">Trap Temps</a></li>
         <li class="navbar-item"><a class="navbar-link" href="#11">Water Trap</a></li>
-      </ul>
-    </div>
-  </nav>
-
-  <!-- Navigation Bar 3 (Log Files) -->
-  <div class="navbar-spacer"></div>
-  <nav class="navbar">
-    <div class="container">
-      <ul class="navbar-list">
-        <li class="navbar-item"><a class="navbar-link" href="#12">VOC Main Loop</a></li>
-        <li class="navbar-item"><a class="navbar-link" href="#13">....</a></li>
-        <li class="navbar-item"><a class="navbar-link" href="#14">...</a></li>
+        <li class="navbar-item"><a class="navbar-link" href="#12">Python Log Files</a></li>
       </ul>
     </div>
   </nav>
@@ -112,19 +116,28 @@
   </div>
 
   <div>
-    <h2 class="title"> Python Log Files </h2>
+    <h2 class="title" id="12"> Python Log Files </h2>
 
-    <h4 class="docs-header" id="12"> VOC Main Loop </h4>
-    <div class="logbox">
-      <iframe src="./logs/voc_main_loop.log" frameborder="2" height='100%' width='100%'></iframe>
+    <h4 class="docs-header"> VOC Main Loop </h4>
+    <button class="frameButton">Open Log</button>
+    <div class='frameContainer'>
+      <iframe class='frameContent' src="./logs/voc_main_loop.log"></iframe>
     </div>
-
-    <h4 class="docs-header" id="13"> Test Log File Display </h4>
-    <div class="logbox">
-      <iframe src="./logs/voc_main_loop.log" height='100%' width='100%'></iframe>
-    </div>
-
-
-
 
 </div>
+
+<script>
+  document.querySelector('.frameButton').addEventListener("click", loadFrame);
+
+  function loadFrame() {
+
+    window.document.querySelector('.frameContent').src = "./logs/voc_main_loop.log";
+
+    var container = window.document.querySelector('.frameContainer');
+    container.classList.add("frameLoaded");
+    container.scrollTop = container.scrollHeight;
+  }
+</script>
+
+
+</html>
