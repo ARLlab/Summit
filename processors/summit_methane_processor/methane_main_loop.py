@@ -69,7 +69,7 @@ async def check_load_pa_log(logger):
         core_session.merge(ch4_config)
         core_session.commit()
 
-        line_to_start = ch4_config.pa_startline - 3 # pad start to avoid missing samples
+        line_to_start = ch4_config.pa_startline - 3  # pad start to avoid missing samples
         if line_to_start < 0:
             line_to_start = 0
 
@@ -300,8 +300,8 @@ async def match_peaks_to_samples(logger):
         runs_w_unmatched_samples = []
         for set in sets:
             runs_w_unmatched_samples.extend((session.query(GcRun)
-                                            .filter(GcRun.id.in_(set))
-                                            .all()))  # create set of runs that require processing
+                                             .filter(GcRun.id.in_(set))
+                                             .all()))  # create set of runs that require processing
 
         for run in runs_w_unmatched_samples:
             # loop through runs containing samples that haven't been matched with peaks
@@ -545,11 +545,11 @@ async def plot_new_data(logger):
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
 
         runs_with_medians = (session.query(GcRun)
-                                    .filter(GcRun.median != None)
-                                    .filter(GcRun.standard_rsd < .02)
-                                    .filter(GcRun.rsd < .02)
-                                    .order_by(GcRun.date)
-                                    .all())
+                             .filter(GcRun.median != None)
+                             .filter(GcRun.standard_rsd < .02)
+                             .filter(GcRun.rsd < .02)
+                             .order_by(GcRun.date)
+                             .all())
 
         last_ambient_date = runs_with_medians[-1].date
         # get date after filtering, ie don't plot if there's no new data getting plotted
@@ -563,13 +563,13 @@ async def plot_new_data(logger):
 
             with TempDir(rundir / 'plots'):
                 name = summit_methane_plot(None, {'Summit Methane [GC]': [ambient_dates, ambient_mrs]},
-                                    limits={'bottom': 1850, 'top': 2050,
-                                            'right': date_limits.get('right', None),
-                                            'left': date_limits.get('left', None)},
-                                    major_ticks=major_ticks,
-                                    minor_ticks=minor_ticks)
+                                           limits={'bottom': 1850, 'top': 2050,
+                                                   'right': date_limits.get('right', None),
+                                                   'left': date_limits.get('left', None)},
+                                           major_ticks=major_ticks,
+                                           minor_ticks=minor_ticks)
 
-                methane_plot = Plot(rundir/'plots'/name, remotedir, True)  # stage plots to be uploaded
+                methane_plot = Plot(rundir / 'plots' / name, remotedir, True)  # stage plots to be uploaded
                 add_or_ignore_plot(methane_plot, core_session)
 
                 ch4_config.last_data_date = last_ambient_date
@@ -594,6 +594,156 @@ async def plot_new_data(logger):
         core_engine.dispose()
         session.close()
         engine.dispose()
+        return False
+
+
+async def dual_plot_methane(logger):
+    """
+    Connects to both the methane [gc] and picarro databases to create an overlayed plot of both data.
+
+    :param logger: logger, to log events to
+    :return: Boolean, True if it ran without error and created data, False if not
+    """
+
+    PROC = 'Methane DualPlotter'
+
+    try:
+        from pathlib import Path
+        from summit_core import core_dir, Config
+        from summit_core import methane_dir
+        from summit_core import picarro_dir
+        from summit_core import connect_to_db, create_daily_ticks, TempDir, Plot, add_or_ignore_plot
+        from summit_picarro import Datum
+        from summit_methane import Base, GcRun, summit_methane_plot
+
+        from summit_picarro import Base as PicarroBase
+
+        remotedir = r'/data/web/htdocs/instaar/groups/arl/summit/plots'
+
+    except ImportError as e:
+        logger.error('ImportError occurred in dual_plot_methane()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        gc_engine, gc_session = connect_to_db('sqlite:///summit_methane.sqlite', methane_dir)
+        Base.metadata.create_all(gc_engine)
+
+        picarro_engine, picarro_session = connect_to_db('sqlite:///summit_picarro.sqlite', picarro_dir)
+        PicarroBase.metadata.create_all(picarro_engine)
+    except Exception as e:
+        logger.error(f'Exception {e.args} prevented connection to the database in dual_plot_methane()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+        Plot.__table__.create(core_engine, checkfirst=True)
+        Config.__table__.create(core_engine, checkfirst=True)
+
+        twoplot_config = core_session.query(Config).filter(Config.processor == PROC).one_or_none()
+
+        if not twoplot_config:
+            twoplot_config = Config(processor=PROC)  # use all default values except processor on init
+            core_session.add(twoplot_config)
+            core_session.commit()
+
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented connecting to the core database in plot_new_data()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        logger.info('Running dual_plot_methane()')
+
+        newest_picarro_data_point = (picarro_session.query(Datum.date)
+            .filter(Datum.mpv_position == 1)
+            .order_by(Datum.date.desc())
+            .first()[0])
+
+        newest_gc_data_point = (gc_session.query(GcRun.date)
+            .filter(GcRun.median != None)
+            .filter(GcRun.standard_rsd < .02)
+            .filter(GcRun.rsd < .02)
+            .order_by(GcRun.date.desc())
+            .first()[0])
+
+        newest_data_point = max(newest_picarro_data_point, newest_gc_data_point)
+
+        if newest_data_point <= twoplot_config.last_data_date:
+            logger.info('No new data was found to plot.')
+            core_session.close()
+            core_engine.dispose()
+            picarro_session.close()
+            picarro_engine.dispose()
+            return False
+
+        date_limits, major_ticks, minor_ticks = create_daily_ticks(twoplot_config.days_to_plot)
+
+        if newest_data_point > twoplot_config.last_data_date:
+
+            runs_with_medians = (gc_session.query(GcRun)
+                                 .filter(GcRun.median != None)
+                                 .filter(GcRun.standard_rsd < .02)
+                                 .filter(GcRun.rsd < .02)
+                                 .order_by(GcRun.date)
+                                 .all())
+
+            gc_dates = [run.date for run in runs_with_medians]
+            gc_ch4 = [run.median for run in runs_with_medians]
+
+            picarro_data = (picarro_session.query(Datum.date, Datum.ch4)
+                            .filter((Datum.mpv_position == 0) | (Datum.mpv_position == 1))
+                            .filter((Datum.instrument_status == 963), (Datum.alarm_status == 0))
+                            .filter(Datum.date >= date_limits['left'])
+                            .all())  # grab only data that falls in plotting period
+
+            picarro_dates = [p.date for p in picarro_data]
+            picarro_ch4 = [p.ch4 for p in picarro_data]
+
+            with TempDir(methane_dir / 'plots'):
+                name = summit_methane_plot(None, {'Summit Methane [Picarro]': [picarro_dates, picarro_ch4],
+                                                  'Summit Methane [GC]': [gc_dates, gc_ch4]},
+                                           limits={'bottom': 1850, 'top': 2050,
+                                                   'right': date_limits.get('right', None),
+                                                   'left': date_limits.get('left', None)},
+                                           major_ticks=major_ticks,
+                                           minor_ticks=minor_ticks)
+
+                methane_plot = Plot(methane_dir / 'plots' / name, remotedir, True)  # stage plots to be uploaded
+                add_or_ignore_plot(methane_plot, core_session)
+
+                twoplot_config.last_data_date = newest_data_point
+                core_session.merge(twoplot_config)
+
+            logger.info('New data plots created.')
+        else:
+            logger.info('No new data found to be plotted.')
+
+        gc_session.close()
+        gc_engine.dispose()
+
+        picarro_session.close()
+        picarro_engine.dispose()
+
+        core_session.commit()
+
+        core_session.close()
+        core_engine.dispose()
+        return True
+
+    except Exception as e:
+        logger.error(f'Exception {e.args} occurred in dual_plot_methane()')
+        send_processor_email(PROC, exception=e)
+
+        core_session.close()
+        core_engine.dispose()
+
+        gc_session.close()
+        gc_engine.dispose()
+
+        picarro_session.close()
+        picarro_engine.dispose()
         return False
 
 
