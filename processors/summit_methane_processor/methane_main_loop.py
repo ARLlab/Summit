@@ -704,6 +704,7 @@ async def dual_plot_methane(logger):
             with TempDir(methane_dir / 'plots'):
                 name = summit_methane_plot(None, {'Summit Methane [Picarro]': [picarro_dates, picarro_ch4],
                                                   'Summit Methane [GC]': [gc_dates, gc_ch4]},
+                                           title = 'Summit Methane [Picarro & GC]',
                                            limits={'bottom': 1850, 'top': 2050,
                                                    'right': date_limits.get('right', None),
                                                    'left': date_limits.get('left', None)},

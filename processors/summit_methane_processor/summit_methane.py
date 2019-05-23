@@ -8,8 +8,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
-from summit_errors import send_processor_email
-
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
 # retention times based on sample number
@@ -414,7 +412,8 @@ def plottable_sample(sample):
             return True
 
 
-def summit_methane_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None, unit_string='ppbv'):
+def summit_methane_plot(dates, compound_dict, title = None, limits=None,
+                        minor_ticks=None, major_ticks=None, unit_string='ppbv'):
     """
     :param dates: list, of Python datetimes; if set, this applies to all compounds.
         If None, each compound supplies its own date values
@@ -487,8 +486,11 @@ def summit_methane_plot(dates, compound_dict, limits=None, minor_ticks=None, maj
     ax.tick_params(axis='both', which='major', size=8, width=2, labelsize=15)
     f1.set_size_inches(11.11, 7.406)
 
+    if not title:
+        title = f'{comp_list}'
+
     ax.set_ylabel(f'Mixing Ratio ({unit_string})', fontsize=20)
-    ax.set_title(f'{comp_list}', fontsize=24, y=1.02)
+    ax.set_title(title, fontsize=24, y=1.02)
     ax.legend(compound_dict.keys())
 
     f1.subplots_adjust(bottom=.20)
