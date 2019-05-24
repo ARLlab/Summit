@@ -18,6 +18,7 @@ Base = declarative_base()  # needed to subclass for sqlalchemy objects
 test_list = ['brbl4762@colorado.edu']
 global_list = ['brbl4762@colorado.edu']
 processor_email_list = ['brbl4762@colorado.edu']
+instrument_email_list = ['brbl4762@colorado.edu', 'jashan.chopra@colorado.edu']
 
 
 class Error():
@@ -133,6 +134,16 @@ class NewDataEmail(EmailTemplate):
             print('Handle the new exception!')
 
 
+class LogParameterEmail(EmailTemplate):
+
+    def __init__(self, logname, parameters):
+        subject = f'LogParameter Error in {logname}'
+        body = (f'The following parameters were outside their limits:'
+                + f'{parameters}')
+        super().__init__(sender, instrument_email_list, body, subject=subject)
+        pass
+
+
 def send_email(send_from, send_to, subject, body, user, passw, attach=None, server='smtp.gmail.com'):
     import smtplib
     from os.path import basename
@@ -176,6 +187,16 @@ def send_processor_email(name, exception=None):
     import traceback
 
     template = ProccessorEmail(sender, name, exception=exception, trace=traceback.format_exc())
+    template.send()
+
+
+def send_logparam_email(invalid_parameters):
+    """
+    Wrapper on logparam emails to take a list of parameters and send a one-off email.
+    :param invalid_parameters: list, of string parameters that failed their checks
+    :return:
+    """
+    template = LogParameterEmail(invalid_parameters)
     template.send()
 
 
