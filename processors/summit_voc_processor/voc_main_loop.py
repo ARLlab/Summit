@@ -875,6 +875,101 @@ async def plot_logdata(logger):
         return False
 
 
+async def check_new_logs(logger):
+
+    try:
+        import datetime as dt
+        from pathlib import Path
+        from datetime import datetime
+        from summit_core import connect_to_db, TempDir, Config
+        from summit_core import voc_dir, core_dir
+        from summit_voc import LogFile
+        from summit_errors import send_logparam_email
+    except ImportError as e:
+        logger.error(f'ImportError occurred in check_new_logs()')
+        send_processor_email('Log Checking', exception=e)
+        return False
+
+    try:
+        engine, session = connect_to_db('sqlite:///summit_voc.sqlite', voc_dir)
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented connecting to the database in check_new_logs()')
+        send_processor_email('Log Checking', exception=e)
+        return False
+
+    try:
+        core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+        Config.__table__.create(core_engine, checkfirst=True)
+
+        logcheck_config = core_session.query(Config).filter(Config.processor == 'Log Checking').one_or_none()
+
+        if not logcheck_config:
+            logcheck_config = Config(processor='Log Checking',
+                                days_to_plot=21)  # use all default values except processor on init
+            core_session.add(logcheck_config)
+            core_session.commit()
+
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented connecting to the core database in check_new_logs()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        logger.info('Running check_new_logs()')
+        """
+        All of your code will go in this main try block, except any imports you make above,
+            below is a fairly detailed outline of how you can go about it.
+            
+        query core database for the most recent logdata date (use order by date, descending, .first())
+                see examples of this in picarro_main_loop, plot_new_data() and most other plotting functions
+            if that date is greater than logcheck_config.last_data_date:
+                query database for logs greater than the logcheck_config.last_data_date (ORDER THEM BY DATE)
+                Somewhere, save the date of logfiles[-1] so you know what the last log date you processed was
+            
+            create an empty list to hold names of any parameters that failed their tests
+            loop through logs to check the parameters, such as logdata.GCHeadP1 for validity
+                - bug Jacques for a logfile with acceptable limits labeled for parameters he wants checked
+        
+            to loop through parameters in each log, make a dictionary like: 
+                ['GCHeadP1': (9, 11), 'GCoventemp': (195, 210), 'etc': (10,20)] where the dictionary key is the name
+                of the parameter in LogFile, and the value is the acceptable limits (as a tuple)
+                
+                Then, you can loop through: name, limits in dictionary.items(), where name is the parameter name limits
+                is the (low, high) acceptable limits.
+                
+                Then you can check that: limits[0] < getattr(LogFile, name) < limits[1] is True
+                    getattr(object, name_of_attribute) is a builtin function - look it up, it's magic...
+                    if not, append name to the empty list of parameters: this list will get passed to an error email
+                    
+            if [that list of parameters]:
+                send_logparam_email(logfile.filename, [that list of parameters])
+                # this will send an error email to the list given in summit_errors.py, listing what failed
+                
+            Once done with checking all the logs, update the date of logcheck_config so you don't re-check those later
+                core_session.merge(logcheck_config)  # to add your changes before comitting the core database below
+                
+        """
+
+        core_session.commit()
+        core_session.close()
+        core_engine.dispose()
+
+        session.close()
+        engine.dispose()
+        return True
+
+    except Exception as e:
+        logger.error(f'Exception {e.args} occurred in check_new_logs()')
+        send_processor_email('Log Checking', exception=e)
+        session.close()
+        engine.dispose()
+
+        core_session.close()
+        core_engine.dispose()
+
+        return False
+
+
 async def load_excel_corrections(sheet_name, logger):
     """
     Load the datasheet from another drive.
@@ -1052,6 +1147,7 @@ async def main():
 
         if new_logs:
             await asyncio.create_task(plot_logdata(logger))
+            # await asyncio.create_task(check_new_logs(logger))
 
         if new_logs or new_lines:
             await asyncio.create_task(load_crfs(logger))
