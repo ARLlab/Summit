@@ -2,19 +2,24 @@
 Created on Friday May 24th
 
 This script imports data from current updated Methane and VOC spreadsheets, combines them with past data,
-and optimizes them for usage in the NOAA Python CCG Harmonic Fitting Program, then outputs them to a text file
+and optimizes them for usage in the NOAA Python CCG Harmonic Fitting Program, then outputs them to a text file.
 
-This script will be very similar to ratio_calc.py, but will return the data specifically in the form optimized for
-the CCG Harmonic Fitting Program: a text file with two columns of numbers, the first column is a decimal year value,
-and the second column is the corresponding value, columns are separated just by white space
+This script returns the data specifically in the form optimized for the CCG Harmonic Fitting Program: a text file
+with two columns of numbers, the first column is a decimal year value, and the second column is the corresponding
+value, columns are separated just by white space
+
+Currently, a few data cleaning tactics are employed. First, since there is no methane data past 2012, the VOC data
+before 2012 is cut. We only look at ethane and acetylene in this circumstance, so other VOC columns are removed. Any
+row with a NaN value is completely dropped. Since methane is sampled more frequently than the VOC's, methane values
+from +/- three hours from any given VOC data point are averaged and then used to calculate the ratio of VOC / ch4 at
+any given VOC datapoint timestep.
 """
 
 # Import libraries
 from fileInput import fileLoad
 import pandas as pd
 import numpy as np
-import os
-import shutil
+import matplotlib.pyplot as plt
 
 # Import Data Sets from Excel
 nmhcData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.xlsx")
@@ -68,6 +73,12 @@ for i in years:                                                             # MA
 
 # Create final text file with outputs
 
+plt.plot(nmhcDate, ethaneMethane, '.')
+plt.title('Test Plot Comparison to CCG')
+plt.xlabel('Decimal Year')
+plt.ylabel('Mixing Ratio [ppb]')
+plt.show()
+
 ethaneMethane = pd.DataFrame(ethaneMethane)                                 # Convert back to dataframe
 ethaneMethane.columns = ['val']                                             # Give it a title
 ethaneMethane = ethaneMethane.dropna(axis=0, how='any')                     # Remove any NaN Values
@@ -83,4 +94,3 @@ with open("aceMethane.txt", "w+") as f:
     for index, value in aceMethane.iterrows():
         f.write("%f " % nmhcDate.iloc[index])
         f.write("%f\n" % value.val)
-

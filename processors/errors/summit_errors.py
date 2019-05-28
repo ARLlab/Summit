@@ -17,8 +17,8 @@ Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
 test_list = ['brbl4762@colorado.edu']
 global_list = ['brbl4762@colorado.edu']
-processor_email_list = ['brbl4762@colorado.edu']
-instrument_email_list = ['brbl4762@colorado.edu', 'jashan.chopra@colorado.edu']
+processor_email_list = ['brbl4762@colorado.edu', 'jach4134@colorado.edu']
+instrument_email_list = ['brbl4762@colorado.edu', 'jach4134@colorado.edu']
 
 
 class Error():
