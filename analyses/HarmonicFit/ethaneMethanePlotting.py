@@ -13,7 +13,7 @@ import datetime as dt
 
 # Reading in file
 root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit'                            # Root File Location
-data = pd.read_csv(root + r'\test1.txt', encoding='utf8', delim_whitespace=True)        # whitespace delimitter read
+data = pd.read_csv(root + r'\TextFiles\test1.txt', encoding='utf8', delim_whitespace=True)        # whitespace delimitter read
 data = data.dropna(axis=1, how='any')                                                   # drop NaN columns
 
 # Printing for Data Understanding

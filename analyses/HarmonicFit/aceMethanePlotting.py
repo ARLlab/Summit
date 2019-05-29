@@ -14,7 +14,7 @@ import datetime as dt
 
 # Reading in File
 root = r'C:\Users\ARL|Desktop\J_Summit\analyses\HarmonicFit'
-data = pd.read_csv(root + r'\aceDefault.txt', encoding='utf8', delim_whitespace=True)
+data = pd.read_csv(root + r'\TextFiles\aceDefault.txt', encoding='utf8', delim_whitespace=True)
 data = data.dropna(axis=1, how='any')
 
 # Printing for Data Verification
