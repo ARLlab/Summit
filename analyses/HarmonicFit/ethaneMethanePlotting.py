@@ -8,10 +8,8 @@ harmonic terms, with no switching in longterm or shortterm settings on the fast 
 
 # Import libraries
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
-# TODO: Import Seaborn and look at those plotting features?
 
 # Reading in file
 root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit'                            # Root File Location
@@ -23,7 +21,6 @@ pd.set_option('display.max_columns', None)
 print(data.columns)
 
 # Exploratory Graphing
-# TODO: Might be nice to display these different scatterplots as subplots seperately, than show overlayed
 plt.figure(1)
 plt.plot(data['date'], data['value'], '.', alpha=0.5, label='Original Data')
 plt.plot(data['date'], data['function'], linewidth=2, alpha=0.8, label='Fitted Function')
@@ -37,7 +34,7 @@ plt.figure(2)
 plt.plot(data['date'], data['residuals'], '.', alpha=0.8, label='Normal Residuals')
 plt.plot(data['date'], data['resid_smooth'], '.', alpha=0.2, label='Residuals from Smoothed Fit')
 plt.plot(data['date'], data['smooth_resid'], linewidth=3, label='Smoothed Residual Line')
-plt.title('Fitted Function Residuals')
+plt.title('Fitted Function Residuals in Ethane/Methane Ratio')
 plt.xlabel('Decimal Year')
 plt.ylabel('Mixing Ratio [ppb]')
 plt.legend()
@@ -61,7 +58,7 @@ data.insert(1, 'DOY', doy)                                                      
 plt.figure(3)
 plt.plot(data['DOY'], data['residuals'], '.', alpha=0.8, label='Normal Residuals')
 plt.plot(data['DOY'], data['resid_smooth'], '.', alpha=0.2, label='Residuals from Smoothed Fit')
-plt.title('Fitted Function Residuals')
+plt.title('Daily Residuals in Ethane/Methane Ratio')
 plt.xlabel('Decimal Year')
 plt.ylabel('Mixing Ratio [ppb]')
 plt.legend()
