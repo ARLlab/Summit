@@ -20,7 +20,7 @@ import seaborn as sns
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
-start = time.time()                                                                         # timer for curiosity
+start: float = time.time()                                                                         # timer for curiosity
 # Reading in File
 root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit\textFiles'
 arl = pd.read_csv(root + r'\methaneARL.txt', encoding='utf8', delim_whitespace=True)
@@ -41,7 +41,7 @@ ax2 = sns.scatterplot(x='date', y='value', data=flask, ax=ax[0, 0], alpha=0.7, s
 ax3 = sns.lineplot(x='date', y='function', data=arl, ax=ax[0, 0], linewidth=2, label='GC Fitted Curve')
 ax4 = sns.lineplot(x='date', y='function', data=flask, ax=ax[0, 0], linewidth=2, label='Flask Fitted Curve')
 
-ax1.set_title('GC v. Flask Methane Data')
+ax1.set_title('GC v. Flask Methane Data', fontsize=12)
 ax1.set_xlabel('Decimal Year')                              # misc details
 ax1.set_ylabel('Mixing Ratio [ppb]')
 ax1.legend()
@@ -56,7 +56,7 @@ ax6 = sns.scatterplot(x='date', y='residuals', data=flask, ax=ax[0, 1], alpha=0.
 ax7 = sns.lineplot(x='date', y='smooth_resid', data=arl, ax=ax[0, 1], linewidth=2, label='GC Resid Curve')
 ax8 = sns.lineplot(x='date', y='smooth_resid', data=flask, ax=ax[0, 1], linewidth=2, label='Flask Resid Curve')
 
-ax5.set_title('GC v. Flask Methane Residuals from Harmonic Fits')
+ax5.set_title('GC v. Flask Methane Residuals from Harmonic Fits', fontsize=12)
 ax5.set_xlabel('Decimal Year')                              # misc details
 ax5.set_ylabel('Mixing Ratio [ppb]')
 ax5.legend()
@@ -109,7 +109,7 @@ print('Data Cleaned and Regression Line Fitted...')
 # Residual Linear Regression Plot
 ax9 = sns.regplot(x='Resid_GC', y='Resid_Flask', data=dataClean, ax=ax[1, 0],
                     line_kws={'label': 'rSquared: {:1.5f}\n Slope: {:1.5f}\n'.format(rSquare, slope[0])})
-ax9.set_title('Comparison of GC and Flask Residuals to Harmonic Fit')
+ax9.set_title('Comparison of GC and Flask Residuals to Harmonic Fit', fontsize=12)
 ax9.set_xlabel('GC Residuals [ppb]')
 ax9.set_ylabel('Flask Residuals [ppb]')
 ax9.legend()
@@ -119,14 +119,17 @@ print('Plot 3 Completed...')
 # ------------------
 # Residual Between Flask and GC
 ax10 = sns.residplot(x='value_GC', y='value_flask', data=dataClean, ax=ax[1, 1], lowess=True)
-ax10.set_title('Residual between GC and Flask Methane Data')
+ax10.set_title('Residual between GC and Flask Methane Data', fontsize=12)
 ax10.set_xlabel('GC Methane Data [ppb]')
 ax10.set_ylabel('Residual from Flask Methane')
-ax10.set(xlim=(1750, 2000))                                                        # Set Axis Limits
+ax10.set(xlim=(1750, 2000))                                                             # Set Axis Limits
+ax10.get_lines()[0].set_color('blue')
 print('Full Plotting Completed...')
+
+end = time.time()
+print('Total Time [Seconds]: ', end - start)
 
 plt.show()
 
-end = time.time()
-print('Total Time [Seconds]:', end - start)
+
 
