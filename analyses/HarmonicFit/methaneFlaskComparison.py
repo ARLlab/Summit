@@ -123,7 +123,8 @@ ax10.set_title('Residual between GC and Flask Methane Data', fontsize=12)
 ax10.set_xlabel('GC Methane Data [ppb]')
 ax10.set_ylabel('Residual from Flask Methane')
 ax10.set(xlim=(1750, 2000))                                                             # Set Axis Limits
-ax10.get_lines()[0].set_color('blue')
+ax10.get_lines()[0].set_color('red')
+ax10.get_lines()[1].set_color('blue')
 print('Full Plotting Completed...')
 
 end = time.time()
