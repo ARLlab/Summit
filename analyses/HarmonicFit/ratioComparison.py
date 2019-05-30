@@ -1,5 +1,5 @@
 """
-Created on March 29th, 2019. This script compares the residuals from both the acetylene / methane ratio,
+Created on May 29th, 2019. This script compares the residuals from both the acetylene / methane ratio,
 and the ethane / methane ratio. It utilizes matplotlib.pyplots subplotting features. Additionally it performs a
 linear regression on both the normal residuals and the smoothed residuals to compare correlations.
 

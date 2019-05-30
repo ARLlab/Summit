@@ -1,5 +1,5 @@
 """
-Created on Friday May 24th
+Created on Friday May 24th, 2019
 
 This script imports data from current updated Methane and VOC spreadsheets, combines them with past data,
 and optimizes them for usage in the NOAA Python CCG Harmonic Fitting Program, then outputs them to a text file.

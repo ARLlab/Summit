@@ -1,5 +1,5 @@
 """
-Created on March 28th, 2019. This script works on preliminary plotting data from the CCGVU exported functions,
+Created on May 28th, 2019. This script works on preliminary plotting data from the CCGVU exported functions,
 residuals, and other features in the Python environment.
 
 This data (from test1.txt) is from CCGVU with the DEFAULT settings. This is three polynomial terms, and four
@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 import datetime as dt
 
 # Reading in file
-root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit'                            # Root File Location
-data = pd.read_csv(root + r'\TextFiles\test1.txt', encoding='utf8', delim_whitespace=True)        # whitespace delimitter read
-data = data.dropna(axis=1, how='any')                                                   # drop NaN columns
+root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit'                                # Root File Location
+data = pd.read_csv(root + r'\TextFiles\test1.txt', encoding='utf8', delim_whitespace=True)  # whitespace delimitter read
+data = data.dropna(axis=1, how='any')                                                       # drop NaN columns
 
 # Printing for Data Understanding
 pd.set_option('display.max_columns', None)
