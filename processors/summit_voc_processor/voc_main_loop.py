@@ -885,6 +885,7 @@ async def check_new_logs(logger):
         from summit_core import voc_dir, core_dir
         from summit_voc import LogFile
         from summit_errors import send_logparam_email
+        import pandas as pd
     except ImportError as e:
         logger.error(f'ImportError occurred in check_new_logs()')
         send_processor_email('Log Checking', exception=e)
@@ -949,6 +950,69 @@ async def check_new_logs(logger):
                 core_session.merge(logcheck_config)  # to add your changes before comitting the core database below
                 
         """
+        # Query the VOC Database for the most recent logfile data
+        recentDate = pd.DataFrame(session  # open session
+                                  .query(LogFile.date)  # hather date
+                                  .order_by(LogFile.date.desc())  # order by desc
+                                  .first())  # grab just the first value
+
+        failed = []  # failed var for later
+
+        # If the most recent date is greater than the last one, we query for all logs greater than it, save the date of
+        # the last one, and then apply various actions to them
+        if (recentDate[0] > logcheck_config.last_data_date).all():
+            logfiles = pd.DataFrame(session
+                                    .query(LogFile.date)  # query DB for dates
+                                    .order_by(LogFile.date.desc())  # order by desc
+                                    .filter(LogFile.date > logcheck_config.last_data_date)  # filter only new ones
+                                    .all())  # get all of them
+
+            lastDate = logfiles.iloc[-1]  # identify last log date
+            # proc
+
+            paramBounds = ({  # dictionary of parameters
+                'samplepressure1': (2, 8),
+                'samplepressure2': (0, 0),
+                'GCHeadP': (0, 0),
+                'GCHeadP1': (0, 0),
+                'chamber_temp_start': (0, 0),
+                'WTA_temp_start': (0, 0),
+                'WTB_temp_start': (0, 0),
+                'adsA_temp_start': (0, 0),
+                'adsB_temp_start': (0, 0),
+                'chamber_temp_end': (0, 0),
+                'WTA_temp_end': (0, 0),
+                'WTB_temp_end': (0, 0),
+                'adsA_temp_end': (0, 0),
+                'adsB_temp_end': (0, 0),
+                'traptempFH': (0, 0),
+                'GCstarttemp': (0, 0),
+                'traptempinject_end': (0, 0),
+                'traptempbakeout_end': (0, 0),
+                'WTA_hottemp': (0, 0),
+                'WTB_hottemp': (0, 0),
+                'GCoventemp': (0, 0)
+            })
+
+            # Loop through log parameters and identify files outside of acceptable limits
+            for name, limits in paramBounds.items():
+                # Find values below the low limit, or above the high limit
+                cond = (limits[0] > getattr(LogFile, name)) | (getattr(LogFile, name) > limits[1])
+
+                # Identify the ID of those unacceptable values and append to preallocated list
+                failedFiles = session.query(LogFile.filename).filter(cond).all()
+                failed.append(failedFiles)
+
+                # TODO: I couldn't implement / test this because I was missing \errors\processor_logs\summit_errors.log
+                # If there are unacceptable values, send an email
+                # if failed:
+                #   send_logparam_email(LogFile.filename, [failed])
+
+        # Update the date of logcheck_config so we don't check same values twice
+        logcheck_config.last_data_date = lastDate[0].to_pydatetime()
+
+        # Merge, commit, close, and dispose of SQL Databases
+        core_session.merge(logcheck_config)
 
         core_session.commit()
         core_session.close()
@@ -956,6 +1020,7 @@ async def check_new_logs(logger):
 
         session.close()
         engine.dispose()
+
         return True
 
     except Exception as e:
