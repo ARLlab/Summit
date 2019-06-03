@@ -119,25 +119,9 @@
     <h2 class="title" id="12"> Python Log Files </h2>
 
     <h4 class="docs-header"> VOC Main Loop </h4>
-    <button class="frameButton">Open Log</button>
-    <div class='frameContainer'>
-      <iframe class='frameContent' src="./logs/voc_main_loop.log"></iframe>
-    </div>
+    <iframe class='frameContent' src="./logs/voc_main_loop.log"></iframe>
 
 </div>
-
-<script>
-  document.querySelector('.frameButton').addEventListener("click", loadFrame);
-
-  function loadFrame() {
-
-    window.document.querySelector('.frameContent').src = "./logs/voc_main_loop.log";
-
-    var container = window.document.querySelector('.frameContainer');
-    container.classList.add("frameLoaded");
-    container.scrollTop = container.scrollHeight;
-  }
-</script>
 
 
 </html>
