@@ -90,7 +90,7 @@ for index, value in data.iterrows():                                            
     high = value.date_flask + tolerence                                                 # Upper date limit
     low = value.date_flask - tolerence                                                  # Lower date limit
     indices = (data['date_gc'] <= high) & (data['date_gc'] >= low)                      # Indicies
-    gc_av = np.nanmean(data['Resid_GC'][indices].values)                                   # GC avg at those indices
+    gc_av = np.nanmean(data['Resid_GC'][indices].values)                                # GC avg at those indices
     if ~np.isnan(value.Resid_Flask):                                                    # append new mat unless res null
         dataClean.append([gc_av, value.Resid_Flask, value.value_GC, value.value_flask])
 
