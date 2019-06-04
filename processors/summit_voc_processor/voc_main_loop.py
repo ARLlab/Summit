@@ -951,47 +951,46 @@ async def check_new_logs(logger):
                 
         """
         # Query the VOC Database for the most recent logfile data
-        recentDate = pd.DataFrame(session  # open session
-                                  .query(LogFile.date)  # hather date
-                                  .order_by(LogFile.date.desc())  # order by desc
-                                  .first())  # grab just the first value
+        recentDate = pd.DataFrame(session                                                   # open session
+                                  .query(LogFile.date)                                      # gather date
+                                  .order_by(LogFile.date.desc())                            # order by desc
+                                  .first())                                                 # grab just the first value
 
         failed = []  # failed var for later
 
         # If the most recent date is greater than the last one, we query for all logs greater than it, save the date of
         # the last one, and then apply various actions to them
-        if (recentDate[0] > logcheck_config.last_data_date).all():
+        if ((recentDate[0] > logcheck_config.last_data_date).all()):
             logfiles = pd.DataFrame(session
-                                    .query(LogFile.date)  # query DB for dates
-                                    .order_by(LogFile.date.desc())  # order by desc
+                                    .query(LogFile.date)                                    # query DB for dates
+                                    .order_by(LogFile.date.desc())                          # order by desc
                                     .filter(LogFile.date > logcheck_config.last_data_date)  # filter only new ones
-                                    .all())  # get all of them
+                                    .all())                                                 # get all of them
 
-            lastDate = logfiles.iloc[-1]  # identify last log date
-            # proc
+            lastDate = logfiles.iloc[-1]                                                    # identify last log date
 
-            paramBounds = ({  # dictionary of parameters
-                'samplepressure1': (2, 8),
-                'samplepressure2': (0, 0),
-                'GCHeadP': (0, 0),
-                'GCHeadP1': (0, 0),
-                'chamber_temp_start': (0, 0),
-                'WTA_temp_start': (0, 0),
-                'WTB_temp_start': (0, 0),
-                'adsA_temp_start': (0, 0),
-                'adsB_temp_start': (0, 0),
-                'chamber_temp_end': (0, 0),
-                'WTA_temp_end': (0, 0),
-                'WTB_temp_end': (0, 0),
-                'adsA_temp_end': (0, 0),
-                'adsB_temp_end': (0, 0),
-                'traptempFH': (0, 0),
-                'GCstarttemp': (0, 0),
-                'traptempinject_end': (0, 0),
-                'traptempbakeout_end': (0, 0),
-                'WTA_hottemp': (0, 0),
-                'WTB_hottemp': (0, 0),
-                'GCoventemp': (0, 0)
+            paramBounds = ({                                                                # dictionary of parameters
+                'samplepressure1': (1.5, 2),
+                'samplepressure2': (7, 10),
+                'GCHeadP': (5, 7),
+                'GCHeadP1': (9, 12),
+                'chamber_temp_start': (20, 28),
+                'WTA_temp_start': (-35, -25),
+                'WTB_temp_start': (20, 30),
+                'adsA_temp_start': (20, 30),
+                'adsB_temp_start': (-35, -25),
+                'chamber_temp_end': (20, 28),
+                'WTA_temp_end': (-35, -25),
+                'WTB_temp_end': (20, 30),
+                'adsA_temp_end': (20, 30),
+                'adsB_temp_end': (-35, -25),
+                'traptempFH': (-30, 0),
+                'GCstarttemp': (35, 45),
+                'traptempinject_end': (290, 310),
+                'traptempbakeout_end': (310, 330),
+                'WTA_hottemp': (75, 85),
+                'WTB_hottemp': (20, 30),
+                'GCoventemp': (190, 210)
             })
 
             # Loop through log parameters and identify files outside of acceptable limits
@@ -1008,8 +1007,8 @@ async def check_new_logs(logger):
                 # if failed:
                 #   send_logparam_email(LogFile.filename, [failed])
 
-        # Update the date of logcheck_config so we don't check same values twice
-        logcheck_config.last_data_date = lastDate[0].to_pydatetime()
+            # Update the date of logcheck_config so we don't check same values twice
+            logcheck_config.last_data_date = lastDate[0].to_pydatetime()
 
         # Merge, commit, close, and dispose of SQL Databases
         core_session.merge(logcheck_config)
