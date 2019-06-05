@@ -4,6 +4,8 @@ from datetime import datetime
 import statistics as s
 from collections import namedtuple
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.ext.declarative import declarative_base
@@ -225,9 +227,12 @@ class MasterCal(Base):
 
     def create_curve(self):
         """
-        Calculate a slope and intercept from the high/low values, and computer the y-difference from the curve to the
+        Calculate a slope and intercept from the high/low values, and compute the y-difference from the curve to the
         middle value for QC.
         """
+
+        cal_data = {'x': [], 'y': []}                                                       # save data from for loop
+
         for cpd in ['co', 'co2', 'ch4']:
             low_val = getattr(self.low_std, cpd + '_result').get('mean')
             high_val = getattr(self.high_std, cpd + '_result').get('mean')
@@ -245,6 +250,19 @@ class MasterCal(Base):
             # y offset is (actual y) - (expected y along the curve)
             # so a positive offset means the actual measurement was above the curve; negative below
             setattr(self, cpd + '_middle_offset', middle_y_offset)
+
+            # Jashan's additions to create a plot
+            cal_data['x'].extend((low_coord[0], mid_coord[0], high_coord[0]))
+            cal_data['y'].extend((low_coord[1], mid_coord[1], high_coord[1]))
+
+        cal_data = pd.DataFrame.from_dict(cal_data)                                         # convert to DF for sns plot
+        co_data = cal_data.iloc[:3]                                                         # seperate co, co2, and ch4
+        co2_data = cal_data.iloc[3:6]
+        ch4_data = cal_data.iloc[6:9]
+
+        # TODO: For some reason sns plotting won't work in this class function, so must be done in the picarro
+        #  mastercal func. I don't think returning these values should mess up the database commits?
+        return co_data, co2_data, ch4_data
 
     @property
     def high_std(self):

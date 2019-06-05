@@ -256,6 +256,10 @@ async def create_mastercals(logger):
         from summit_core import picarro_dir as rundir
         from summit_core import connect_to_db
         from summit_picarro import MasterCal, CalEvent, match_cals_by_min
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        import numpy as np
+        from sklearn.linear_model import LinearRegression
     except Exception as e:
         logger.error('ImportError occured in create_mastercals()')
         send_processor_email(PROC, exception=e)
@@ -293,7 +297,61 @@ async def create_mastercals(logger):
 
         if mastercals:
             for mc in mastercals:
-                mc.create_curve()  # calculate curve from low - high point, and check middle distance
+                # calculate curve from low - high point, and check middle distance
+                co_data, co2_data, ch4_data = mc.create_curve()
+
+                # TODO: I'm sure this may be more efficient with classes, but I was really struggling trying to figure
+                #  it out, hopefully its not too slow since there are rarely mastercals?
+                sns.set()                                                                       # seaborn plot setup
+                f, ax = plt.subplots(ncols=3, figsize=(12, 8))                                  # setup axes
+                sns.despine(f)                                                                  # remove right/top axes
+                plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.4,
+                                    hspace=0.1)                                                 # adjust plot spacing
+
+                # TODO: Linear Regression with all three points provides some different intel than the slope/intercept
+                #  you calculate in create_curve, but it will be super easy to display your statistics if we want to
+                #  instead
+
+                # linear regression with all three points
+                stats = {'r': [], 'slope': [], 'intercept': []}                                     # preallocate dict
+                for data in [co_data, co2_data, ch4_data]:
+                    x = np.array(data['x']).reshape((-1, 1))                                        # x data
+                    y = np.array(data['y'])                                                         # y data
+                    model = LinearRegression().fit(x, y)                                            # create model
+                    rSquared, intercept, slope = model.score(x, y), model.intercept_, model.coef_   # stats
+                    stats['r'].append(rSquared)                                                     # append to dict
+                    stats['slope'].append(slope[0])                                                 # slope is an array
+                    stats['intercept'].append(intercept)
+                stats = pd.DataFrame.from_dict(stats)                                               # convert to df
+
+                # seaborn plotting
+                ax1 = sns.regplot(x='x', y='y', data=co_data, ax=ax[0],
+                                  line_kws={'label': 'rSquared: {:1.5f}\n Slope: {:1.5f}\n Intercept: {:1.5f}\n'.format(
+                                      stats['r'][0], stats['slope'][0], stats['intercept'][0])})
+                ax2 = sns.regplot(x='x', y='y', data=co2_data, ax=ax[1],
+                                  line_kws={'label': 'rSquared: {:1.5f}\n Slope: {:1.5f}\n Intercept: {:1.5f}\n'.format(
+                                      stats['r'][1], stats['slope'][1], stats['intercept'][1])})
+                ax3 = sns.regplot(x='x', y='y', data=ch4_data, ax=ax[2],
+                                  line_kws={'label': 'rSquared: {:1.5f}\n Slope: {:1.5f}\n Intercept: {:1.5f}\n'.format(
+                                      stats['r'][2], stats['slope'][2], stats['intercept'][2])})
+                ax1.set_title('CO Master Calibration Event')                                            # titles
+                ax2.set_title('CO2 Master Calibration Event')
+                ax3.set_title('CH4 Master Calibration Event')
+                f.text(0.5, 0.04, 'Standard', fontsize=14, ha='center')                                 # global xlabel
+                f.text(0.04, 0.5, 'Calibration Event', fontsize=14, va='center', rotation='vertical')   # global ylabel
+                for plot in [ax1, ax2, ax3]:                                                            # loop over sub
+                    plot.set_ylabel('')                                                                 # Remove ylabel
+                    plot.set_xlabel('')                                                                 # remove xlabel
+                    plot.get_lines()[0].set_color('purple')                                             # line color
+                    plot.legend()
+                for plot, data in [(ax1, co_data), (ax2, co2_data), (ax3, ch4_data)]:                   # trim axes
+                    plot.set(xlim=((data['x'].iloc[0] - 10), (data['x'].iloc[-1] + 10)))
+                    plot.set(ylim=((data['y'].iloc[0] - 10), (data['y'].iloc[-1] + 10)))
+
+                # TODO: Not really sure where you would want these plots to go, i wanted to name them by id but i'm
+                #  not sure when/where the id gets decided, because right now it is None
+                f.savefig('plot_{}.png'.format(mc.id))
+
                 session.add(mc)
                 logger.info(f'MasterCal for {mc.subcals[0].date} created.')
 
