@@ -122,7 +122,7 @@ rSquare2, intercept2, slope2 = model2.score(x2, y2), model2.intercept_, model2.c
 ax5 = sns.regplot(x='EthaneResid', y='OzoneResid', data=ozoneFinal, ax=ax[1, 0],
                   line_kws={'label': 'rSquared: {:1.5f}\n Slope: {:1.5f}\n'.format(rSquare1, slope1[0])})
 ax5.set_title('Ethane Residuals v. Ozone Residuals')
-ax5.set_xlabel('Ethane Residuals [ppb]')
+ax5.set_xlabel('Ethane/Ch4 Ratio Residuals [ppb]')
 ax5.set_ylabel('Ozone Residuals [ppb]')
 ax5.set(xlim=(-.0004, .0006))
 ax5.set(ylim=(-25, 25))
@@ -135,7 +135,7 @@ print('Plot 3 Completed')
 ax6 = sns.regplot(x='AceResid', y='OzoneResid', data=ozoneFinal, ax=ax[1, 1],
                   line_kws={'label': 'rSquared: {:1.5f}\n Slope: {:1.5f}\n'.format(rSquare2, slope2[0])})
 ax6.set_title('Acetylene Residuals v. Ozone Residuals')
-ax6.set_xlabel('Acetylene Residuals [ppb]')
+ax6.set_xlabel('Acetylene/Ch4 Ratio Residuals [ppb]')
 ax6.set_ylabel('Ozone Residuals [ppb]')
 ax6.legend()
 ax6.get_lines()[0].set_color('red')
