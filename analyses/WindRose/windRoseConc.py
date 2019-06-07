@@ -7,8 +7,7 @@ with various atmospheric tracer concentrations
 
 # import libraries and functions
 import matplotlib.pyplot as plt
-from metTrim import metTrim
-import windrose as wr
+from WindRose.metTrim import metTrim
 import pandas as pd
 import numpy as np
 from numba import njit
@@ -100,21 +99,19 @@ def windRose():
 
     # ---- plotting
 
-    plt.figure(1)
-    ax = wr.WindroseAxes.from_ax()
-    ax.bar(metFinal['dir'].values, metFinal['eth'].values, normed=True, opening=0.9, edgecolor='black',
-           nsector=24, bins=14, cmap=cm.viridis_r, blowto=False)
-    ax.set_title('Summit Ethane Conc. Residual w/ Wind Direction')
-    ax.set_xlabel('Ethane Conc [ppb]')
-    ax.set_legend()
+    fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw=dict(projection='windrose'))
+    fig.suptitle('NMHC Conc. Residuals by Wind Direction', fontsize=16)
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.2, hspace=0)
 
-    plt.figure(2)
-    ax = wr.WindroseAxes.from_ax()
-    ax.bar(metFinal['dir'].values, metFinal['ace'].values, normed=True, opening=0.9, edgecolor='black',
-           nsector=24, bins=14, cmap=cm.viridis_r, blowto=False)
-    ax.set_title('Summit Ace Conc. Residual w/ Wind Direction')
-    ax.set_xlabel('Wind Speed in Meters per Second')
-    ax.set_legend()
+    ax1.bar(metFinal['dir'].values, metFinal['eth'].values, normed=True, opening=0.9, edgecolor='black',
+            nsector=24, bins=14, cmap=cm.viridis_r, blowto=False)
+    ax1.set_title('Summit Ethane Conc. Residual [ppb]')
+    ax1.set_legend(loc=6)
+
+    ax2.bar(metFinal['dir'].values, metFinal['ace'].values, normed=True, opening=0.9, edgecolor='black',
+            nsector=24, bins=5, cmap=cm.viridis_r, blowto=False)
+    ax2.set_title('Summit Ace Conc. Residual [ppb]')
+    ax2.set_legend(loc=7)
 
     plt.show()
 

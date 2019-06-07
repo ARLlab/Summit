@@ -7,7 +7,7 @@ cardinal direction.
 
 # import libaries and functions
 import matplotlib.pyplot as plt
-from metTrim import metTrim
+from WindRose.metTrim import metTrim
 import windrose as wr
 import matplotlib.cm as cm
 
