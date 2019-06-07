@@ -2,7 +2,7 @@
 Created on June 6th, 2019. This script imports surface met data from the Summit site and optimizes it for usage in
 seaborn plotting in the form of a well labeled pandas dataframe
 
-The ozone data used here is courtesy of NOAA ESRL GMD. See the citations below. ftp://ftp.cmdl.noaa.gov/met/sum/README
+The met data used here is courtesy of NOAA ESRL GMD. See the citations below. ftp://ftp.cmdl.noaa.gov/met/sum/README
 
 Mefford, T.K., M. Bieniulis, B. Halter, and J. Peterson,
 Meteorological Measurements, in CMDL Summary Report 1994 - 1995,
@@ -76,6 +76,7 @@ def metTrim():
     met = met.replace(-999.9, np.nan)                                                   # turn missing val to nan
     met = met.replace(-9, np.nan)
     met = met.replace(-999, np.nan)
+    met = met.replace(-99.9, np.nan)
     met = met.dropna(axis=0, how='any')                                                 # remove rows with nan vals
 
     # ---- convert date to dec datetime
@@ -89,7 +90,6 @@ def metTrim():
     met = met.drop(['yr', 'mo', 'dy', 'hr'], axis=1)                                    # drop old date columns
 
     return met
-
 
 if __name__ == '__main__':
     metTrim()
