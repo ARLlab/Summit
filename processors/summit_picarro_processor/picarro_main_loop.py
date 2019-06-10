@@ -259,7 +259,6 @@ async def create_mastercals(logger):
         import matplotlib.pyplot as plt
         import seaborn as sns
         import numpy as np
-        from sklearn.linear_model import LinearRegression
     except Exception as e:
         logger.error('ImportError occured in create_mastercals()')
         send_processor_email(PROC, exception=e)
@@ -299,41 +298,36 @@ async def create_mastercals(logger):
             for mc in mastercals:
                 # calculate curve from low - high point, and check middle distance
                 co_data, co2_data, ch4_data = mc.create_curve()
+                session.add(mc)
 
-                # TODO: I'm sure this may be more efficient with classes, but I was really struggling trying to figure
-                #  it out, hopefully its not too slow since there are rarely mastercals?
                 sns.set()                                                                       # seaborn plot setup
                 f, ax = plt.subplots(ncols=3, figsize=(12, 8))                                  # setup axes
                 sns.despine(f)                                                                  # remove right/top axes
                 plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.4,
                                     hspace=0.1)                                                 # adjust plot spacing
 
-                # TODO: Linear Regression with all three points provides some different intel than the slope/intercept
-                #  you calculate in create_curve, but it will be super easy to display your statistics if we want to
-                #  instead
+                # remove the middle point to create the regression line between low and high
+                co_data1 = co_data.drop(co_data.index[1], axis=0)
+                co2_data1 = co2_data.drop(co2_data.index[1], axis=0)
+                ch4_data1 = ch4_data.drop(ch4_data.index[1], axis=0)
 
-                # linear regression with all three points
-                stats = {'r': [], 'slope': [], 'intercept': []}                                     # preallocate dict
-                for data in [co_data, co2_data, ch4_data]:
-                    x = np.array(data['x']).reshape((-1, 1))                                        # x data
-                    y = np.array(data['y'])                                                         # y data
-                    model = LinearRegression().fit(x, y)                                            # create model
-                    rSquared, intercept, slope = model.score(x, y), model.intercept_, model.coef_   # stats
-                    stats['r'].append(rSquared)                                                     # append to dict
-                    stats['slope'].append(slope[0])                                                 # slope is an array
-                    stats['intercept'].append(intercept)
-                stats = pd.DataFrame.from_dict(stats)                                               # convert to df
+                # plot the regression lines & statistics table
+                ax1 = sns.regplot(x='x', y='y', data=co_data1, ax=ax[0],
+                                  line_kws={'label': ' Intercept: {:1.5f}\n Slope: {:1.5f}\n Mid Offset: {:1.5f}\n'
+                                  .format(mc.co_intercept, mc.co_slope, mc.co_middle_offset)})
+                ax2 = sns.regplot(x='x', y='y', data=co2_data1, ax=ax[1],
+                                  line_kws={'label': ' Intercept: {:1.5f}\n Slope: {:1.5f}\n Mid Offset: {:1.5f}\n'
+                                  .format(mc.co2_intercept, mc.co2_slope, mc.co2_middle_offset)})
+                ax3 = sns.regplot(x='x', y='y', data=ch4_data1, ax=ax[2],
+                                  line_kws={'label': ' Intercept: {:1.5f}\n Slope: {:1.5f}\n Mid Offset: {:1.5f}\n'
+                                  .format(mc.ch4_intercept, mc.ch4_slope, mc.ch4_middle_offset)})
 
-                # seaborn plotting
-                ax1 = sns.regplot(x='x', y='y', data=co_data, ax=ax[0],
-                                  line_kws={'label': 'rSquared: {:1.5f}\n Slope: {:1.5f}\n Intercept: {:1.5f}\n'.format(
-                                      stats['r'][0], stats['slope'][0], stats['intercept'][0])})
-                ax2 = sns.regplot(x='x', y='y', data=co2_data, ax=ax[1],
-                                  line_kws={'label': 'rSquared: {:1.5f}\n Slope: {:1.5f}\n Intercept: {:1.5f}\n'.format(
-                                      stats['r'][1], stats['slope'][1], stats['intercept'][1])})
-                ax3 = sns.regplot(x='x', y='y', data=ch4_data, ax=ax[2],
-                                  line_kws={'label': 'rSquared: {:1.5f}\n Slope: {:1.5f}\n Intercept: {:1.5f}\n'.format(
-                                      stats['r'][2], stats['slope'][2], stats['intercept'][2])})
+                # plot the three points
+                ax4 = sns.scatterplot(x='x', y='y', data=co_data, ax=ax[0], s=70)
+                ax5 = sns.scatterplot(x='x', y='y', data=co2_data, ax=ax[1], s=70)
+                ax6 = sns.scatterplot(x='x', y='y', data=ch4_data, ax=ax[2], s=70)
+
+                # plot details
                 ax1.set_title('CO Master Calibration Event')                                            # titles
                 ax2.set_title('CO2 Master Calibration Event')
                 ax3.set_title('CH4 Master Calibration Event')
@@ -348,11 +342,9 @@ async def create_mastercals(logger):
                     plot.set(xlim=((data['x'].iloc[0] - 10), (data['x'].iloc[-1] + 10)))
                     plot.set(ylim=((data['y'].iloc[0] - 10), (data['y'].iloc[-1] + 10)))
 
-                # TODO: Not really sure where you would want these plots to go, i wanted to name them by id but i'm
-                #  not sure when/where the id gets decided, because right now it is None
-                f.savefig('plot_{}.png'.format(mc.id))
+                # Save the figure with the ID name following it.
+                f.savefig('masterCal_{}.png'.format(mc.id))
 
-                session.add(mc)
                 logger.info(f'MasterCal for {mc.subcals[0].date} created.')
 
             session.commit()

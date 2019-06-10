@@ -256,12 +256,12 @@ class MasterCal(Base):
             cal_data['y'].extend((low_coord[1], mid_coord[1], high_coord[1]))
 
         cal_data = pd.DataFrame.from_dict(cal_data)                                         # convert to DF for sns plot
-        co_data = cal_data.iloc[:3]                                                         # seperate co, co2, and ch4
-        co2_data = cal_data.iloc[3:6]
-        ch4_data = cal_data.iloc[6:9]
+        co_data = cal_data.iloc[:3].reset_index()                                           # seperate co, co2, and ch4
+        co2_data = cal_data.iloc[3:6].reset_index()
+        ch4_data = cal_data.iloc[6:9].reset_index()
 
-        # TODO: For some reason sns plotting won't work in this class function, so must be done in the picarro
-        #  mastercal func. I don't think returning these values should mess up the database commits?
+        # TODO: For some reason sns plotting won't work inside the class function, so must be done in the picarro
+        #  mastercal func. I don't think returning these values should mess up anything?
         return co_data, co2_data, ch4_data
 
     @property
