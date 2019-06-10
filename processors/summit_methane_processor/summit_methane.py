@@ -145,12 +145,15 @@ class SampleCorrection(Base):
     __tablename__ = 'corrections'
 
     id = Column(Integer, primary_key=True)
+    pa = Column(Float)
     sample_num = Column(Integer)
 
     sample = relationship('Sample', uselist=False, back_populates='correction')
 
-    def __init__(self, sample_num, sample):
-        pass
+    def __init__(self, sample_num, pa, sample):
+        self.sample_num = sample_num
+        self.pa = pa
+        self.sample = sample
 
 
 class PaLine(Base):
