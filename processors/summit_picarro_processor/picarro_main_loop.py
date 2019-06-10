@@ -52,6 +52,9 @@ async def check_load_new_data(logger):
         from summit_core import connect_to_db, get_all_data_files, check_filesize
         from summit_picarro import Base, DataFile, Datum
         from sqlalchemy.orm.exc import MultipleResultsFound
+        from summit_errors import EmailTemplate, sender, processor_email_list
+
+        from pandas.errors import ParserError
     except ImportError as e:
         logger.error('ImportError occurred in check_load_new_data()')
         send_processor_email(PROC, exception=e)
@@ -103,9 +106,23 @@ async def check_load_new_data(logger):
                 logger.error(f'Exception {e.args} occurred while reading {file.name}')
                 send_processor_email(PROC, exception=e)
                 continue
+            except ParserError as e:
+                logger.error(f'Pandas ParserError occurred while reading {file.name}.')
+                try:
+                    df = pd.read_csv(file.path, delim_whitespace=True, error_bad_lines=False)
+                    EmailTemplate(sender, processor_email_list,
+                                  (f'The Picarro Processor failed to read file {file.name} '
+                                   + 'It was re-parsed, skipping unreadable lines, but should be'
+                                   + ' investigated.'),
+                                  subject='Picarro Data Read Email').send()
+                except Exception as e:
+                    logger.error(f'Exception {e.args} occurred in check_load_new_data() while reading a file.'
+                                 + f' The file was {file.name}')
+                    send_processor_email(PROC, exception=e)
+                    continue
             except Exception as e:
                 logger.error(f'Exception {e.args} occurred in check_load_new_data() while reading a file.'
-                             + f'The file was {file.name}')
+                             + f' The file was {file.name}')
                 send_processor_email(PROC, exception=e)
                 continue
 
