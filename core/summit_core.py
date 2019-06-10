@@ -523,7 +523,7 @@ async def move_log_files(logger):
 
     while True:
         try:
-            from summit_errors import send_processor_email
+            from summit_errors import send_processor_email, EmailTemplate, sender, processor_email_list
             from shutil import copy
         except ImportError as e:
             logger.error('ImportError occurred in move_log_files()')
@@ -556,7 +556,16 @@ async def move_log_files(logger):
 
                 for file in sync_files:
                     if file.name not in moved_data_files:
-                        copy(file.path, data_path)  # will overwrite
+                        try:
+                            copy(file.path, data_path)  # will overwrite
+                        except PermissionError:
+                            logger.error(f'File {file.name} could not be moved due to a permissions error.')
+                            EmailTemplate(sender, processor_email_list,
+                                          f'File {file.name} could not be moved due a permissions error.\n'
+                                          + 'Copying/pasting the file, deleting the old one, and renaming the file '
+                                          + 'to its old name should allow it to be processed.\n'
+                                          + 'This will require admin privelidges.').send()
+                            continue
                         file.path = data_path / file.name
                         file.location = 'data'
                         session.merge(file)
