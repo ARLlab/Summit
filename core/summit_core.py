@@ -284,6 +284,11 @@ def merge_lists(a, b):
         yield a
 
 
+def split_into_sets_of_n(lst, n):
+    for i in range(0, len(lst), n):
+        yield (lst[i:i + n])
+
+
 def search_for_attr_value(obj_list, attr, value):
     """
     Finds the first (not necesarilly the only) object in a list, where its
