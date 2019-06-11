@@ -140,7 +140,7 @@ async def check_load_new_data(logger):
 
                 send_processor_warning(PROC, 'DataFrame',
                                        (f'The Picarro Processor cut {diff} lines from a dataframe after reading it.\n'
-                                        + 'That file should be investigated and cleaned if necessary.'))
+                                        + f'{file.name} should be investigated and cleaned if necessary.'))
 
             # CO2 stays in ppm
             df['CO_sync'] *= 1000  # convert CO to ppb
