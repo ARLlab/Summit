@@ -951,23 +951,21 @@ async def check_new_logs(logger):
                 
         """
         # Query the VOC Database for the most recent logfile data
-        recentDate = pd.DataFrame(session                                                   # open session
-                                  .query(LogFile.date)                                      # gather date
-                                  .order_by(LogFile.date.desc())                            # order by desc
-                                  .first())                                                 # grab just the first value
-
-        failed = []  # failed var for later
+        recentDate = (session                                                   # open session
+                      .query(LogFile.date)                                      # gather date
+                      .order_by(LogFile.date.desc())                            # order by desc
+                      .first()[0])                                                 # grab just the first value
 
         # If the most recent date is greater than the last one, we query for all logs greater than it, save the date of
         # the last one, and then apply various actions to them
-        if ((recentDate[0] > logcheck_config.last_data_date).all()):
-            logfiles = pd.DataFrame(session
-                                    .query(LogFile.date)                                    # query DB for dates
-                                    .order_by(LogFile.date.desc())                          # order by desc
-                                    .filter(LogFile.date > logcheck_config.last_data_date)  # filter only new ones
-                                    .all())                                                 # get all of them
+        if recentDate > logcheck_config.last_data_date:
+            logfiles = (session
+                        .query(LogFile.date)                                    # query DB for dates
+                        .order_by(LogFile.date.desc())                          # order by desc
+                        .filter(LogFile.date > logcheck_config.last_data_date)  # filter only new ones
+                        .all())                                                 # get all of them
 
-            lastDate = logfiles.iloc[-1]                                                    # identify last log date
+            lastDate = logfiles[-1]                                                    # identify last log date
 
             paramBounds = ({                                                                # dictionary of parameters
                 'samplepressure1': (1.5, 2),
@@ -994,21 +992,20 @@ async def check_new_logs(logger):
             })
 
             # Loop through log parameters and identify files outside of acceptable limits
-            for name, limits in paramBounds.items():
-                # Find values below the low limit, or above the high limit
-                cond = (limits[0] > getattr(LogFile, name)) | (getattr(LogFile, name) > limits[1])
+            for log in logfiles:
+                failed = []  # failed var for later
+                for name, limits in paramBounds.items():
+                    # Find values below the low limit, or above the high limit
+                    paramVal = getattr(log, name)
+                    if not limits[0] <= paramVal <= limits[1]:
+                        # Identify the ID of those unacceptable values and append to preallocated list
+                        failed.append(name)
 
-                # Identify the ID of those unacceptable values and append to preallocated list
-                failedFiles = session.query(LogFile.filename).filter(cond).all()
-                failed.append(failedFiles)
-
-                # TODO: I couldn't implement / test this because I was missing \errors\processor_logs\summit_errors.log
-                # If there are unacceptable values, send an email
-                # if failed:
-                #   send_logparam_email(LogFile.filename, [failed])
+                if failed:
+                    send_logparam_email(log.filename, failed)
 
             # Update the date of logcheck_config so we don't check same values twice
-            logcheck_config.last_data_date = lastDate[0].to_pydatetime()
+            logcheck_config.last_data_date = lastDate
 
         # Merge, commit, close, and dispose of SQL Databases
         core_session.merge(logcheck_config)

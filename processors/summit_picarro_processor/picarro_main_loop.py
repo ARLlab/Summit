@@ -343,12 +343,11 @@ async def create_mastercals(logger):
                     plot.set(ylim=((data['y'].iloc[0] - 10), (data['y'].iloc[-1] + 10)))
 
                 # Save the figure with the ID name following it.
-                # TODO: For some reason the id isn't saved to the masterCal yet? does it have to be comitted first?
-                f.savefig('masterCal_{}.png'.format(mc.id))
+                session.commit()
+                f.savefig(f'masterCal_{mc.subcals[0].date.isoformat(" ")}.png')
 
                 logger.info(f'MasterCal for {mc.subcals[0].date} created.')
 
-            session.commit()
             return True
         else:
             logger.info('No MasterCals were created.')

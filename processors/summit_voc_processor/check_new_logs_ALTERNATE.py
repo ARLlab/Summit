@@ -79,6 +79,11 @@ if (recentDate[0] > logcheck_config.last_data_date).all():
                 'GCoventemp': (190, 210)
             })
 
+        # A=0; B=1
+        change = {'primary': (-35, -25), 'secondary': (20, 30)}
+        checking = {}
+        number = {0: 'A', 1: 'B'}
+
         # If Ads = 0, we switch adsA and adsB starting and ending temperatures
         elif file[index].WTinuse == 0 and file[index].adsTinuse == 0:
             a = [paramBounds['adsA_temp_start'], paramBounds['adsA_temp_end']]
@@ -118,19 +123,21 @@ if (recentDate[0] > logcheck_config.last_data_date).all():
             paramBounds['adsB_temp_end'] = a[1]
 
         # Loop through log parameters and identify files outside of acceptable limits
-        for name, limits in paramBounds.items():
-            # Find values below the low limit, or above the high limit
-            cond = (limits[0] >= getattr(LogFile, name)) | (getattr(LogFile, name) >= limits[1])
+        for log in logfiles:
+            failed = []  # failed var for later
+            for name, limits in paramBounds.items():
+                # Find values below the low limit, or above the high limit
+                paramVal = getattr(log, name)
+                if not limits[0] <= paramVal <= limits[1]:
+                    # Identify the ID of those unacceptable values and append to preallocated list
+                    failed.append(name)
 
-            # Identify the LogFile of those unacceptable values and append to preallocated list
-            # TODO: I think this may fail some incorrect LogFiles because it may not account for the if statements?
-            failedFiles = session.query(LogFile).filter(cond).all()
-            failed.append(failedFiles)
 
-            # TODO: I couldn't implement / test this because I was missing \errors\processor_logs\summit_errors.log
-            # If there are unacceptable values, send an email
-            # if failed:
-            #   send_logparam_email(LogFile.filename, [failed])
+            if failed:
+                send_logparam_email(log.filename, failed)
+
+        # Update the date of logcheck_config so we don't check same values twice
+        logcheck_config.last_data_date = lastDate
 
 # Update the date of logcheck_config so we don't check same values twice
 logcheck_config.last_data_date = lastDate
