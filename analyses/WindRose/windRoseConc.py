@@ -101,7 +101,7 @@ def windRose():
     # ---- plotting
     # setup subplots
     fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw=dict(projection='windrose'))                            #
-    fig.suptitle('NMHC Conc. Residuals by Wind Direction', fontsize=16)
+    fig.suptitle('NMHC Conc. Residuals at Summit by Wind Direction', fontsize=16)
     plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.2, hspace=0)
 
     # setup ethane windrose
