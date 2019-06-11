@@ -108,13 +108,14 @@ async def check_load_new_data(logger):
                 continue
             except ParserError as e:
                 logger.error(f'Pandas ParserError occurred while reading {file.name}.')
+                from summit_errors import send_processor_warning
                 try:
                     df = pd.read_csv(file.path, delim_whitespace=True, error_bad_lines=False)
-                    EmailTemplate(sender, processor_email_list,
-                                  (f'The Picarro Processor failed to read file {file.name} '
-                                   + 'It was re-parsed, skipping unreadable lines, but should be'
-                                   + ' investigated.'),
-                                  subject='Picarro Data Read Email').send()
+                    send_processor_warning(PROC, 'Dataframe',
+                                           (f'The Picarro Processor failed to read file {file.name} '
+                                            + 'It was re-parsed, skipping unreadable lines, but should be'
+                                            + ' investigated.'))
+
                 except Exception as e:
                     logger.error(f'Exception {e.args} occurred in check_load_new_data() while reading a file.'
                                  + f' The file was {file.name}')
@@ -125,6 +126,21 @@ async def check_load_new_data(logger):
                              + f' The file was {file.name}')
                 send_processor_email(PROC, exception=e)
                 continue
+
+            original_length = len(df)
+
+            df.dropna(axis=0, how='any', inplace=True)
+
+            new_length = len(df)
+            diff = original_length - new_length
+
+            if diff:
+                logger.warning(f'Dataframe contained {diff} null values in {file.name}.')
+                from summit_errors import send_processor_warning
+
+                send_processor_warning(PROC, 'DataFrame',
+                                       (f'The Picarro Processor cut {diff} lines from a dataframe after reading it.\n'
+                                        + 'That file should be investigated and cleaned if necessary.'))
 
             # CO2 stays in ppm
             df['CO_sync'] *= 1000  # convert CO to ppb
