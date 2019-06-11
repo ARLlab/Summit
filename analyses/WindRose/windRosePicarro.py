@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 from numba import njit
 import matplotlib.cm as cm
+import windrose
 
 
 @njit
@@ -51,7 +52,66 @@ def fastDateCombTwo(tolerence, date1, date2, value1, value2):
 def windRosePicarro():
     pass
 
-    # import data
+    # ---- import data
+    met = metTrim()
+    root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit\textFiles'
+
+    co = pd.read_csv(root + r'\picarro_co.txt', delim_whitespace=True)
+    co2 = pd.read_csv(root + r'\picarro_co2.txt', delim_whitespace=True)
+    co.columns, co2.columns = ['date', 'value'], ['date', 'value']
+
+    # ---- data adjustments
+    earlyVals = ~(met['DecYear'] <= co['date'][0])                                               # trim early vals
+    met = met[earlyVals]
+    met = met.reset_index()
+    met = met.drop(['index', 'spd', 'steady'], axis=1)                                              # drop cols
+
+    lateVals = ~(co['date'] >= met['DecYear'].iloc[-1])
+    co, co2 = co[lateVals], co2[lateVals]
+    co, co2 = co.reset_index(), co2.reset_index()
+
+    metCO = pd.concat([met, co], sort=False, axis=1)                                                # combine datasets
+    dates, direc, gc = fastDateCombTwo(1, metCO['DecYear'].values,                                  # call fast func
+                                       metCO['date'].values,
+                                       metCO['dir'].values,
+                                       metCO['value'].values)
+    metCO_Final = pd.DataFrame(columns=['DecYear', 'dir', 'value'])                                 # preallocate mat
+    metCO_Final['DecYear'], metCO_Final['dir'], metCO_Final['value'] = dates, direc, gc             # append columns
+
+    index = ~(metCO_Final <= 0)                                                                     # remove neg & zero
+    metCO_Final = metCO_Final[index]
+    metCO_Final = metCO_Final.dropna(axis=0, how='any')                                             # drop nan
+
+    metCO2 = pd.concat([met, co2], sort=False, axis=1)
+    dates, direc, gc = fastDateCombTwo(1, metCO2['DecYear'].values,
+                                       metCO2['date'].values,
+                                       metCO2['dir'].values,
+                                       metCO2['value'].values)
+    metCO2_Final = pd.DataFrame(columns=['DecYear', 'dir', 'value'])
+    metCO2_Final['DecYear'], metCO2_Final['dir'], metCO2_Final['value'] = dates, direc, gc
+
+    index = ~(metCO2_Final <= 0)
+    metCO2_Final = metCO2_Final[index]
+    metCO2_Final = metCO2_Final.dropna(axis=0, how='any')
+
+    # ---- plotting
+    fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw=dict(projection='windrose'))
+    fig.suptitle('CO & CO2 Conc. at Summit by Wind Direction', fontsize=16)
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.2, hspace=None)
+
+    # setup GC methane windrose
+    ax1.bar(metCO_Final['dir'].values, metCO_Final['value'].values, normed=False, opening=0.9,
+            edgecolor='black', nsector=24, bins=14, cmap=cm.viridis_r, blowto=False)
+    ax1.set_title('CO Conc. [ppb]')
+    ax1.set_legend(loc=6)
+
+    # setup picarro methane windrose
+    ax2.bar(metCO2_Final['dir'].values, metCO2_Final['value'].values, normed=False, opening=0.9,
+            edgecolor='black', nsector=24, bins=14, cmap=cm.viridis_r, blowto=False)
+    ax2.set_title('CO2 [ppm]')
+    ax2.set_legend(loc=7)
+
+    plt.show()
 
 
 if __name__ == '__main__':
