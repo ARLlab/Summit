@@ -3,6 +3,10 @@ Created on June 7th, 2019. The met data used here is courtesy of NOAA ESRL GMD. 
 a full citation can be found in the file 'metTrim.py'. This function creates a windrose plot of cardinal direction
 with with methane data from the GCFID and from the Picarro Analyzer
 
+This function uses raw methane data points and not the residuals from the NOAA GMD CCG Harmonic fitting tool. This is
+because the short timespan of the picarro data results in a poor harmonic fit. Reanalysis should be done once a strong
+seasonal cycle has been developed in the data.
+
 """
 
 # import libraries and functions
@@ -53,46 +57,75 @@ def windRoseMethane():
     pass
 
     # ---- import data
-    met = metTrim()
+    met = metTrim()                                                                             # met data
     root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit\textFiles'                      # root
 
-    arl = pd.read_csv(root + r'\methaneARL.txt', encoding='utf8', delim_whitespace=True)        # import data
-    colkeep = ['date', 'residuals']                                                             # col to keep
+    arl = pd.read_csv(root + r'\methaneARL.txt', encoding='utf8', delim_whitespace=True)        # GC methane data
+    pic = pd.read_csv(root + r'\picarro_ch4.txt', delim_whitespace=True, encoding='utf8')       # picarro ch4 data
+    pic.columns = ['date', 'value']
+    colkeep = ['date', 'value']                                                                 # col to keep
     arl = arl.drop(labels=(arl.columns[np.logical_and(arl.columns != colkeep[0],
                                                       arl.columns != colkeep[1])]),
-                   axis=1)                                                                      # drop all other cols
+               axis=1)                                                                      # drop all other cols
     arl = arl.dropna(axis=0, how='any')                                                         # goodbye nan values
 
-    # ---- combining datasets
+    # ---- combining datasets (met and GC)
     earlyVals = ~(met['DecYear'] <= arl['date'][0])                                             # early met vals
     met = met[earlyVals]                                                                        # remove those vals
     met = met.reset_index()                                                                     # reset index
     met = met.drop(['index', 'spd', 'steady'], axis=1)                                          # remove some columns
 
     metARL = pd.concat([met, arl], sort=False, axis=1)                                          # combine datasets
-    dates, direc, gc = fastDateCombTwo(1, metARL['DecYear'].values,                                # call fast func
+    dates, direc, gc = fastDateCombTwo(1, metARL['DecYear'].values,                             # call fast func
                                        metARL['date'].values,
                                        metARL['dir'].values,
-                                       metARL['residuals'].values)
-    metFinal = pd.DataFrame(columns=['DecYear', 'dir', 'gc_resid'])                # preallocate mat
-    metFinal['DecYear'], metFinal['dir'], metFinal['gc_resid'] = dates, direc, gc               # append columns
-
-    # metPicarro = pd.concat([met, picarroCH4], sort=False, axis=1)
+                                       metARL['value'].values)
+    metFinal = pd.DataFrame(columns=['DecYear', 'dir', 'value'])                                # preallocate mat
+    metFinal['DecYear'], metFinal['dir'], metFinal['value'] = dates, direc, gc                  # append columns
 
     index = ~(metFinal <= 0)                                                                    # remove neg & zero
     metFinal = metFinal[index]
     metFinal = metFinal.dropna(axis=0, how='any')                                               # drop nan
 
+    # ---- combining datasets (met and picarro)
+    earlyVals = ~(met['DecYear'] <= pic['date'][0])                                             # early date values
+    met = met[earlyVals]                                                                        # remove
+    met = met.reset_index()
+
+    lateVals = ~(pic['date'] >= met['DecYear'].iloc[-1] )                        # late date value
+    pic = pic[lateVals]                                                                         # removal
+    pic = pic.reset_index()
+
+    metPic = pd.concat([met, pic], sort=False, axis=1)
+    dates, direc, gc = fastDateCombTwo(1, metPic['DecYear'].values,                             # call fast func
+                                       metPic['date'].values,
+                                       metPic['dir'].values,
+                                       metPic['value'].values)
+
+    metFinal2 = pd.DataFrame(columns=['DecYear', 'dir', 'value'])                               # preallocate mat
+    metFinal2['DecYear'], metFinal2['dir'], metFinal2['value'] = dates, direc, gc               # append columns
+
+    index = ~(metFinal2 <= 0)                                                                   # remove neg & zero
+    metFinal2 = metFinal2[index]
+    metFinal2 = metFinal2.dropna(axis=0, how='any')                                             # drop nan
+    metFinal2 = metFinal2.reset_index()
+
     # ---- plotting
     fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw=dict(projection='windrose'))
-    fig.suptitle('Methane Conc. Residuals by Wind Direction', fontsize=16)
+    fig.suptitle('Methane Conc. at Summit by Wind Direction', fontsize=16)
     plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.2, hspace=None)
 
     # setup GC methane windrose
-    ax1.bar(metFinal['dir'].values, metFinal['gc_resid'].values, normed=False, opening=0.9,
+    ax1.bar(metFinal['dir'].values, metFinal['value'].values, normed=False, opening=0.9,
             edgecolor='black', nsector=24, bins=14, cmap=cm.viridis_r, blowto=False)
-    ax1.set_title('GCFID Methane Conc. Residual [ppb]')
+    ax1.set_title('GCFID Methane Conc. [ppb]')
     ax1.set_legend(loc=6)
+
+    # setup picarro methane windrose
+    ax2.bar(metFinal2['dir'].values, metFinal2['value'].values, normed=False, opening=0.9,
+            edgecolor='black', nsector=24, bins=14, cmap=cm.viridis_r, blowto=False)
+    ax2.set_title('Picarro Methane Conc. [ppb]')
+    ax2.set_legend(loc=7)
 
     plt.show()
 
