@@ -954,7 +954,7 @@ async def check_new_logs(logger):
         recentDate = (session                                                   # open session
                       .query(LogFile.date)                                      # gather date
                       .order_by(LogFile.date.desc())                            # order by desc
-                      .first()[0])                                                 # grab just the first value
+                      .first()[0])                                              # grab just the first value
 
         # If the most recent date is greater than the last one, we query for all logs greater than it, save the date of
         # the last one, and then apply various actions to them
@@ -965,9 +965,9 @@ async def check_new_logs(logger):
                         .filter(LogFile.date > logcheck_config.last_data_date)  # filter only new ones
                         .all())                                                 # get all of them
 
-            lastDate = logfiles[-1]                                                    # identify last log date
+            lastDate = logfiles[-1]                                             # identify last log date
 
-            paramBounds = ({                                                                # dictionary of parameters
+            paramBounds = ({                                                    # dictionary of parameters
                 'samplepressure1': (1.5, 2),
                 'samplepressure2': (7, 10),
                 'GCHeadP': (5, 7),

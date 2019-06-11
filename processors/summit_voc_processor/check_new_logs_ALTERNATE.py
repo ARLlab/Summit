@@ -30,24 +30,23 @@ if not logcheck_config:
     core_session.commit()
 
 # Query the VOC Database for the most recent logfile data
-recentDate = pd.DataFrame(session                                       # open session
-                          .query(LogFile.date)                          # hather date
-                          .order_by(LogFile.date.desc())                # order by desc
-                          .first())                                     # grab just the first value
+recentDate = (session                                                   # open session
+                      .query(LogFile.date)                                      # gather date
+                      .order_by(LogFile.date.desc())                            # order by desc
+                      .first()[0])                                              # grab just the first value
 
 failed = []                                                             # failed var for later
 
 # If the most recent date is greater than the last one, we query for all logs greater than it, save the date of the
 # last one, and then apply various actions to them
-if (recentDate[0] > logcheck_config.last_data_date).all():
-    logfiles = pd.DataFrame(session
-                            .query(LogFile)                                             # query DB for logfiles
-                            .order_by(LogFile.date.asc())                               # order by ascending
-                            .filter(LogFile.date > logcheck_config.last_data_date)      # filter only new ones
-                            .all())                                                     # get all of them
+if recentDate > logcheck_config.last_data_date:
+    logfiles = (session
+                .query(LogFile.date)  # query DB for dates
+                .order_by(LogFile.date.desc())  # order by desc
+                .filter(LogFile.date > logcheck_config.last_data_date)  # filter only new ones
+                .all())  # get all of them
 
-    lastfile = logfiles.iloc[-1]                                                        # get last logfile (newest date)
-    lastDate = lastfile[0].date                                                         # date of logfile
+    lastDate = logfiles[-1]  # identify last log date
 
     # Loop over logfiles to determine the H20 Trap and Ads Trap in use to define parameter bounds
     for index, file in logfiles.iteritems():
@@ -132,9 +131,8 @@ if (recentDate[0] > logcheck_config.last_data_date).all():
                     # Identify the ID of those unacceptable values and append to preallocated list
                     failed.append(name)
 
-
-            if failed:
-                send_logparam_email(log.filename, failed)
+            # if failed:
+            #     send_logparam_email(log.filename, failed)
 
         # Update the date of logcheck_config so we don't check same values twice
         logcheck_config.last_data_date = lastDate
