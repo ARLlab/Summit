@@ -12,6 +12,8 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime
 
 Base = declarative_base()
 
+PROC = 'Core'
+
 
 def find_project_dir(runpath):
     """
@@ -565,11 +567,12 @@ async def move_log_files(logger):
                             copy(file.path, data_path)  # will overwrite
                         except PermissionError:
                             logger.error(f'File {file.name} could not be moved due to a permissions error.')
-                            EmailTemplate(sender, processor_email_list,
-                                          f'File {file.name} could not be moved due a permissions error.\n'
-                                          + 'Copying/pasting the file, deleting the old one, and renaming the file '
-                                          + 'to its old name should allow it to be processed.\n'
-                                          + 'This will require admin privelidges.').send()
+                            from summit_errors import send_processor_warning
+                            send_processor_warning(PROC, 'PermissionError',
+                                                   f'File {file.name} could not be moved due a permissions error.\n'
+                                                   + 'Copying/pasting the file, deleting the old one, and renaming '
+                                                   + 'the file to its old name should allow it to be processed.\n'
+                                                   + 'This will require admin privelidges.')
                             continue
                         file.path = data_path / file.name
                         file.location = 'data'
@@ -582,12 +585,15 @@ async def move_log_files(logger):
                                 copy(file.path, data_path)  # will overwrite
                             except PermissionError:
                                 logger.error(f'File {file.name} could not be moved due to a permissions error.')
-                                EmailTemplate(sender, processor_email_list,
-                                              f'File {file.name} could not be moved due a permissions error.\n'
-                                              + 'Copying/pasting the file, deleting the old one, and renaming the file '
-                                              + 'to its old name should allow it to be processed.\n'
-                                              + 'This will require admin privelidges.').send()
+                                from summit_errors import send_processor_warning
+
+                                send_processor_warning(PROC, 'PermissionError',
+                                                       f'File {file.name} could not be moved due a permissions error.\n'
+                                                       + 'Copying/pasting the file, deleting the old one, and renaming '
+                                                       + 'the file to its old name should allow it to be processed.\n'
+                                                       + 'This will require admin privelidges.')
                                 continue
+
                             matched_file.size = check_filesize(matched_file.path)
                             session.merge(matched_file)
                             logger.info(f'File {matched_file.name} updated in data directory.')
