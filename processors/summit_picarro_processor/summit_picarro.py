@@ -231,8 +231,6 @@ class MasterCal(Base):
         middle value for QC.
         """
 
-        cal_data = {'x': [], 'y': []}                                                       # save data from for loop
-
         for cpd in ['co', 'co2', 'ch4']:
             low_val = getattr(self.low_std, cpd + '_result').get('mean')
             high_val = getattr(self.high_std, cpd + '_result').get('mean')
@@ -251,22 +249,9 @@ class MasterCal(Base):
             # so a positive offset means the actual measurement was above the curve; negative below
             setattr(self, cpd + '_middle_offset', middle_y_offset)
 
-            # call plotting function to save plot
-            mastercal_plot()
-
-            # Jashan's additions to create a plot
-            cal_data['x'].extend((low_coord[0], mid_coord[0], high_coord[0]))
-            cal_data['y'].extend((low_coord[1], mid_coord[1], high_coord[1]))
-
-
-        cal_data = pd.DataFrame.from_dict(cal_data)                                         # convert to DF for sns plot
-        co_data = cal_data.iloc[:3].reset_index()                                           # seperate co, co2, and ch4
-        co2_data = cal_data.iloc[3:6].reset_index()
-        ch4_data = cal_data.iloc[6:9].reset_index()
-
-        # TODO: For some reason sns plotting won't work inside the class function, so must be done in the picarro
-        #  mastercal func. I don't think returning these values should mess up anything?
-        return co_data, co2_data, ch4_data
+            # call plotting function to create plot, then save
+            date = self.subcals[0].date.isoformat(" ")
+            mastercal_plot(cpd, low_coord, mid_coord, high_coord, curve, middle_y_offset, date)
 
     @property
     def high_std(self):
@@ -469,5 +454,48 @@ def filter_postcal_data(cal, session):
 
     return
 
-def mastercal_plot():
-    pass
+
+def mastercal_plot(cpd, low_coord, mid_coord, high_coord, curve, middle_y_offset, date):
+    """
+    This function creates a plot for each master calibration event that displays a line between the low and high
+    standards as well as a table with statistics gathered in create_curve. It then saves the figure for display on
+    the daily website.
+    """
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    from summit_core import picarro_dir, TempDir
+
+    sns.set()                                                                               # seaborn plot setup
+    f, ax = plt.subplots(nrows=1)                                                           # setup subplot
+    sns.despine(f)                                                                          # remove right/top axes
+
+    # create dataframes required for plotting
+    calData = pd.DataFrame(columns=['x', 'y'])
+    calData['x'] = [low_coord[0], mid_coord[0], high_coord[0]]
+    calData['y'] = [low_coord[1], mid_coord[1], high_coord[1]]
+
+    calData1 = calData.drop(calData.index[1], axis=0)                                       # remove mid points for line
+
+    # plot the regression lines & statistics table
+    ax1 = sns.regplot(x='x', y='y', data=calData1, ax=ax[0],
+                      line_kws={'label': ' Intercept: {:1.5f}\n Slope: {:1.5f}\n Mid Offset: {:1.5f}\n'
+                      .format(curve.intercept, curve.m, middle_y_offset)})
+
+    # plot the three points
+    sns.scatterplot(x='x', y='y', data=calData, ax=ax[0], s=70)
+
+    # plot details
+    ax1.set_title(f'{cpd} Master Calibration Event')                                        # title
+    ax1.set_ylabel('Standard', fontsize=14)                                                 # ylabel
+    ax1.set_xlabel('Calibration Event', fontsize=14)                                        # xlabel
+    ax1.get_lines()[0].set_color('purple')                                                  # line color
+    ax1.legend()                                                                            # legend
+    ax1.set(xlim=((calData['x'].iloc[0] - 10), (calData['x'].iloc[-1] + 10)))
+    ax1.set(ylim=((calData['y'].iloc[0] - 10), (calData['y'].iloc[-1] + 10)))
+
+    # Save the figure by the low cal date
+    plotdir = picarro_dir / 'plots'
+    with TempDir(plotdir):
+        f.savefig(f'{cpd}_masterCal_{date}.png')
+

@@ -297,58 +297,12 @@ async def create_mastercals(logger):
         if mastercals:
             for mc in mastercals:
                 # calculate curve from low - high point, and check middle distance
-                co_data, co2_data, ch4_data = mc.create_curve()
+                mc.create_curve()
                 session.add(mc)
-
-                sns.set()                                                                       # seaborn plot setup
-                f, ax = plt.subplots(ncols=3, figsize=(12, 8))                                  # setup axes
-                sns.despine(f)                                                                  # remove right/top axes
-                plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.4,
-                                    hspace=0.1)                                                 # adjust plot spacing
-
-                # remove the middle point to create the regression line between low and high
-                co_data1 = co_data.drop(co_data.index[1], axis=0)
-                co2_data1 = co2_data.drop(co2_data.index[1], axis=0)
-                ch4_data1 = ch4_data.drop(ch4_data.index[1], axis=0)
-
-                # plot the regression lines & statistics table
-                ax1 = sns.regplot(x='x', y='y', data=co_data1, ax=ax[0],
-                                  line_kws={'label': ' Intercept: {:1.5f}\n Slope: {:1.5f}\n Mid Offset: {:1.5f}\n'
-                                  .format(mc.co_intercept, mc.co_slope, mc.co_middle_offset)})
-                ax2 = sns.regplot(x='x', y='y', data=co2_data1, ax=ax[1],
-                                  line_kws={'label': ' Intercept: {:1.5f}\n Slope: {:1.5f}\n Mid Offset: {:1.5f}\n'
-                                  .format(mc.co2_intercept, mc.co2_slope, mc.co2_middle_offset)})
-                ax3 = sns.regplot(x='x', y='y', data=ch4_data1, ax=ax[2],
-                                  line_kws={'label': ' Intercept: {:1.5f}\n Slope: {:1.5f}\n Mid Offset: {:1.5f}\n'
-                                  .format(mc.ch4_intercept, mc.ch4_slope, mc.ch4_middle_offset)})
-
-                # plot the three points
-                ax4 = sns.scatterplot(x='x', y='y', data=co_data, ax=ax[0], s=70)
-                ax5 = sns.scatterplot(x='x', y='y', data=co2_data, ax=ax[1], s=70)
-                ax6 = sns.scatterplot(x='x', y='y', data=ch4_data, ax=ax[2], s=70)
-
-                # plot details
-                ax1.set_title('CO Master Calibration Event')                                            # titles
-                ax2.set_title('CO2 Master Calibration Event')
-                ax3.set_title('CH4 Master Calibration Event')
-                f.text(0.5, 0.04, 'Standard', fontsize=14, ha='center')                                 # global xlabel
-                f.text(0.04, 0.5, 'Calibration Event', fontsize=14, va='center', rotation='vertical')   # global ylabel
-                for plot in [ax1, ax2, ax3]:                                                            # loop over sub
-                    plot.set_ylabel('')                                                                 # Remove ylabel
-                    plot.set_xlabel('')                                                                 # remove xlabel
-                    plot.get_lines()[0].set_color('purple')                                             # line color
-                    plot.legend()
-                for plot, data in [(ax1, co_data), (ax2, co2_data), (ax3, ch4_data)]:                   # trim axes
-                    plot.set(xlim=((data['x'].iloc[0] - 10), (data['x'].iloc[-1] + 10)))
-                    plot.set(ylim=((data['y'].iloc[0] - 10), (data['y'].iloc[-1] + 10)))
-
-                # Save the figure with the ID name following it.
-                session.commit()
-                f.savefig(f'masterCal_{mc.subcals[0].date.isoformat(" ")}.png')
-
                 logger.info(f'MasterCal for {mc.subcals[0].date} created.')
 
             return True
+
         else:
             logger.info('No MasterCals were created.')
             return False
