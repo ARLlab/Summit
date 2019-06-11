@@ -189,6 +189,10 @@ def send_processor_email(name, exception=None):
     template = ProccessorEmail(sender, name, exception=exception, trace=traceback.format_exc())
     template.send()
 
+def send_processor_warning(name, type, body):
+    EmailTemplate(sender, processor_email_list, body,
+                  subject=f'{name} {type} Warning').send()
+
 
 def send_logparam_email(invalid_parameters):
     """
