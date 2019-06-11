@@ -251,9 +251,13 @@ class MasterCal(Base):
             # so a positive offset means the actual measurement was above the curve; negative below
             setattr(self, cpd + '_middle_offset', middle_y_offset)
 
+            # call plotting function to save plot
+            mastercal_plot()
+
             # Jashan's additions to create a plot
             cal_data['x'].extend((low_coord[0], mid_coord[0], high_coord[0]))
             cal_data['y'].extend((low_coord[1], mid_coord[1], high_coord[1]))
+
 
         cal_data = pd.DataFrame.from_dict(cal_data)                                         # convert to DF for sns plot
         co_data = cal_data.iloc[:3].reset_index()                                           # seperate co, co2, and ch4
@@ -464,3 +468,6 @@ def filter_postcal_data(cal, session):
     session.commit()
 
     return
+
+def mastercal_plot():
+    pass

@@ -960,12 +960,12 @@ async def check_new_logs(logger):
         # the last one, and then apply various actions to them
         if recentDate > logcheck_config.last_data_date:
             logfiles = (session
-                        .query(LogFile.date)                                    # query DB for dates
-                        .order_by(LogFile.date.desc())                          # order by desc
+                        .query(LogFile)                                         # query DB for dates
+                        .order_by(LogFile.date)                                 # order by desc
                         .filter(LogFile.date > logcheck_config.last_data_date)  # filter only new ones
                         .all())                                                 # get all of them
 
-            lastDate = logfiles[-1]                                             # identify last log date
+            lastDate = logfiles[-1].date                                        # identify last log date
 
             paramBounds = ({                                                    # dictionary of parameters
                 'samplepressure1': (1.5, 2),
@@ -993,16 +993,14 @@ async def check_new_logs(logger):
 
             # Loop through log parameters and identify files outside of acceptable limits
             for log in logfiles:
-                failed = []  # failed var for later
+                failed = []                                                                     # failed var for later
                 for name, limits in paramBounds.items():
-                    # Find values below the low limit, or above the high limit
-                    paramVal = getattr(log, name)
-                    if not limits[0] <= paramVal <= limits[1]:
-                        # Identify the ID of those unacceptable values and append to preallocated list
-                        failed.append(name)
+                    paramVal = getattr(log, name)                                               # limit tuple
+                    if not limits[0] <= paramVal <= limits[1]:                                  # items outside of bound
+                        failed.append(name)                                                     # append failed name
 
                 if failed:
-                    send_logparam_email(log.filename, failed)
+                    send_logparam_email(log.filename, failed)                                   # send email
 
             # Update the date of logcheck_config so we don't check same values twice
             logcheck_config.last_data_date = lastDate

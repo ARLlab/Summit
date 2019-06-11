@@ -41,104 +41,97 @@ failed = []                                                             # failed
 # last one, and then apply various actions to them
 if recentDate > logcheck_config.last_data_date:
     logfiles = (session
-                .query(LogFile.date)  # query DB for dates
-                .order_by(LogFile.date.desc())  # order by desc
+                .query(LogFile)  # query DB for logfiles
+                .order_by(LogFile.date)  # order by desc
                 .filter(LogFile.date > logcheck_config.last_data_date)  # filter only new ones
                 .all())  # get all of them
 
-    lastDate = logfiles[-1]  # identify last log date
+    lastDate = logfiles[-1].date  # identify last log date
 
     # Loop over logfiles to determine the H20 Trap and Ads Trap in use to define parameter bounds
-    for index, file in logfiles.iteritems():
-        # TODO: I'm not sure if there's an easy way to make these different paramter bounds depending on the traps?
-        # TODO: Maybe with classes, but I'm still inexperience -- if there is a way can you show me?
-        # The default is WT = 0, Ads = 1
-        if file[index].WTinuse == 0 and file[index].adsTinuse == 1:
-            paramBounds = ({                                                            # dictionary of parameters
-                'samplepressure1': (1.5, 2),
-                'samplepressure2': (7, 10),
-                'GCHeadP': (5, 7),
-                'GCHeadP1': (9, 12),
-                'chamber_temp_start': (20, 28),
-                'WTA_temp_start': (-35, -25),
-                'WTB_temp_start': (20, 30),
-                'adsA_temp_start': (20, 30),
-                'adsB_temp_start': (-35, -25),
-                'chamber_temp_end': (20, 28),
-                'WTA_temp_end': (-35, -25),
-                'WTB_temp_end': (20, 30),
-                'adsA_temp_end': (20, 30),
-                'adsB_temp_end': (-35, -25),
-                'traptempFH': (-30, 0),
-                'GCstarttemp': (35, 45),
-                'traptempinject_end': (290, 310),
-                'traptempbakeout_end': (310, 330),
-                'WTA_hottemp': (75, 85),
-                'WTB_hottemp': (20, 30),
-                'GCoventemp': (190, 210)
-            })
+    # The default is WT = 0, Ads = 1
+    paramBounds = ({                                                            # dictionary of parameters
+        'samplepressure1': (1.5, 2),
+        'samplepressure2': (7, 10),
+        'GCHeadP': (5, 7),
+        'GCHeadP1': (9, 12),
+        'chamber_temp_start': (20, 28),
+        'WTA_temp_start': (-35, -25),
+        'WTB_temp_start': (20, 30),
+        'adsA_temp_start': (20, 30),
+        'adsB_temp_start': (-35, -25),
+        'chamber_temp_end': (20, 28),
+        'WTA_temp_end': (-35, -25),
+        'WTB_temp_end': (20, 30),
+        'adsA_temp_end': (20, 30),
+        'adsB_temp_end': (-35, -25),
+        'traptempFH': (-30, 0),
+        'GCstarttemp': (35, 45),
+        'traptempinject_end': (290, 310),
+        'traptempbakeout_end': (310, 330),
+        'WTA_hottemp': (75, 85),
+        'WTB_hottemp': (20, 30),
+        'GCoventemp': (190, 210)
+    })
 
-        # A=0; B=1
-        change = {'primary': (-35, -25), 'secondary': (20, 30)}
-        checking = {}
-        number = {0: 'A', 1: 'B'}
+    # A=0; B=1
+    change = {'primary': (-35, -25), 'secondary': (20, 30)}
+    checking = {}
+    number = {0: 'A', 1: 'B'}
 
-        # If Ads = 0, we switch adsA and adsB starting and ending temperatures
-        elif file[index].WTinuse == 0 and file[index].adsTinuse == 0:
-            a = [paramBounds['adsA_temp_start'], paramBounds['adsA_temp_end']]
-            b = [paramBounds['adsB_temp_start'], paramBounds['adsB_temp_end']]
+    # # If Ads = 0, we switch adsA and adsB starting and ending temperatures
+    # elif file[index].WTinuse == 0 and file[index].adsTinuse == 0:
+    #     a = [paramBounds['adsA_temp_start'], paramBounds['adsA_temp_end']]
+    #     b = [paramBounds['adsB_temp_start'], paramBounds['adsB_temp_end']]
+    #
+    #     paramBounds['adsA_temp_start'] = b[0]
+    #     paramBounds['adsB_temp_start'] = a[0]
+    #     paramBounds['adsA_temp_end'] = b[1]
+    #     paramBounds['adsB_temp_end'] = a[1]
+    #
+    # # If WT = 1, we switch WTA and WTB starting and ending temperatures
+    # elif file[index].WTinuse == 1 and file[index].adsTinuse == 1:
+    #     a = [paramBounds['WTA_temp_start'], paramBounds['WTA_temp_end']]
+    #     b = [paramBounds['WTB_temp_start'], paramBounds['WTB_temp_end']]
+    #
+    #     paramBounds['WTA_temp_start'] = b[0]
+    #     paramBounds['WTB_temp_start'] = a[0]
+    #     paramBounds['WTA_temp_end'] = b[1]
+    #     paramBounds['WTB_temp_end'] = a[1]
+    #
+    # # Last possibility is both are swapped from default
+    # else:
+    #     a = [paramBounds['WTA_temp_start'], paramBounds['WTA_temp_end']]
+    #     b = [paramBounds['WTB_temp_start'], paramBounds['WTB_temp_end']]
+    #
+    #     paramBounds['WTA_temp_start'] = b[0]
+    #     paramBounds['WTB_temp_start'] = a[0]
+    #     paramBounds['WTA_temp_end'] = b[1]
+    #     paramBounds['WTB_temp_end'] = a[1]
+    #
+    #     a = [paramBounds['adsA_temp_start'], paramBounds['adsA_temp_end']]
+    #     b = [paramBounds['adsB_temp_start'], paramBounds['adsB_temp_end']]
+    #
+    #     paramBounds['adsA_temp_start'] = b[0]
+    #     paramBounds['adsB_temp_start'] = a[0]
+    #     paramBounds['adsA_temp_end'] = b[1]
+    #     paramBounds['adsB_temp_end'] = a[1]
 
-            paramBounds['adsA_temp_start'] = b[0]
-            paramBounds['adsB_temp_start'] = a[0]
-            paramBounds['adsA_temp_end'] = b[1]
-            paramBounds['adsB_temp_end'] = a[1]
+    # Loop through log parameters and identify files outside of acceptable limits
+    for log in logfiles:
+        failed = []  # failed var for later
+        for name, limits in paramBounds.items():
+            # Find values below the low limit, or above the high limit
+            paramVal = getattr(log, name)
+            if not limits[0] <= paramVal <= limits[1]:
+                # Identify the ID of those unacceptable values and append to preallocated list
+                failed.append(name)
 
-        # If WT = 1, we switch WTA and WTB starting and ending temperatures
-        elif file[index].WTinuse == 1 and file[index].adsTinuse == 1:
-            a = [paramBounds['WTA_temp_start'], paramBounds['WTA_temp_end']]
-            b = [paramBounds['WTB_temp_start'], paramBounds['WTB_temp_end']]
+        # if failed:
+        #     send_logparam_email(log.filename, failed)
 
-            paramBounds['WTA_temp_start'] = b[0]
-            paramBounds['WTB_temp_start'] = a[0]
-            paramBounds['WTA_temp_end'] = b[1]
-            paramBounds['WTB_temp_end'] = a[1]
-
-        # Last possibility is both are swapped from default
-        else:
-            a = [paramBounds['WTA_temp_start'], paramBounds['WTA_temp_end']]
-            b = [paramBounds['WTB_temp_start'], paramBounds['WTB_temp_end']]
-
-            paramBounds['WTA_temp_start'] = b[0]
-            paramBounds['WTB_temp_start'] = a[0]
-            paramBounds['WTA_temp_end'] = b[1]
-            paramBounds['WTB_temp_end'] = a[1]
-
-            a = [paramBounds['adsA_temp_start'], paramBounds['adsA_temp_end']]
-            b = [paramBounds['adsB_temp_start'], paramBounds['adsB_temp_end']]
-
-            paramBounds['adsA_temp_start'] = b[0]
-            paramBounds['adsB_temp_start'] = a[0]
-            paramBounds['adsA_temp_end'] = b[1]
-            paramBounds['adsB_temp_end'] = a[1]
-
-        # Loop through log parameters and identify files outside of acceptable limits
-        for log in logfiles:
-            failed = []  # failed var for later
-            for name, limits in paramBounds.items():
-                # Find values below the low limit, or above the high limit
-                paramVal = getattr(log, name)
-                if not limits[0] <= paramVal <= limits[1]:
-                    # Identify the ID of those unacceptable values and append to preallocated list
-                    failed.append(name)
-
-            # if failed:
-            #     send_logparam_email(log.filename, failed)
-
-        # Update the date of logcheck_config so we don't check same values twice
-        logcheck_config.last_data_date = lastDate
-
-# Update the date of logcheck_config so we don't check same values twice
-logcheck_config.last_data_date = lastDate
+    # Update the date of logcheck_config so we don't check same values twice
+    logcheck_config.last_data_date = lastDate
 
 # Merge, commit, close, and dispose of SQL Databases
 core_session.merge(logcheck_config)
