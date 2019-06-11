@@ -578,7 +578,16 @@ async def move_log_files(logger):
                     else:
                         matched_file = search_for_attr_value(data_files, 'name', file.name)
                         if file.size > matched_file.size:
-                            copy(file.path, data_path)  # will overwrite
+                            try:
+                                copy(file.path, data_path)  # will overwrite
+                            except PermissionError:
+                                logger.error(f'File {file.name} could not be moved due to a permissions error.')
+                                EmailTemplate(sender, processor_email_list,
+                                              f'File {file.name} could not be moved due a permissions error.\n'
+                                              + 'Copying/pasting the file, deleting the old one, and renaming the file '
+                                              + 'to its old name should allow it to be processed.\n'
+                                              + 'This will require admin privelidges.').send()
+                                continue
                             matched_file.size = check_filesize(matched_file.path)
                             session.merge(matched_file)
                             logger.info(f'File {matched_file.name} updated in data directory.')
