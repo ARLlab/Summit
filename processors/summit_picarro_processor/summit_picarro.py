@@ -498,4 +498,5 @@ def mastercal_plot(cpd, low_coord, mid_coord, high_coord, curve, middle_y_offset
     plotdir = picarro_dir / 'plots'
     with TempDir(plotdir):
         f.savefig(f'{cpd}_masterCal_{date}.png', format='png')
+        f.close()
 
