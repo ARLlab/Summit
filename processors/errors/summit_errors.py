@@ -238,22 +238,35 @@ def send_processor_email(name, exception=None):
     template = ProccessorEmail(sender, name, exception=exception, trace=traceback.format_exc())
     template.send()
 
+
 def send_processor_warning(name, type, body):
+    """
+
+    :param name: string, the processor name
+    :param type: string, type of error to include in subject
+    :param body: string, the body of the email; usually contains instructions for checking/resolving the warning
+    :return:
+    """
     EmailTemplate(sender, processor_email_list, body,
                   subject=f'{name} {type} Warning').send()
 
 
-def send_logparam_email(invalid_parameters):
+def send_logparam_email(filename, invalid_parameters):
     """
     Wrapper on logparam emails to take a list of parameters and send a one-off email.
     :param invalid_parameters: list, of string parameters that failed their checks
     :return:
     """
-    template = LogParameterEmail(invalid_parameters)
+    template = LogParameterEmail(filename, invalid_parameters)
     template.send()
 
 
 def send_basic_w_attachement(directory):
+    """
+    Testing...
+    :param directory:
+    :return:
+    """
     import json
     userdata = json.loads(auth_file.read_text())
 
