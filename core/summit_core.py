@@ -280,13 +280,19 @@ def merge_lists(a, b):
     """
     it_a = iter(a)
     it_b = iter(b)
-    yield(next(it_a))
+    yield (next(it_a))
     for a, b in zip(it_a, it_b):
         yield b
         yield a
 
 
 def split_into_sets_of_n(lst, n):
+    """
+    Split a list into lists of length n
+    :param lst: list, a list of values to be split
+    :param n: int, number of items per set after split
+    :return: generator, lists of length n
+    """
     for i in range(0, len(lst), n):
         yield (lst[i:i + n])
 
@@ -308,7 +314,7 @@ def find_closest_date(date, list_of_dates, how='abs'):
     """
     This is a helper function that works on Python datetimes. It returns the closest date value, either absolutely,
     or closest without being above/below, and the timedelta from the provided date.
-    NOTE: Datetime differences must not exceed ~273K years for proper matching.
+
     :param date: datetime
     :param list_of_dates: list, of datetimes
     :param how: ['abs', 'pos','neg']
@@ -352,7 +358,6 @@ def create_daily_ticks(days_in_plot, minors_per_day=4):
     :return: date_limits, major_ticks, minor_ticks
     """
     from datetime import datetime
-    import datetime as dt
 
     date_limits = dict()
     date_limits['right'] = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + dt.timedelta(
@@ -413,8 +418,10 @@ async def send_files_sftp(filepaths, remote_path):
     """
     Send a list of files to the provided remote path.
     :param filepaths: list, of pathlib Path objects
+    :param remote_path: string, path on the remote server to send files to
     :return: list, of booleans of which plots uploaded sucessfully
     """
+
     bools = []
     try:
         con = connect_to_sftp()
@@ -443,7 +450,7 @@ async def check_send_plots(logger):
     """
     try:
         from summit_errors import send_processor_email
-    except ImportError as e:
+    except ImportError:
         logger.error('ImportError occurred in check_send_plots()')
         return False
 
@@ -488,6 +495,12 @@ async def check_send_plots(logger):
 
 
 class MovedFile(Base):
+    """
+    MovedFiles are used to track files that have been moved to the /data directory from their FTP directories.
+    The FTP directories are cleaned somewhat regularly, so they're not a good home for the permanent data files.
+
+    Filepaths are used to track and move them, and filesize is the sole determiner if a file is moved again.
+    """
     __tablename__ = 'files'
 
     id = Column(Integer, primary_key=True)
@@ -520,7 +533,7 @@ class MovedFile(Base):
 
 async def move_log_files(logger):
     """
-    Runs continuously and sleeps for five minutes at a time. Comb the directories for new data files and move any that
+    Runs continuously and sleeps for 10 minutes at a time. Comb the directories for new data files and move any that
     are new or have been updated. This WILL NOT handle turning over a new year in the daily files well, as they have no
     year in the filename. I can't fix that.
 
@@ -532,7 +545,7 @@ async def move_log_files(logger):
         try:
             from summit_errors import send_processor_email, EmailTemplate, sender, processor_email_list
             from shutil import copy
-        except ImportError as e:
+        except ImportError:
             logger.error('ImportError occurred in move_log_files()')
             return False
 
@@ -552,12 +565,12 @@ async def move_log_files(logger):
             data_types = ['methane', 'voc', 'daily', 'picarro']
             file_types = ['.txt', '.txt', '.txt', '.dat']
 
-            for sync_path, type, data_path, file_type in zip(sync_paths, data_types, data_paths, file_types):
-                sync_files = [MovedFile(path, type, 'sync', check_filesize(path))
+            for sync_path, type_, data_path, file_type in zip(sync_paths, data_types, data_paths, file_types):
+                sync_files = [MovedFile(path, type_, 'sync', check_filesize(path))
                               for path in get_all_data_files(sync_path, file_type)]
                 data_files = (session.query(MovedFile)
                               .filter(MovedFile.location == 'data')
-                              .filter(MovedFile.type == type)
+                              .filter(MovedFile.type == type_)
                               .all())
                 moved_data_files = [d.name for d in data_files]
 
