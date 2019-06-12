@@ -876,6 +876,14 @@ async def plot_logdata(logger):
 
 
 async def check_new_logs(logger):
+    """
+    This function checks new log files to see if each daily parameter is within a specified range. It will loop
+    through every parameter of the log file, and send a warning email with the names of parameters that failed for
+    any given log file.
+
+    :param logger: logger, for all logging
+    :return: Boolean, True if successful, False if an Exception is handled
+    """
 
     try:
         import datetime as dt
@@ -885,6 +893,7 @@ async def check_new_logs(logger):
         from summit_core import voc_dir, core_dir
         from summit_voc import LogFile
         from summit_errors import send_logparam_email
+        import pandas as pd
     except ImportError as e:
         logger.error(f'ImportError occurred in check_new_logs()')
         send_processor_email('Log Checking', exception=e)
@@ -916,39 +925,104 @@ async def check_new_logs(logger):
 
     try:
         logger.info('Running check_new_logs()')
-        """
-        All of your code will go in this main try block, except any imports you make above,
-            below is a fairly detailed outline of how you can go about it.
-            
-        query core database for the most recent logdata date (use order by date, descending, .first())
-                see examples of this in picarro_main_loop, plot_new_data() and most other plotting functions
-            if that date is greater than logcheck_config.last_data_date:
-                query database for logs greater than the logcheck_config.last_data_date (ORDER THEM BY DATE)
-                Somewhere, save the date of logfiles[-1] so you know what the last log date you processed was
-            
-            create an empty list to hold names of any parameters that failed their tests
-            loop through logs to check the parameters, such as logdata.GCHeadP1 for validity
-                - bug Jacques for a logfile with acceptable limits labeled for parameters he wants checked
-        
-            to loop through parameters in each log, make a dictionary like: 
-                ['GCHeadP1': (9, 11), 'GCoventemp': (195, 210), 'etc': (10,20)] where the dictionary key is the name
-                of the parameter in LogFile, and the value is the acceptable limits (as a tuple)
-                
-                Then, you can loop through: name, limits in dictionary.items(), where name is the parameter name limits
-                is the (low, high) acceptable limits.
-                
-                Then you can check that: limits[0] < getattr(LogFile, name) < limits[1] is True
-                    getattr(object, name_of_attribute) is a builtin function - look it up, it's magic...
-                    if not, append name to the empty list of parameters: this list will get passed to an error email
-                    
-            if [that list of parameters]:
-                send_logparam_email(logfile.filename, [that list of parameters])
-                # this will send an error email to the list given in summit_errors.py, listing what failed
-                
-            Once done with checking all the logs, update the date of logcheck_config so you don't re-check those later
-                core_session.merge(logcheck_config)  # to add your changes before comitting the core database below
-                
-        """
+
+        # Query the VOC Database for the most recent logfile data
+        recentDate = (session                                                   # open session
+                      .query(LogFile.date)                                      # gather date
+                      .order_by(LogFile.date.desc())                            # order by desc
+                      .first()[0])                                              # grab just the first value
+
+        # If the most recent date is greater than the last one, we query for all logs greater than it, save the date of
+        # the last one, and then apply various actions to them
+        if recentDate > logcheck_config.last_data_date:
+            logfiles = (session
+                        .query(LogFile)                                         # query DB for dates
+                        .order_by(LogFile.date)                                 # order by desc
+                        .filter(LogFile.date > logcheck_config.last_data_date)  # filter only new ones
+                        .all())                                                 # get all of them
+
+            lastDate = logfiles[-1].date                                        # identify last log date
+
+            """
+            A Note About Log Parameter Checks:
+
+            The "real" names of water trap and ads trap attributes are WTA_temp_start, adsB_temp_end etc, BUT the 
+            acceptable values for each depend on which trap is the active one. The active traps should cool to 
+            sub-zero temperatures, and the inactive traps should remain around ambient.
+
+            Because of this, the boundary parameters are listed as WT_primary_temp_start, ads_secondary_temp_end etc.
+            The attribute that should be retrieved from each logfile is then constructed by replacing _primary or 
+            _secondary in the boundary name with A or B depending on the active water and adsorbent traps. This allows:
+            getattr(logfile, log_name) to get the primary or secondary trap information and check that it's within 
+            limits. 
+            """
+            # set the parameter bounds as a dictionary
+            paramBounds = ({'samplepressure1': (1.5, 2.65),
+                            'samplepressure2': (6.5, 10),
+                            'GCHeadP': (5, 7.75),
+                            'GCHeadP1': (9, 13),
+                            'chamber_temp_start': (18, 30),
+                            'WT_primary_temp_start': (-35, -24),
+                            'WT_secondary_temp_start': (18, 35),
+                            'ads_secondary_temp_start': (18, 35),
+                            'ads_primary_temp_start': (-35, -24),
+                            'chamber_temp_end': (18, 30),
+                            'WT_primary_temp_end': (-35, -24),
+                            'WT_secondary_temp_end': (15, 35),
+                            'ads_secondary_temp_end': (15, 35),
+                            'ads_primary_temp_end': (-35, -24),
+                            'traptempFH': (-35, 0),
+                            'GCstarttemp': (35, 45),
+                            'traptempinject_end': (285, 310),
+                            'traptempbakeout_end': (310, 335),
+                            'WT_primary_hottemp': (75, 85),
+                            'WT_secondary_hottemp': (20, 35),
+                            'GCoventemp': (190, 210)})
+
+            # loop through log parameters and identify files outside of acceptable limits
+            for log in logfiles:                                                                # loop over each log
+
+                wt_primary = 'A' if log.WTinuse is 0 else 'B'                                   # identify primary and
+                ads_primary = 'A' if log.adsTinuse is 0 else 'B'                                # secondary WT/ads
+                wt_secondary = 'A' if wt_primary is 'B' else 'B'                                # depending on used
+                ads_secondary = 'A' if ads_primary is 'B' else 'B'
+
+                failed = []                                                                     # prealloc failed list
+
+                for name, limits in paramBounds.items():                                        # loop over param dict
+
+                    # replace primary and secondary with appropriate classification (A or B)
+                    if '_primary' in name or '_secondary' in name:
+                        if 'WT_' in name:
+                            log_name = name.replace('_primary', wt_primary).replace('_secondary', wt_secondary)
+                        elif 'ads_' in name:
+                            log_name = name.replace('_primary', ads_primary).replace('_secondary', ads_secondary)
+                        else:
+                            print("THIS CAN'T BE HAPPENING.")
+                            log_name = None
+                    # otherwise use the default parameter name
+                    else:
+                        log_name = name
+
+                    paramVal = getattr(log, log_name)                                           # limit tuple
+
+                    if not limits[0] <= paramVal <= limits[1]:                                  # items outside of bound
+                        failed.append(name)                                                     # append failed name
+
+                        # print log statement for error identification in addition to email
+                        if log_name != name:
+                            print(f'Log {log.filename} failed due to parameter {name}/{log_name}')
+                        else:
+                            print(f'Log {log.filename} failed due to parameter {name}')
+
+                if failed:
+                    send_logparam_email(log.filename, failed)                                   # send email with failed
+
+            # Update the date of logcheck_config so we don't check same values twice
+            logcheck_config.last_data_date = lastDate
+
+        # Merge, commit, close, and dispose of SQL Databases
+        core_session.merge(logcheck_config)
 
         core_session.commit()
         core_session.close()
@@ -956,6 +1030,7 @@ async def check_new_logs(logger):
 
         session.close()
         engine.dispose()
+
         return True
 
     except Exception as e:

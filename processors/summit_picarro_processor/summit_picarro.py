@@ -4,6 +4,8 @@ from datetime import datetime
 import statistics as s
 from collections import namedtuple
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.ext.declarative import declarative_base
@@ -225,9 +227,10 @@ class MasterCal(Base):
 
     def create_curve(self):
         """
-        Calculate a slope and intercept from the high/low values, and computer the y-difference from the curve to the
-        middle value for QC.
+        Calculate a slope and intercept from the high/low values, and compute the y-difference from the curve to the
+        middle value for QC. Additionally calls mastercal_plot to save a figure of the calibration line for each cpd.
         """
+
         for cpd in ['co', 'co2', 'ch4']:
             low_val = getattr(self.low_std, cpd + '_result').get('mean')
             high_val = getattr(self.high_std, cpd + '_result').get('mean')
@@ -245,6 +248,10 @@ class MasterCal(Base):
             # y offset is (actual y) - (expected y along the curve)
             # so a positive offset means the actual measurement was above the curve; negative below
             setattr(self, cpd + '_middle_offset', middle_y_offset)
+
+            # call plotting function to create plot, then save
+            date = self.subcals[0].date.strftime('%Y%m%d')
+            mastercal_plot(cpd, low_coord, mid_coord, high_coord, curve, middle_y_offset, date)
 
     @property
     def high_std(self):
@@ -446,3 +453,49 @@ def filter_postcal_data(cal, session):
     session.commit()
 
     return
+
+
+def mastercal_plot(cpd, low_coord, mid_coord, high_coord, curve, middle_y_offset, date):
+    """
+    This function creates a plot for each master calibration event that displays a line between the low and high
+    standards as well as a table with statistics gathered in create_curve. It then saves the figure for display on
+    the daily website.
+    """
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    from summit_core import picarro_dir, TempDir
+
+    # create dataframes required for plotting
+    calData = pd.DataFrame(columns=['x', 'y'])
+    calData['x'] = [low_coord[0], mid_coord[0], high_coord[0]]
+    calData['y'] = [low_coord[1], mid_coord[1], high_coord[1]]
+
+    calData1 = calData.drop(calData.index[1], axis=0)                                       # remove mid points for line
+
+    sns.set()  # seaborn plot setup
+    f, ax = plt.subplots(nrows=1)  # setup subplot
+    sns.despine(f)  # remove right/top axes
+
+    # plot the regression lines & statistics table
+    sns.regplot(x='x', y='y', data=calData1, ax=ax,
+                line_kws={'label': ' Intercept: {:1.5f}\n Slope: {:1.5f}\n Mid Offset: {:1.5f}\n'.format(
+                          curve.intercept, curve.m, middle_y_offset)})
+
+    # plot the three points
+    sns.scatterplot(x='x', y='y', data=calData, ax=ax, s=70)
+
+    # plot details
+    ax.set_title(f'{cpd} Master Calibration Event')                                        # title
+    ax.set_ylabel('Standard', fontsize=14)                                                 # ylabel
+    ax.set_xlabel('Calibration Event', fontsize=14)                                        # xlabel
+    ax.get_lines()[0].set_color('purple')                                                  # line color
+    ax.legend()                                                                            # legend
+    ax.set(xlim=((calData['x'].iloc[0] - 10), (calData['x'].iloc[-1] + 10)))
+    ax.set(ylim=((calData['y'].iloc[0] - 10), (calData['y'].iloc[-1] + 10)))
+
+    # Save the figure by the low cal date
+    plotdir = picarro_dir / 'plots'
+    with TempDir(plotdir):
+        f.savefig(f'{cpd}_masterCal_{date}.png', format='png')
+
