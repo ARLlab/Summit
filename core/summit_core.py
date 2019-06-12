@@ -606,7 +606,7 @@ async def move_log_files(logger):
             import gc
             gc.collect()
 
-            for i in range(10):
+            for i in range(20):
                 await asyncio.sleep(30)
 
         except Exception as e:
