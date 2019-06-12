@@ -43,8 +43,8 @@ Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
 test_list = ['brbl4762@colorado.edu']
 global_list = ['brbl4762@colorado.edu']
-processor_email_list = ['brbl4762@colorado.edu']
-instrument_email_list = ['brbl4762@colorado.edu', 'jashan.chopra@colorado.edu']
+processor_email_list = ['brbl4762@colorado.edu', 'jach4134@colorado.edu']
+instrument_email_list = ['brbl4762@colorado.edu', 'jach4134@colorado.edu']
 
 
 class Error():
@@ -190,7 +190,6 @@ class LogParameterEmail(EmailTemplate):
         body = (f'The following parameters were outside their limits:'
                 + f'{parameters}')
         super().__init__(sender, instrument_email_list, body, subject=subject)
-        pass
 
 
 def send_email(send_from, send_to, subject, body, user, passw, attach=None, server='smtp.gmail.com'):
@@ -254,6 +253,7 @@ def send_processor_warning(name, type, body):
 def send_logparam_email(filename, invalid_parameters):
     """
     Wrapper on logparam emails to take a list of parameters and send a one-off email.
+    :param filename: filename of the log 
     :param invalid_parameters: list, of string parameters that failed their checks
     :return:
     """

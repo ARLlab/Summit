@@ -289,6 +289,9 @@ async def create_mastercals(logger):
         from summit_core import picarro_dir as rundir
         from summit_core import connect_to_db
         from summit_picarro import MasterCal, CalEvent, match_cals_by_min
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        import numpy as np
     except Exception as e:
         logger.error('ImportError occured in create_mastercals()')
         send_processor_email(PROC, exception=e)
@@ -326,12 +329,14 @@ async def create_mastercals(logger):
 
         if mastercals:
             for mc in mastercals:
-                mc.create_curve()  # calculate curve from low - high point, and check middle distance
+                # calculate curve from low - high point, and check middle distance
+                mc.create_curve()
                 session.add(mc)
                 logger.info(f'MasterCal for {mc.subcals[0].date} created.')
 
             session.commit()
             return True
+
         else:
             logger.info('No MasterCals were created.')
             return False

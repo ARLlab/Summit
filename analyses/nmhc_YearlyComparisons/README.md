@@ -1,4 +1,4 @@
-## This folder contains analyses on the NHMC's across all years of data. 
+## [OUTDATED] This folder contains analyses on the NHMC's across all years of data. 
   The outputted plots express individual NMHC compounds over the span of a single year.
   Each plot has a seperate line for each year of data
   
