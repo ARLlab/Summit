@@ -228,7 +228,7 @@ class MasterCal(Base):
     def create_curve(self):
         """
         Calculate a slope and intercept from the high/low values, and compute the y-difference from the curve to the
-        middle value for QC.
+        middle value for QC. Additionally calls mastercal_plot to save a figure of the calibration line for each cpd.
         """
 
         for cpd in ['co', 'co2', 'ch4']:
@@ -250,7 +250,7 @@ class MasterCal(Base):
             setattr(self, cpd + '_middle_offset', middle_y_offset)
 
             # call plotting function to create plot, then save
-            date = self.subcals[0].date.isoformat(" ")
+            date = self.subcals[0].date.strftime('%Y%m%d')
             mastercal_plot(cpd, low_coord, mid_coord, high_coord, curve, middle_y_offset, date)
 
     @property
@@ -466,10 +466,6 @@ def mastercal_plot(cpd, low_coord, mid_coord, high_coord, curve, middle_y_offset
     import pandas as pd
     from summit_core import picarro_dir, TempDir
 
-    sns.set()                                                                               # seaborn plot setup
-    f, ax = plt.subplots(nrows=1)                                                           # setup subplot
-    sns.despine(f)                                                                          # remove right/top axes
-
     # create dataframes required for plotting
     calData = pd.DataFrame(columns=['x', 'y'])
     calData['x'] = [low_coord[0], mid_coord[0], high_coord[0]]
@@ -477,25 +473,29 @@ def mastercal_plot(cpd, low_coord, mid_coord, high_coord, curve, middle_y_offset
 
     calData1 = calData.drop(calData.index[1], axis=0)                                       # remove mid points for line
 
+    sns.set()  # seaborn plot setup
+    f, ax = plt.subplots(nrows=1)  # setup subplot
+    sns.despine(f)  # remove right/top axes
+
     # plot the regression lines & statistics table
-    ax1 = sns.regplot(x='x', y='y', data=calData1, ax=ax[0],
-                      line_kws={'label': ' Intercept: {:1.5f}\n Slope: {:1.5f}\n Mid Offset: {:1.5f}\n'
-                      .format(curve.intercept, curve.m, middle_y_offset)})
+    sns.regplot(x='x', y='y', data=calData1, ax=ax,
+                line_kws={'label': ' Intercept: {:1.5f}\n Slope: {:1.5f}\n Mid Offset: {:1.5f}\n'.format(
+                          curve.intercept, curve.m, middle_y_offset)})
 
     # plot the three points
-    sns.scatterplot(x='x', y='y', data=calData, ax=ax[0], s=70)
+    sns.scatterplot(x='x', y='y', data=calData, ax=ax, s=70)
 
     # plot details
-    ax1.set_title(f'{cpd} Master Calibration Event')                                        # title
-    ax1.set_ylabel('Standard', fontsize=14)                                                 # ylabel
-    ax1.set_xlabel('Calibration Event', fontsize=14)                                        # xlabel
-    ax1.get_lines()[0].set_color('purple')                                                  # line color
-    ax1.legend()                                                                            # legend
-    ax1.set(xlim=((calData['x'].iloc[0] - 10), (calData['x'].iloc[-1] + 10)))
-    ax1.set(ylim=((calData['y'].iloc[0] - 10), (calData['y'].iloc[-1] + 10)))
+    ax.set_title(f'{cpd} Master Calibration Event')                                        # title
+    ax.set_ylabel('Standard', fontsize=14)                                                 # ylabel
+    ax.set_xlabel('Calibration Event', fontsize=14)                                        # xlabel
+    ax.get_lines()[0].set_color('purple')                                                  # line color
+    ax.legend()                                                                            # legend
+    ax.set(xlim=((calData['x'].iloc[0] - 10), (calData['x'].iloc[-1] + 10)))
+    ax.set(ylim=((calData['y'].iloc[0] - 10), (calData['y'].iloc[-1] + 10)))
 
     # Save the figure by the low cal date
     plotdir = picarro_dir / 'plots'
     with TempDir(plotdir):
-        f.savefig(f'{cpd}_masterCal_{date}.png')
+        f.savefig(f'{cpd}_masterCal_{date}.png', format='png')
 
