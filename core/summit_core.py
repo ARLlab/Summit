@@ -12,6 +12,8 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime
 
 Base = declarative_base()
 
+PROC = 'Core'
+
 
 def find_project_dir(runpath):
     """
@@ -284,6 +286,11 @@ def merge_lists(a, b):
         yield a
 
 
+def split_into_sets_of_n(lst, n):
+    for i in range(0, len(lst), n):
+        yield (lst[i:i + n])
+
+
 def search_for_attr_value(obj_list, attr, value):
     """
     Finds the first (not necesarilly the only) object in a list, where its
@@ -523,7 +530,7 @@ async def move_log_files(logger):
 
     while True:
         try:
-            from summit_errors import send_processor_email
+            from summit_errors import send_processor_email, EmailTemplate, sender, processor_email_list
             from shutil import copy
         except ImportError as e:
             logger.error('ImportError occurred in move_log_files()')
@@ -556,7 +563,17 @@ async def move_log_files(logger):
 
                 for file in sync_files:
                     if file.name not in moved_data_files:
-                        copy(file.path, data_path)  # will overwrite
+                        try:
+                            copy(file.path, data_path)  # will overwrite
+                        except PermissionError:
+                            logger.error(f'File {file.name} could not be moved due to a permissions error.')
+                            from summit_errors import send_processor_warning
+                            send_processor_warning(PROC, 'PermissionError',
+                                                   f'File {file.name} could not be moved due a permissions error.\n'
+                                                   + 'Copying/pasting the file, deleting the old one, and renaming '
+                                                   + 'the file to its old name should allow it to be processed.\n'
+                                                   + 'This will require admin privelidges.')
+                            continue
                         file.path = data_path / file.name
                         file.location = 'data'
                         session.merge(file)
@@ -564,7 +581,19 @@ async def move_log_files(logger):
                     else:
                         matched_file = search_for_attr_value(data_files, 'name', file.name)
                         if file.size > matched_file.size:
-                            copy(file.path, data_path)  # will overwrite
+                            try:
+                                copy(file.path, data_path)  # will overwrite
+                            except PermissionError:
+                                logger.error(f'File {file.name} could not be moved due to a permissions error.')
+                                from summit_errors import send_processor_warning
+
+                                send_processor_warning(PROC, 'PermissionError',
+                                                       f'File {file.name} could not be moved due a permissions error.\n'
+                                                       + 'Copying/pasting the file, deleting the old one, and renaming '
+                                                       + 'the file to its old name should allow it to be processed.\n'
+                                                       + 'This will require admin privelidges.')
+                                continue
+
                             matched_file.size = check_filesize(matched_file.path)
                             session.merge(matched_file)
                             logger.info(f'File {matched_file.name} updated in data directory.')

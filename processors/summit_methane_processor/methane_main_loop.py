@@ -27,7 +27,7 @@ async def check_load_pa_log(logger):
 
     try:
         from summit_core import methane_LOG_path as pa_filepath
-        from summit_core import connect_to_db, check_filesize, core_dir, Config
+        from summit_core import connect_to_db, check_filesize, core_dir, Config, split_into_sets_of_n
         from summit_methane import Base, read_pa_line, PaLine
         from summit_core import methane_dir as rundir
         from pathlib import Path
@@ -88,9 +88,19 @@ async def check_load_pa_log(logger):
             return False
         else:
             ct = 0  # count committed logs
-            line_dates = [line.date for line in pa_lines]
-            dates_already_in_db = session.query(PaLine.date).filter(PaLine.date.in_(line_dates)).all()
-            dates_already_in_db[:] = [l.date for l in dates_already_in_db]
+            all_line_dates = [line.date for line in pa_lines]
+
+            # SQLite can't take in clauses with > 1000 variables, so chunk to sets of 500
+            if len(all_line_dates) > 500:
+                sets = split_into_sets_of_n(all_line_dates, 500)
+            else:
+                sets = [all_line_dates]
+
+            dates_already_in_db = []
+            for set in sets:
+                set_matches = session.query(PaLine.date).filter(PaLine.date.in_(set)).all()
+                set_matches[:] = [s.date for s in set_matches]
+                dates_already_in_db.extend(set_matches)
 
             for line in pa_lines:
                 if line.date not in dates_already_in_db:
@@ -257,7 +267,7 @@ async def match_peaks_to_samples(logger):
 
     try:
         from summit_core import methane_dir as rundir
-        from summit_core import connect_to_db
+        from summit_core import connect_to_db, split_into_sets_of_n
         from summit_methane import Peak, Sample, GcRun, Base, sample_rts
         from operator import attrgetter
         import datetime as dt
@@ -289,11 +299,7 @@ async def match_peaks_to_samples(logger):
         whole_set = list({s.run_id for s in unmatched_samples})
         # SQLite can't take in clauses with > 1000 variables, so chunk to sets of 500
         if len(whole_set) > 500:  # subdivide set
-            def split_set(lst, n):
-                for i in range(0, len(lst), n):
-                    yield (lst[i:i + n])
-
-            sets = split_set(whole_set, 500)
+            sets = split_into_sets_of_n(whole_set, 500)
         else:
             sets = [whole_set]
 
@@ -363,7 +369,7 @@ async def add_one_standard(logger):
 
         current_standard_dates = [S.date_st for S in session.query(Standard).all()]
 
-        my_only_standard = Standard('ws_2019', 2067.16, datetime(2019, 1, 1), datetime(2019, 6, 1))
+        my_only_standard = Standard('ws_2019', 2067.16, datetime(2019, 1, 1), datetime(2019, 12, 31))
 
         if my_only_standard.date_st not in current_standard_dates:
             session.merge(my_only_standard)

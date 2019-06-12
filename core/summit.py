@@ -65,7 +65,7 @@ async def main(logger):
             errors = await asyncio.create_task(check_existing_errors(logger, active_errors=errors))
 
         print('Sleeping...')
-        for i in range(20):
+        for i in range(40):
             await asyncio.sleep(30)
 
 
