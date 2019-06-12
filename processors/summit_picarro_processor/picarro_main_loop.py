@@ -334,6 +334,7 @@ async def create_mastercals(logger):
                 session.add(mc)
                 logger.info(f'MasterCal for {mc.subcals[0].date} created.')
 
+            session.commit()
             return True
 
         else:
