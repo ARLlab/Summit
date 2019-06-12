@@ -82,9 +82,8 @@ if __name__ == '__main__':
         send_processor_email('MAIN', exception=e)
         raise e
 
-    # Commented Off so I don't mess up the website at all in any way
     loop = asyncio.get_event_loop()
-    # loop.create_task(move_log_files(logger))
-    # loop.create_task(main(logger))
+    loop.create_task(move_log_files(logger))
+    loop.create_task(main(logger))
 
     loop.run_forever()

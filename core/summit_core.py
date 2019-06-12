@@ -23,7 +23,7 @@ def find_project_dir(runpath):
     """
     runpath = runpath.resolve()
 
-    if runpath.name == "J_Summit" or runpath.name == 'summit_master':
+    if runpath.name == "Summit" or runpath.name == 'summit_master':
         return runpath
     else:
         runpath = runpath / '..'
@@ -41,7 +41,7 @@ taylor_basepath = '/data/web/htdocs/instaar/groups/arl/res_parameters/summit_plo
 
 processor_dirs = [voc_dir, picarro_dir, methane_dir, error_dir, core_dir]
 
-data_file_paths = json.loads((core_dir / 'j_file_locations.json').read_text())
+data_file_paths = json.loads((core_dir / 'file_locations.json').read_text())
 
 for k, v in data_file_paths.items():
     data_file_paths[k] = Path(v)  # Pathify stored string paths
