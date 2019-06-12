@@ -25,8 +25,6 @@ import matplotlib.pyplot as plt
 nmhcData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.xlsx")
 methaneData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\Methane.xlsx")
 
-# TODO: Combine with new data from currently updated spreadsheets once corrections are made?
-
 # Cleaning Up Data
 nmhcData = nmhcData[nmhcData['DecYear'] > 2012]                             # Only need years past 2012 in VOC Data
 reqRows = ['DecYear', 'ethane', 'acetylene']                                # only need date, ethane, and acetylene
