@@ -1,3 +1,29 @@
+"""
+The Error module has several purposes ranging from tracking undesirable states that should trigger emails, to framing
+different types of warning and error emails that can be used as one-offs as exceptions are caught or need to be warned.
+
+The highest-complexity purpose of the module is to track undesirable states at runtime (like a lack of new data), and
+trigger emails if these states are active or the get resolved. This is done with Error objects.
+
+Errors are not database-persisted, and exist only during the runtime of the error module or submodules like
+check_for_new_data(). In short, an Error is triggered when some state isn't acceptable, ie there is not new data
+from a particular processor. When this occurs, an Error is given a string-reason, ie 'No New Data', a resolution
+function, and an email template.
+
+The email template is used to draft and send the email including the reason for the failure.
+    Only one email is sent when the error is activated. The Error then stays alive, until it's resolution function
+    is run and returns True for being resolved.
+
+The resolution function is (in most cases) a simple function that returns True if the error should be resolved, and
+    false if not. For instance, new_data_found() resolves if data greater than the date the Error was initiated with is
+    found in the database.
+
+Because resolution functions exist in the Error class once assigned, they need to be passed any necessary arguments
+    from the function, like new_data_found() requires the name of the processor, and the last date data was found.
+    If it checks the database and returns True for there being newer data, it triggers the error to resolve, which
+    will then send the resolution email.
+"""
+
 import json
 import time
 from datetime import datetime
@@ -22,6 +48,11 @@ instrument_email_list = ['brbl4762@colorado.edu', 'jashan.chopra@colorado.edu']
 
 
 class Error():
+    """
+    Errors are used to track peristent problems that arise, like a lack of new data. They are initiated, which sends
+    the original error email, then their resolution function is checked periodically, and once true will send a
+    resolution email, stating the error was resolved.
+    """
     id = 0
 
     def __init__(self, reason, resolution_function, email_template, expiration=None):
@@ -51,6 +82,11 @@ class Error():
 
 
 class EmailTemplate():
+    """
+    EmailTemplates allow for an email to be drafted but not sent. They can be used as one-offs to draft and send an
+    email once, or they can be given an initial and resoltion message, which will be send by an Error depending on the
+    Error's state.
+    """
 
     def __init__(self, send_from, send_to_list, body, resolution_body='',
                  subject=None, attachments=None, auth_file=auth_file):
@@ -85,6 +121,11 @@ class EmailTemplate():
 
 
 class ProccessorEmail(EmailTemplate):
+    """
+    A subclass of EmailTempltes, ProcessorEmails require only the sender and processor name to be sent.
+    The subject and body are composed with the processor name, and additional information given in an exception or
+    traceback.
+    """
 
     def __init__(self, send_from, processor_name, exception=None, trace='', attachments=()):
 
@@ -108,6 +149,10 @@ class ProccessorEmail(EmailTemplate):
 
 
 class NewDataEmail(EmailTemplate):
+    """
+    NewDataEmails subclass EmailTemplates and are specifically for being passed to Errors that are triggered when no new
+    data is found.
+    """
 
     def __init__(self, send_from, processor_name, last_data_time, attachments=()):
         subject = f'No New Data for Summit {processor_name[0].upper() + processor_name[1:]}'
@@ -135,6 +180,10 @@ class NewDataEmail(EmailTemplate):
 
 
 class LogParameterEmail(EmailTemplate):
+    """
+    LogParameterEmails are a convenient wrapped designed to be sent by the voc processor when log values exceed their
+    given limits.
+    """
 
     def __init__(self, logname, parameters):
         subject = f'LogParameter Error in {logname}'
