@@ -25,6 +25,28 @@ log_params_list = (['filename', 'sampletime', 'sampleflow1', 'sampleflow2',
                     'WTA_hottemp', 'WTB_hottemp', 'GCHeadP1', 'GCoventemp'])
 # does not include date on purpose because it's handled in GcRun
 
+log_parameter_bounds = ({'samplepressure1': (1.5, 2.65),
+                         'samplepressure2': (6.5, 10),
+                         'GCHeadP': (5, 7.75),
+                         'GCHeadP1': (9, 13),
+                         'chamber_temp_start': (18, 30),
+                         'WT_primary_temp_start': (-35, -24),
+                         'WT_secondary_temp_start': (18, 35),
+                         'ads_secondary_temp_start': (18, 35),
+                         'ads_primary_temp_start': (-35, -24),
+                         'chamber_temp_end': (18, 30),
+                         'WT_primary_temp_end': (-35, -24),
+                         'WT_secondary_temp_end': (15, 35),
+                         'ads_secondary_temp_end': (15, 35),
+                         'ads_primary_temp_end': (-35, -24),
+                         'traptempFH': (-35, 0),
+                         'GCstarttemp': (35, 45),
+                         'traptempinject_end': (285, 310),
+                         'traptempbakeout_end': (310, 335),
+                         'WT_primary_hottemp': (75, 85),
+                         'WT_secondary_hottemp': (20, 35),
+                         'GCoventemp': (190, 210)})  # acceptable limits for parameters that are checked
+
 gcrun_params_list = log_params_list + ['peaks', 'date_end', 'date_start', 'crfs', 'type']
 
 sample_types = {0: 'zero', 1: 'ba_standard', 2: 'bh_standard', 4: 'ambient', 6: 'trap_blank'}
