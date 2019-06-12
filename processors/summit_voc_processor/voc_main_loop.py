@@ -891,7 +891,7 @@ async def check_new_logs(logger):
         from datetime import datetime
         from summit_core import connect_to_db, TempDir, Config
         from summit_core import voc_dir, core_dir
-        from summit_voc import LogFile
+        from summit_voc import LogFile, log_parameter_bounds
         from summit_errors import send_logparam_email
         import pandas as pd
     except ImportError as e:
@@ -956,28 +956,6 @@ async def check_new_logs(logger):
             getattr(logfile, log_name) to get the primary or secondary trap information and check that it's within 
             limits. 
             """
-            # set the parameter bounds as a dictionary
-            paramBounds = ({'samplepressure1': (1.5, 2.65),
-                            'samplepressure2': (6.5, 10),
-                            'GCHeadP': (5, 7.75),
-                            'GCHeadP1': (9, 13),
-                            'chamber_temp_start': (18, 30),
-                            'WT_primary_temp_start': (-35, -24),
-                            'WT_secondary_temp_start': (18, 35),
-                            'ads_secondary_temp_start': (18, 35),
-                            'ads_primary_temp_start': (-35, -24),
-                            'chamber_temp_end': (18, 30),
-                            'WT_primary_temp_end': (-35, -24),
-                            'WT_secondary_temp_end': (15, 35),
-                            'ads_secondary_temp_end': (15, 35),
-                            'ads_primary_temp_end': (-35, -24),
-                            'traptempFH': (-35, 0),
-                            'GCstarttemp': (35, 45),
-                            'traptempinject_end': (285, 310),
-                            'traptempbakeout_end': (310, 335),
-                            'WT_primary_hottemp': (75, 85),
-                            'WT_secondary_hottemp': (20, 35),
-                            'GCoventemp': (190, 210)})
 
             # loop through log parameters and identify files outside of acceptable limits
             for log in logfiles:                                                                # loop over each log
@@ -989,7 +967,7 @@ async def check_new_logs(logger):
 
                 failed = []                                                                     # prealloc failed list
 
-                for name, limits in paramBounds.items():                                        # loop over param dict
+                for name, limits in log_parameter_bounds.items():                                        # loop over param dict
 
                     # replace primary and secondary with appropriate classification (A or B)
                     if '_primary' in name or '_secondary' in name:
@@ -998,22 +976,24 @@ async def check_new_logs(logger):
                         elif 'ads_' in name:
                             log_name = name.replace('_primary', ads_primary).replace('_secondary', ads_secondary)
                         else:
-                            print("THIS CAN'T BE HAPPENING.")
+                            logger.error("""THIS CAN'T BE HAPPENING. 
+                                            A parameter in the logs contains _primary or _secondary, but does not
+                                            contain WT_ or ads_""")
                             log_name = None
                     # otherwise use the default parameter name
                     else:
                         log_name = name
 
-                    paramVal = getattr(log, log_name)                                           # limit tuple
+                    log_value = getattr(log, log_name)                                           # limit tuple
 
-                    if not limits[0] <= paramVal <= limits[1]:                                  # items outside of bound
+                    if not limits[0] <= log_value <= limits[1]:                                  # items outside of bound
                         failed.append(name)                                                     # append failed name
 
                         # print log statement for error identification in addition to email
                         if log_name != name:
-                            print(f'Log {log.filename} failed due to parameter {name}/{log_name}')
+                            logger.warning(f'Log {log.filename} failed due to parameter {name}/{log_name}')
                         else:
-                            print(f'Log {log.filename} failed due to parameter {name}')
+                            logger.warning(f'Log {log.filename} failed due to parameter {name}')
 
                 if failed:
                     send_logparam_email(log.filename, failed)                                   # send email with failed
