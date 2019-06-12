@@ -6,12 +6,6 @@ This script is a general function for importting excel spreadsheets
 
 This code was written in Spyder via Anaconda Distribution [Python 3.7]
 
-Overall Project Goals:
-1) Times on the x axis should be written as day of the year instead of decimal
-2) Each plot should have a proper legend
-3) Remove outliers from the data sets
-4) [Maybe?] Put each compound graph in one larger subplot for trend comparison
-5) Modularize code to have an input / sort matrices file, and then a plotting file
 
 """
 def fileLoad(filename):

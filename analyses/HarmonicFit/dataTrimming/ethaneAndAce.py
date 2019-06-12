@@ -17,9 +17,9 @@ def ethaneAce():
     nmhcData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.xlsx")
 
     # Cleaning Up Data
-    nmhcData = nmhcData[nmhcData['DecYear'] > 2012]  # Only need years past 2012 in VOC Data
-    reqRows = ['DecYear', 'ethane', 'acetylene']  # only need date, ethane, and acetylene
-    nmhcData = nmhcData[reqRows]  # just get required rows
+    nmhcData = nmhcData[nmhcData['DecYear'] > 2012]             # Only need years past 2012 in VOC Data
+    reqRows = ['DecYear', 'ethane', 'acetylene']                # only need date, ethane, and acetylene
+    nmhcData = nmhcData[reqRows]                                # just get required rows
     nmhcData = nmhcData.dropna(axis=0, how='any')
 
     with open('ethaneOriginal.txt', 'w+') as f:
