@@ -666,13 +666,23 @@ async def dual_plot_methane(logger):
             .filter(Datum.mpv_position == 1)
             .order_by(Datum.date.desc())
             .first()[0])
-
-        newest_gc_data_point = (gc_session.query(GcRun.date)
-            .filter(GcRun.median != None)
-            .filter(GcRun.standard_rsd < .02)
-            .filter(GcRun.rsd < .02)
-            .order_by(GcRun.date.desc())
-            .first()[0])
+        try:
+            newest_gc_data_point = (gc_session.query(GcRun.date)
+                .filter(GcRun.median != None)
+                .filter(GcRun.standard_rsd < .02)
+                .filter(GcRun.rsd < .02)
+                .order_by(GcRun.date.desc())
+                .first()[0])
+        except TypeError:
+            logger.error('NoneType not subscriptable encountered due to lack of methane data to query.')
+            from summit_errors import send_processor_warning
+            send_processor_warning(PROC, 'Dual Plotter',
+                                   '''The Methane Dual Plotter could not query any GcRuns for methane data.\n
+                                   Check the database to make sure there are in fact GcRuns with medians and valid rsds.
+                                   \nThis often happens when the methane database is remade without re-setting 
+                                   the filesize and pa_startlie in the config table of Core database, 
+                                   thus no peaks are found.''')
+            return False
 
         newest_data_point = max(newest_picarro_data_point, newest_gc_data_point)
 
