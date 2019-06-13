@@ -33,6 +33,5 @@ def convToDatetime(year, decyear):
 
         # return the timedelta of the days added to start, remove the microseconds
         result = start + dt.timedelta(days=numdays)
-        result = result - dt.timedelta(microseconds=result.microseconds)
 
         return result
