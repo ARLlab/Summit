@@ -10,13 +10,16 @@ from fileInput import fileLoad
 import pandas as pd
 import datetime as dt
 from decToDatetime import convToDatetime
+from noaaDates import noaaDateConv
+import time
 
 
 def nmhc():
 
+    start = time.time()
     # import original data set and new datasets
     nmhcPrev = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.xlsx")
-    nmhc2018 = fileLoad(r'Z:\Data\Summit_GC\Summit_GC_2018\NMHC_results\Ambient_2018_V2.xlsx')
+    nmhc2018 = fileLoad(r'C:\Users\ARL\Desktop\Ambient_2018_V2.xlsx')
     nmhc2019 = fileLoad(r'C:\Users\ARL\Desktop\Summit_GC_2019\NMHC_results\Ambient_2019.xlsx')
 
     # identify the mixing ratio rows
@@ -39,6 +42,9 @@ def nmhc():
     nmhc2018.columns, nmhc2019.columns = list(nmhc2018.loc[0]), list(nmhc2019.loc[0])
     nmhc2018 = nmhc2018.drop([0, len(nmhc2018)-1], axis=0)
     nmhc2019 = nmhc2019.drop([0, len(nmhc2019)-1], axis=0)
+
+    end = time.time()
+    print('transposed in ', end - start)
 
     # create datetime column for each dataframe
     for yr in [nmhc2018, nmhc2019]:
@@ -68,31 +74,35 @@ def nmhc():
     badcols = ['DecYear', 'DOY', 'Ignore']
     nmhcPrev.drop(badcols, axis=1, inplace=True)
 
+    end = time.time()
+    print('datetimes created in ', end - start)
+
     # combine all datasets into one dataframe
     nmhcPrev = nmhcPrev[nmhcPrev['datetime'] < dt.datetime(2018, 1, 1)]                             # remove 2018
     nmhcPrev = nmhcPrev.append(nmhc2018)                                                            # add all 2018
     nmhcPrev = nmhcPrev.append(nmhc2019)                                                            # add all 2019
 
+    end = time.time()
+    print('datasets combined in ', end - start)
+
     # create textfiles for each NMHC
     compounds = ['ethane', 'ethene', 'propane', 'propene', 'i-butane', 'acetylene', 'n-butane', 'i-pentane',
-                'n-pentane', 'hexane', 'Benzene', 'Toluene']
+                 'n-pentane', 'hexane', 'Benzene', 'Toluene']
 
     for cpd in compounds:
         values = nmhcPrev[cpd]                                              # get the specfic cpd
         dates = nmhcPrev['datetime']                                        # get the specific datetimes
-        final = pd.concat([values, dates], axis=1)
+        final = pd.concat([dates, values], axis=1)
         final = final.dropna(axis=0, how='any')                             # drop the NANs
+        final = final[final['datetime'] > dt.datetime(2011, 1, 1)]         # remove pre2012 values because of gap
 
-        with open(f'{cpd}.txt', 'w+') as f:                                 # write to text file
-            for index, value in final.iterrows():
-                f.write('%f ' % value.datetime.year)
-                f.write('%f ' % value.datetime.month)
-                f.write('%f ' % value.datetime.day)
-                f.write('%f ' % value.datetime.hour)
-                f.write('%f ' % value.datetime.minute)
-                f.write('%f\n' % value[cpd])
+        final = noaaDateConv(final)                                         # conv date formats
+
+        final.to_csv(f'{cpd}.txt', header=None, index=None, sep=' ', mode='w+')
 
         print(f'{cpd} file written')
+
+    print('All Files Done')
 
 
 if __name__ == '__main__':
