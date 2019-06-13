@@ -278,12 +278,12 @@ def merge_lists(a, b):
     :param b: list, or other iterable
     :return: list, joined from a and b, such that the return is [a[0], b[0], a[1], b[1], ...]
     """
+    assert len(a) == len(b), "Lists of non-matching lengths cannot be merged."
     it_a = iter(a)
     it_b = iter(b)
-    yield (next(it_a))
     for a, b in zip(it_a, it_b):
-        yield b
         yield a
+        yield b
 
 
 def split_into_sets_of_n(lst, n):
