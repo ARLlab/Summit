@@ -67,7 +67,7 @@ sheet_slices = {
     'bh': {'start': 42, 'end': 57, 'diff': 44},
     'blank': {'start': 42, 'end': 57, 'diff': 43},
     'trapblank': {'start': 42, 'end': 57, 'diff': 42}
-}  # sheet indexes for pulling pas and rts
+}  # sheet indexes for pulling pas and rts from excel sheets
 
 compound_windows_1 = (
     {'ethane': (1.65, 1.85),  # compound retention windows for every named compound at Summit 'name':(low, high)
@@ -532,7 +532,6 @@ class Datum(Base):
                                    * 1000 * 1.5)
                         # formula is (pa / (CRF * ECN * SampleTime * SampleFlow1)) * 1000 *1.5
                         # 1000 * 1.5 normalizes to a sample volume of 2000s by convention
-
             return None
 
         else:
@@ -546,7 +545,6 @@ def find_crf(crfs, sample_date):
     :param sample_date: datetime, datetime of sample to be matched to a CRF
     :return: Crf object
     """
-
     return next((crf for crf in crfs if crf.date_start <= sample_date < crf.date_end), None)
 
 
@@ -640,11 +638,9 @@ def read_log_file(filename):
 
             else:
                 logger.warning(f'File {file.name} had an improper number of lines and was ignored.')
-                # print(f'File {file.name} had an improper number of lines and was ignored.')
                 return None
         except:
             logger.warning(f'File {file.name} failed to be processed and was ignored.')
-            # print(f'File {file.name} failed to be processed and was ignored.')
             return None
 
 
@@ -730,7 +726,7 @@ def match_log_to_pa(LogFiles, NmhcLines):
 
 def get_dates_peak_info(session, compound, info, date_start=None, date_end=None):
     """
-
+    Queries the database for peak.[pa, rt, or mr] and returns along with the dates. Optional date limits are possible.
     :param session: An active sqlalchemy session object
     :param compound: string, the compound to be retrieved
     :param info: string, the item from ['mr','pa', 'rt'] to be retrieved
@@ -821,11 +817,11 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
     This plots stuff.
 
     Example with all dates supplied:
-        plot_last_week((None, {'Ethane':[[date, date, date], [1, 2, 3]],
+        summit_plot((None, {'Ethane':[[date, date, date], [1, 2, 3]],
                                 'Propane':[[date, date, date], [.5, 1, 1.5]]}))
 
     Example with single date list supplied:
-        plot_last_week([date, date, date], {'ethane':[None, [1, 2, 3]],
+        summit_plot([date, date, date], {'ethane':[None, [1, 2, 3]],
                                 'propane':[None, [.5, 1, 1.5]]})
     """
 
@@ -895,6 +891,7 @@ def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_t
 def summit_log_plot(name, dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None,
                     y_label_str='Temperature (\xb0C)'):
     """
+    :param name: string, name to be saved with
     :param dates: list, of Python datetimes; if set, this applies to all compounds.
         If None, each compound supplies its own date values
     :param compound_dict: dict, {'compound_name':[dates, mrs]}
@@ -910,11 +907,11 @@ def summit_log_plot(name, dates, compound_dict, limits=None, minor_ticks=None, m
     This plots stuff.
 
     Example with all dates supplied:
-        plot_last_week((None, {'Ethane':[[date, date, date], [1, 2, 3]],
+        summit_plot((None, {'Ethane':[[date, date, date], [1, 2, 3]],
                                 'Propane':[[date, date, date], [.5, 1, 1.5]]}))
 
     Example with single date list supplied:
-        plot_last_week([date, date, date], {'ethane':[None, [1, 2, 3]],
+        summit_plot([date, date, date], {'ethane':[None, [1, 2, 3]],
                                 'propane':[None, [.5, 1, 1.5]]})
     """
 
@@ -1131,5 +1128,11 @@ def correction_from_df_column(col, logfiles, nmhc_lines, gc_runs, logger, sheetn
 
 
 def find_approximate_rt(peaklist, rt):
+    """
+    Find a peak with the closest retention time if it's within a tolerance.
+    :param peaklist: list, of Peaks
+    :param rt: float, retention time to match to
+    :return: Peak, the peak matching the retention time within the tolerance, if any
+    """
     peaklist = [peak for peak in peaklist if peak.rt]  # clean list for only those with RTs
     return next((peak for peak in peaklist if rt - .011 < peak.rt < rt + .011), None)
