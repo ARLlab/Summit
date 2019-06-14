@@ -6,12 +6,11 @@ Summit, updated with 2019 data.
 # import libraries and functions
 import pandas as pd
 import numpy as np
-from numba import njit
 import matplotlib.pyplot as plt
 import seaborn as sns
-from decToDatetime import convToDatetime
 import datetime as dt
 import calendar
+from pandas.plotting import register_matplotlib_converters
 
 
 def dateConv(arr):
@@ -33,12 +32,13 @@ def dateConv(arr):
     return datetimes
 
 
-compounds = ['ethane', 'ethene', 'pentane', 'pentene', 'i-pentane', 'acetylene', 'n-pentane', 'i-butane', 'n_butane',
+compounds = ['ethane', 'ethene', 'propane', 'propene', 'i_pentane', 'acetylene', 'n_pentane', 'i_butane', 'n_butane',
              'hexane', 'benzene', 'toulene']                                                # compound list
 
 root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit\textfiles'                      # data directory
 header = ['yr', 'value', 'function', 'resid']                                               # dataframe headers
 
+register_matplotlib_converters()
 for cpd in compounds:
     filename = root + '\\' + cpd + 'FIT.txt'                                                # file ext
     data = pd.read_csv(filename, delim_whitespace=True, header=None,                        # data read
@@ -57,8 +57,8 @@ for cpd in compounds:
     highV = max(data['value']) - (mean / 10)
 
     mean = np.mean(data['resid'].values)
-    lowR = min(data['resid']) - (mean / 10)
-    highR = max(data['resid']) - (mean / 10)
+    lowR = min(data['resid']) - (mean / 25)
+    highR = max(data['resid']) - (mean / 25)
 
     # plotting
     sns.set()                                                                               # setup
@@ -76,8 +76,9 @@ for cpd in compounds:
     ax1.set_title('GC ' + cpd + ' Data with Fitted Function')
     ax1.set_xlabel('Date')
     ax1.set_ylabel('Mixing Ratio [ppb]')
-    ax1.set(xlim=(2012, 2020))
+    ax1.set(xlim=(dt.datetime(2012, 1, 1), dt.datetime(2020, 1, 1)))
     ax1.set(ylim=(lowV, highV))
+    ax2.get_lines()[0].set_color('#a2d2df')
     ax1.legend()
 
     # residual data
@@ -87,8 +88,8 @@ for cpd in compounds:
     ax3.set_xlabel('Date')
     ax3.set_ylabel('Mixing Ratio [ppb]')
     ax3.legend()
-    ax3.set(xlim=(2012, 2020))
-    ax1.set(ylim=(lowR, highR))
+    ax3.set(xlim=(dt.datetime(2012, 1, 1), dt.datetime(2020, 1, 1)))
+    ax3.set(ylim=(lowR, highR))
 
     # save the plots
     direc = r'C:\Users\ARL\Desktop\J_Summit\analyses\Figures' + '\\' + cpd + '.png'
