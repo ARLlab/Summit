@@ -995,7 +995,7 @@ async def check_new_logs(logger):
                             logger.warning(f'Log {log.filename} failed due to parameter {name}')
 
                 if failed:
-                    send_logparam_email(log.filename, failed)                                   # send email with failed
+                    send_logparam_email(log, failed)                                   # send email with failed
 
             # Update the date of logcheck_config so we don't check same values twice
             logcheck_config.last_data_date = lastDate
