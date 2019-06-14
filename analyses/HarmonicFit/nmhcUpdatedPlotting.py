@@ -7,13 +7,30 @@ Summit, updated with 2019 data.
 import pandas as pd
 import numpy as np
 from numba import njit
-import numba as nb
 import matplotlib.pyplot as plt
 import seaborn as sns
 from decToDatetime import convToDatetime
 import datetime as dt
+import calendar
 
 
+def dateConv(arr):
+    """
+    An approach to convert decyear values into datetime values with numpy vectorization to improve efficiency
+
+    :param arr: a numpy array of decyear values
+    :return: a numpy array of datetime values
+    """
+    datetimes = []
+    for i in range(len(arr)):
+
+        year = int(arr[i])                                                  # get the year
+        start = dt.datetime(year - 1, 12, 31)                               # create starting datetime
+        numdays = (arr[i] - year) * (365 + calendar.isleap(year))           # calc number of days to current date
+        result = start + dt.timedelta(days=numdays)                         # add timedelta of those days
+        datetimes.append(result)                                            # append results
+
+    return datetimes
 
 
 compounds = ['ethane', 'ethene', 'pentane', 'pentene', 'i-pentane', 'acetylene', 'n-pentane', 'i-butane', 'n_butane',
@@ -28,13 +45,20 @@ for cpd in compounds:
                        encoding='utf8', error_bad_lines=False)
     data.columns = header                                                                   # reset column names
 
-    datetime = []
-    for x in np.nditer(data['yr'].values):                                                  # conv decyear to datetime
-        datetime.append(convToDatetime(0, x))
-    data['datetime'] = datetime                                                             # assign to DF
-    data.drop('yr', axis=1, inplace=True)                                                   # drop old column
+    dates = dateConv(data['yr'].values)                                                     # call conv function
+    data['datetime'] = dates                                                                # assign to DF
+    data.drop('yr', axis=1, inplace=True)
 
     # trim outliers
+
+    # y bounds
+    mean = np.mean(data['value'].values)
+    lowV = min(data['value']) - (mean / 10)
+    highV = max(data['value']) - (mean / 10)
+
+    mean = np.mean(data['resid'].values)
+    lowR = min(data['resid']) - (mean / 10)
+    highR = max(data['resid']) - (mean / 10)
 
     # plotting
     sns.set()                                                                               # setup
@@ -52,6 +76,8 @@ for cpd in compounds:
     ax1.set_title('GC ' + cpd + ' Data with Fitted Function')
     ax1.set_xlabel('Date')
     ax1.set_ylabel('Mixing Ratio [ppb]')
+    ax1.set(xlim=(2012, 2020))
+    ax1.set(ylim=(lowV, highV))
     ax1.legend()
 
     # residual data
@@ -61,6 +87,8 @@ for cpd in compounds:
     ax3.set_xlabel('Date')
     ax3.set_ylabel('Mixing Ratio [ppb]')
     ax3.legend()
+    ax3.set(xlim=(2012, 2020))
+    ax1.set(ylim=(lowR, highR))
 
     # save the plots
     direc = r'C:\Users\ARL\Desktop\J_Summit\analyses\Figures' + '\\' + cpd + '.png'
