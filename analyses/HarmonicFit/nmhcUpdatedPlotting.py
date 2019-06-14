@@ -11,6 +11,7 @@ import seaborn as sns
 import datetime as dt
 import calendar
 from pandas.plotting import register_matplotlib_converters
+from scipy import stats
 
 
 def dateConv(arr):
@@ -49,16 +50,25 @@ for cpd in compounds:
     data['datetime'] = dates                                                                # assign to DF
     data.drop('yr', axis=1, inplace=True)
 
-    # trim outliers
+    # trim a few extreme outliers
+    values = data['value'].values                                                           # get the value col
+    z = np.abs(stats.zscore(values))                                                        # get the z score
+    thresh = 2                                                                              # > 3 std devs
+    data = data[~(z > thresh)]                                                              # boolean index
+
+    resids = data['resid'].values                                                           # same thing but trim resid
+    z = np.abs(stats.zscore(resids))
+    thresh = 5
+    data = data[~(z > thresh)]
 
     # y bounds
-    mean = np.mean(data['value'].values)
-    lowV = min(data['value']) - (mean / 10)
-    highV = max(data['value']) - (mean / 10)
+    mean = np.mean(values)
+    lowV = min(data['value']) - (mean / 5)                                                 # arbitrary vals look ok
+    highV = max(data['value']) + (mean / 5)
 
     mean = np.mean(data['resid'].values)
-    lowR = min(data['resid']) - (mean / 25)
-    highR = max(data['resid']) - (mean / 25)
+    lowR = min(data['resid']) - (mean / 5)
+    highR = max(data['resid']) + (mean / 5)
 
     # plotting
     sns.set()                                                                               # setup
@@ -76,9 +86,9 @@ for cpd in compounds:
     ax1.set_title('GC ' + cpd + ' Data with Fitted Function')
     ax1.set_xlabel('Date')
     ax1.set_ylabel('Mixing Ratio [ppb]')
-    ax1.set(xlim=(dt.datetime(2012, 1, 1), dt.datetime(2020, 1, 1)))
+    ax1.set(xlim=(min(data['datetime']), dt.datetime(2020, 1, 1)))
     ax1.set(ylim=(lowV, highV))
-    ax2.get_lines()[0].set_color('#a2d2df')
+    ax1.get_lines()[0].set_color('#00b386')
     ax1.legend()
 
     # residual data
@@ -88,7 +98,7 @@ for cpd in compounds:
     ax3.set_xlabel('Date')
     ax3.set_ylabel('Mixing Ratio [ppb]')
     ax3.legend()
-    ax3.set(xlim=(dt.datetime(2012, 1, 1), dt.datetime(2020, 1, 1)))
+    ax3.set(xlim=(min(data['datetime']), dt.datetime(2020, 1, 1)))
     ax3.set(ylim=(lowR, highR))
 
     # save the plots
