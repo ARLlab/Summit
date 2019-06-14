@@ -44,7 +44,7 @@ Base = declarative_base()  # needed to subclass for sqlalchemy objects
 test_list = ['brbl4762@colorado.edu']
 global_list = ['brbl4762@colorado.edu']
 processor_email_list = ['brbl4762@colorado.edu', 'jach4134@colorado.edu']
-instrument_email_list = ['brbl4762@colorado.edu', 'jach4134@colorado.edu']
+instrument_email_list = ['brbl4762@colorado.edu']
 
 
 class Error():
@@ -181,14 +181,20 @@ class NewDataEmail(EmailTemplate):
 
 class LogParameterEmail(EmailTemplate):
     """
-    LogParameterEmails are a convenient wrapped designed to be sent by the voc processor when log values exceed their
+    LogParameterEmails are a convenient subclass designed to be sent by the voc processor when log values exceed their
     given limits.
     """
 
-    def __init__(self, logname, parameters):
-        subject = f'LogParameter Error in {logname}'
-        body = (f'The following parameters were outside their limits:'
-                + f'{parameters}')
+    def __init__(self, log, parameters):
+        from summit_voc import log_parameter_bounds
+        subject = f'LogParameter Error in {log.filename}'
+        body = f'The following parameters were outside their limits:\n'
+
+        for parameter in parameters:
+            limits = log_parameter_bounds.get(parameter)
+            log_value = getattr(log, parameter)
+            body = body + f'{parameter}:{log_value} was outside limits of {limits}\n'
+
         super().__init__(sender, instrument_email_list, body, subject=subject)
 
 
@@ -250,14 +256,14 @@ def send_processor_warning(name, type, body):
                   subject=f'{name} {type} Warning').send()
 
 
-def send_logparam_email(filename, invalid_parameters):
+def send_logparam_email(logfile, invalid_parameters):
     """
     Wrapper on logparam emails to take a list of parameters and send a one-off email.
     :param filename: filename of the log 
     :param invalid_parameters: list, of string parameters that failed their checks
     :return:
     """
-    template = LogParameterEmail(filename, invalid_parameters)
+    template = LogParameterEmail(logfile, invalid_parameters)
     template.send()
 
 
