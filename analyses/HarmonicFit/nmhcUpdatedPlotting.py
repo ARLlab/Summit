@@ -70,9 +70,13 @@ for cpd in compounds:
     lowR = min(data['resid']) - (mean / 5)
     highR = max(data['resid']) + (mean / 5)
 
+    # x bounds
+    low = min(data['datetime']) - dt.timedelta(days=30)
+    high = max(data['datetime']) + dt.timedelta(days=30)
+
     # plotting
     sns.set()                                                                               # setup
-    f, ax = plt.subplots(ncols=2, figsize=(12, 8))                                          # 2 column subplot
+    f, ax = plt.subplots(nrows=2, figsize=(12, 8))                                          # 2 column subplot
     sns.despine(f)
     plt.subplots_adjust(left=None, bottom=None, right=None,
                         top=None, wspace=0.3, hspace=0.5)
@@ -86,7 +90,7 @@ for cpd in compounds:
     ax1.set_title('GC ' + cpd + ' Data with Fitted Function')
     ax1.set_xlabel('Date')
     ax1.set_ylabel('Mixing Ratio [ppb]')
-    ax1.set(xlim=(min(data['datetime']), dt.datetime(2020, 1, 1)))
+    ax1.set(xlim=(low, high))
     ax1.set(ylim=(lowV, highV))
     ax1.get_lines()[0].set_color('#00b386')
     ax1.legend()
@@ -98,7 +102,7 @@ for cpd in compounds:
     ax3.set_xlabel('Date')
     ax3.set_ylabel('Mixing Ratio [ppb]')
     ax3.legend()
-    ax3.set(xlim=(min(data['datetime']), dt.datetime(2020, 1, 1)))
+    ax3.set(xlim=(low, high))
     ax3.set(ylim=(lowR, highR))
 
     # save the plots
