@@ -13,7 +13,7 @@ import numpy as np
 def convToDatetime(year, decyear):
 
     # if decyear is in the form of year.xxx, extract the year value
-    if decyear > 2000:
+    if np.any(decyear > 2000):
         year = int((str(decyear))[:4])
 
     # if the decyear is nan, just return it as a nan
