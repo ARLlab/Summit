@@ -913,8 +913,7 @@ async def check_new_logs(logger):
         logcheck_config = core_session.query(Config).filter(Config.processor == 'Log Checking').one_or_none()
 
         if not logcheck_config:
-            logcheck_config = Config(processor='Log Checking',
-                                days_to_plot=21)  # use all default values except processor on init
+            logcheck_config = Config(processor='Log Checking')  # use all default values except processor on init
             core_session.add(logcheck_config)
             core_session.commit()
 
@@ -1202,7 +1201,7 @@ async def main():
 
         if new_logs:
             await asyncio.create_task(plot_logdata(logger))
-            # await asyncio.create_task(check_new_logs(logger))
+            await asyncio.create_task(check_new_logs(logger))
 
         if new_logs or new_lines:
             await asyncio.create_task(load_crfs(logger))
