@@ -4,12 +4,6 @@ Created on Thursday May 14nd, 2019
 This script explores the ratio of ethane to methane, as well as acetylene to methane. It plots the ratio
 along all of the years where the data is present, and then performs harmonic fitting on the plots.
 
-Goals:
-1) Import spreadsheet data
-2) Create and output ratio numpy arrays
-    - Ratios
-    - Date Array
-3) Turn into a function
 
 """
 
