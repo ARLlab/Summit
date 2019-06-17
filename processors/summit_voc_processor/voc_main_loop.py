@@ -985,8 +985,8 @@ async def check_new_logs(logger):
 
                     log_value = getattr(log, log_name)                                           # limit tuple
 
-                    if not limits[0] <= log_value <= limits[1]:                                  # items outside of bound
-                        failed.append(name)                                                     # append failed name
+                    if not limits[0] <= log_value <= limits[1]:                                 # items outside of bound
+                        failed.append(name)                                                   # append failed name
 
                         # print log statement for error identification in addition to email
                         if log_name != name:
@@ -995,7 +995,7 @@ async def check_new_logs(logger):
                             logger.warning(f'Log {log.filename} failed due to parameter {name}')
 
                 if failed:
-                    send_logparam_email(log, failed)                                   # send email with failed
+                    send_logparam_email(log, failed)                                 # send email with failed
 
             # Update the date of logcheck_config so we don't check same values twice
             logcheck_config.last_data_date = lastDate
