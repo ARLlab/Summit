@@ -363,8 +363,9 @@ def match_lines_to_runs(lines, runs):
         if not match or not diff:
             continue
 
-        if abs(diff) < dt.timedelta(minutes=5):
-            # Valid matches *usually* have ~03:22 difference
+        if abs(diff) < dt.timedelta(minutes=55):
+            # Valid matches *usually* *HAD* ~03:22 difference
+            # on 6/12/2019, the sequence was changed, which resulted in differences ranging from 15 min to 55 min.
 
             matched_run = search_for_attr_value(runs, 'date', match)  # pull matching NmhcLine
 
