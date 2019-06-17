@@ -12,7 +12,6 @@ import pandas as pd
 import numpy as np
 from numba import njit
 import matplotlib.cm as cm
-import windrose
 
 
 @njit
@@ -50,7 +49,6 @@ def fastDateCombTwo(tolerence, date1, date2, value1, value2):
 
 
 def windRosePicarro():
-    pass
 
     # ---- import data
     met = metTrim()
@@ -99,13 +97,13 @@ def windRosePicarro():
     fig.suptitle('CO & CO2 Conc. at Summit by Wind Direction', fontsize=16)
     plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.2, hspace=None)
 
-    # setup GC methane windrose
+    # setup CO windrose
     ax1.bar(metCO_Final['dir'].values, metCO_Final['value'].values, normed=False, opening=0.9,
             edgecolor='black', nsector=24, bins=14, cmap=cm.viridis_r, blowto=False)
     ax1.set_title('CO Conc. [ppb]')
     ax1.set_legend(loc=6)
 
-    # setup picarro methane windrose
+    # setup picarro CO2 windrose
     ax2.bar(metCO2_Final['dir'].values, metCO2_Final['value'].values, normed=False, opening=0.9,
             edgecolor='black', nsector=24, bins=14, cmap=cm.viridis_r, blowto=False)
     ax2.set_title('CO2 [ppm]')
