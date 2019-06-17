@@ -192,8 +192,8 @@ class LogParameterEmail(EmailTemplate):
 
         for parameter in parameters:
             limits = log_parameter_bounds.get(parameter)
-            log_value = getattr(log, parameter)
-            body = body + f'{parameter}:{log_value} was outside limits of {limits}\n'
+            log_value = getattr(log, parameter, 'Value Not Found')
+            body = body + f'{parameter}: {log_value} was outside limits of {limits}\n'
 
         super().__init__(sender, instrument_email_list, body, subject=subject)
 
