@@ -32,6 +32,7 @@ and Oceanic Tech., 3, 414-421, 1986.
 import pandas as pd
 import numpy as np
 from numba import njit
+import datetime as dt
 
 
 @njit
@@ -54,6 +55,19 @@ def convDatetime(yr, mo, dy, hr):
                    (dy[i] / 365 / 12) +                                         # day rem
                    (hr[i] / 24 / 365 / 12))                                     # hr rem
     return date
+
+
+def createDatetime(yr, mo, dy, hr):
+    """
+    Same thing as above function but converts to datetime format instead of decimal year
+    """
+
+    datetime = []
+    for i in range(len(yr)):
+        time = dt.datetime(yr[i], mo[i], dy[i], hr[i])
+        datetime.append(time)
+
+    return datetime
 
 
 def metTrim():
@@ -79,17 +93,18 @@ def metTrim():
     met = met.replace(-99.9, np.nan)
     met = met.dropna(axis=0, how='any')                                                 # remove rows with nan vals
 
-    # ---- convert date to dec datetime
+    # ---- convert date to datetime
     metInt = met.applymap(int)                                                          # make sure values are ints
-    dates = convDatetime(metInt['yr'].values,                                           # call convDatetime func
-                         metInt['mo'].values,
-                         metInt['dy'].values,
-                         metInt['hr'].values)
+    dates = createDatetime(metInt['yr'].values,
+                           metInt['mo'].values,
+                           metInt['dy'].values,
+                           metInt['hr'].values)
 
-    met['DecYear'] = dates                                                              # add it as a new column
+    met['datetime'] = dates                                                             # add it as a new column
     met = met.drop(['yr', 'mo', 'dy', 'hr'], axis=1)                                    # drop old date columns
 
     return met
+
 
 if __name__ == '__main__':
     metTrim()
