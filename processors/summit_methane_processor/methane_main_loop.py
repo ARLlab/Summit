@@ -758,7 +758,113 @@ async def dual_plot_methane(logger):
 
 
 async def update_excel_sheet(logger):
-    pass
+    logger.info('Running update_excel_sheet()')
+
+    try:
+        import pandas as pd
+        from datetime import datetime
+
+        from summit_core import methane_dir as rundir
+        from summit_errors import send_processor_warning
+
+        from summit_methane import GcRun, Base, add_formulas_and_format_sheet
+        from summit_core import Config, core_dir, connect_to_db, append_df_to_excel
+        from summit_core import methane_dir, data_file_paths
+
+        methane_sheet = data_file_paths.get('methane_sheet', None)
+
+        if not methane_sheet:
+            logger.error('Filepath for the methane integration sheet could not be retrieved.')
+            send_processor_warning(PROC, 'Filepath Error',
+                                   '''The methane integration sheet filepath could not be retrieved. It should be listed
+                                   as "methane_sheet" in file_locations.json in the core folder.''')
+            return False
+
+    except ImportError as e:
+        logger.error('ImportError occurred in update_excel_sheet()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
+        Base.metadata.create_all(engine)
+    except Exception as e:
+        logger.error(f'Exception {e.args} prevented connection to the database in update_excel_sheet()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        core_engine, core_session = connect_to_db('sqlite:///summit_core.sqlite', core_dir)
+        Config.__table__.create(core_engine, checkfirst=True)
+
+        methane_sheet_config = core_session.query(Config).filter(Config.processor == 'methane_sheet').one_or_none()
+
+        if not methane_sheet_config:
+            methane_sheet_config = Config(processor='methane_sheet')
+            # use all default values except processor on init
+            core_session.add(methane_sheet_config)
+            core_session.commit()
+
+    except Exception as e:
+        logger.error(f'Error {e.args} prevented connecting to the core database in update_excel_sheet()')
+        send_processor_email(PROC, exception=e)
+        return False
+
+    try:
+        most_recent_gcrun = session.query(GcRun.date).order_by(GcRun.date.desc()).first()
+
+        if not most_recent_gcrun:
+            most_recent_gcrun = datetime(1900, 1, 1)  # default to a safely historic date
+        else:
+            most_recent_gcrun = most_recent_gcrun.date  # get date from tuple response
+
+        new_runs = session.query(GcRun).filter(GcRun.date > methane_sheet_config.last_data_date).all()
+
+        if new_runs:
+            col_list = ['date', 'filename', 'peak1', 'peak2', 'mr1', 'mr2', 'run_median', 'run_rsd', 'std_median',
+                        'std_rsd']  # list of all columns needed in the dataframe
+
+            master_df = pd.DataFrame(index=None, columns=col_list)
+
+            for run in new_runs:
+                df = pd.DataFrame(index=range(1, 6), columns=col_list)
+                df['date'][1] = run.date
+                df['filename'][1] = run.logfile.name
+
+                # The below can copy peak information from the automatic integrations into the spreadsheet
+                # peaks1 = [sample.peak for sample in run.samples if sample.sample_num in [0,2,4,6,8]]
+                # peaks2 = [sample.peak for sample in run.samples if sample.sample_num in [1,3,5,7,9]]
+                # df.loc[0:5, 'peak1'] = [(peak.pa if peak else None) for peak in peaks1]
+                # df.loc[0:5, 'peak2'] = [(peak.pa if peak else None) for peak in peaks2]
+
+                master_df = master_df.append(df)
+
+            append_df_to_excel(methane_sheet, master_df, **{'index': False})  # add new lines and save sheet
+            add_formulas_and_format_sheet(methane_sheet)  # open sheet and add formulas where non-existent, format cols
+
+            logger.info('New GcRuns added to the automated integration spreadsheet.')
+
+            methane_sheet_config.last_data_date = most_recent_gcrun
+        else:
+            logger.info('No new GcRuns found to add to the automated integration spreadsheet.')
+
+        core_session.merge(methane_sheet_config)
+        core_session.commit()
+
+        session.close()
+        engine.dispose()
+        core_session.close()
+        core_engine.dispose()
+        return True
+
+    except Exception as e:
+        session.close()
+        engine.dispose()
+        core_session.close()
+        core_engine.dispose()
+        logger.error(f'Exception {e.args} occurred in update_excel_sheet()')
+        send_processor_email(PROC, exception=e)
+        return False
 
 
 async def read_excel_sheet(logger):
@@ -792,6 +898,7 @@ async def main():
                     await asyncio.create_task(add_one_standard(logger))
                     if await asyncio.create_task(quantify_samples(logger)):
                         await asyncio.create_task(plot_new_data(logger))
+                    await asyncio.create_task(update_excel_sheet(logger))
 
         return True
 
