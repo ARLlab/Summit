@@ -280,14 +280,7 @@ async def match_peaks_to_samples(logger):
         engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
         Base.metadata.create_all(engine)
     except Exception as e:
-        logger.error(f'Exception {e.args} prevented connection to the database in check_load_pa_log()')
-        send_processor_email(PROC, exception=e)
-        return False
-
-    try:
-        engine, session = connect_to_db('sqlite:///summit_methane.sqlite', rundir)
-    except Exception as e:
-        logger.error(f'Exception {e.args} prevented connection to the database.')
+        logger.error(f'Exception {e.args} prevented connection to the database in match_peaks_to_samples()')
         send_processor_email(PROC, exception=e)
         return False
 
@@ -762,6 +755,10 @@ async def dual_plot_methane(logger):
         picarro_session.close()
         picarro_engine.dispose()
         return False
+
+
+async def update_excel_sheet(logger):
+    pass
 
 
 async def read_excel_sheet(logger):
