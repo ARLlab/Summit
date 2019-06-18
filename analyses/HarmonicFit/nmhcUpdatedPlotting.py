@@ -46,6 +46,12 @@ for cpd in compounds:
                        encoding='utf8', error_bad_lines=False)
     data.columns = header                                                                   # reset column names
 
+    data = data[data['value'] > 0.0]
+
+    normResid = data['resid'].values / data['value'].values
+    data.drop(['resid'], axis=1, inplace=True)
+    data['resid'] = normResid
+
     dates = dateConv(data['yr'].values)                                                     # call conv function
     data['datetime'] = dates                                                                # assign to DF
     data.drop('yr', axis=1, inplace=True)
@@ -97,8 +103,8 @@ for cpd in compounds:
 
     # residual data
     ax3 = sns.scatterplot(x='datetime', y='resid', data=data, ax=ax[1],
-                          alpha=1, s=10, legend='brief', label='Residuals from Fit')
-    ax3.set_title('GC ' + cpd + ' Residuals from Fit')
+                          alpha=1, s=10, legend='brief', label='Normalized Residuals from Fit')
+    ax3.set_title('GC ' + cpd + ' Normalized Residuals from Fit')
     ax3.set_xlabel('Date')
     ax3.set_ylabel('Mixing Ratio [ppb]')
     ax3.legend()
@@ -106,7 +112,7 @@ for cpd in compounds:
     ax3.set(ylim=(lowR, highR))
 
     # save the plots
-    direc = r'C:\Users\ARL\Desktop\J_Summit\analyses\Figures' + '\\' + cpd + '.png'
+    direc = r'C:\Users\ARL\Desktop\J_Summit\analyses\Figures' + '\\' + cpd + 'NORM.png'
     f.savefig(direc, format='png')
     print(cpd + ' plots created')
 
