@@ -95,19 +95,19 @@ def windRosePicarro():
     # ---- plotting
     fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw=dict(projection='windrose'))
     fig.suptitle('CO & CO2 Conc. at Summit by Wind Direction', fontsize=16)
-    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.2, hspace=None)
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.2, hspace=-0.2)
 
     # setup CO windrose
     ax1.bar(metCO_Final['dir'].values, metCO_Final['value'].values, normed=False, opening=0.9,
             edgecolor='black', nsector=24, bins=14, cmap=cm.viridis_r, blowto=False)
     ax1.set_title('CO Conc. [ppb]')
-    ax1.set_legend(loc=6)
+    ax1.set_legend(loc=8, fancybox=True, shadow=True, bbox_to_anchor=(0.5, -.5))
 
     # setup picarro CO2 windrose
     ax2.bar(metCO2_Final['dir'].values, metCO2_Final['value'].values, normed=False, opening=0.9,
             edgecolor='black', nsector=24, bins=14, cmap=cm.viridis_r, blowto=False)
     ax2.set_title('CO2 [ppm]')
-    ax2.set_legend(loc=7)
+    ax2.set_legend(loc=8, fancybox=True, shadow=True, bbox_to_anchor=(0.5, -.5))
 
     plt.show()
 
