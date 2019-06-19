@@ -26,9 +26,9 @@ def make_getter(key):
 class MetaClass(type):
 
     def __init__(self, *args, **kwargs):
+        super().__init__(self)
         for attr in attr_list:  # for every property name, assign a created function as the property
             setattr(self, attr, property(make_getter(attr)))
-        super().__init__(self)
 
 
 class Class(metaclass=MetaClass):
