@@ -1,26 +1,23 @@
-"""
-This custom function turns decimal date of years into a datetime format. If decyear is in the form with the year,
-entire the year parameter as anything, it will be overwritten
-:param: decyear: the decimal year. Should be of the form year.xxxxx (ex: 2019.7283)
-"""
+
 import datetime as dt
-from isleapyear import isleapyear
-import numpy as np
+import calendar
+import numpy
 
 
-def convToDatetime(decyear):
+def dateConv(arr):
+    """
+    An approach to convert decyear values into datetime values with numpy vectorization to improve efficiency
 
-    # if the decyear is nan, just return it as a nan
-    if np.isnan(decyear):
-        return decyear
+    :param arr: a numpy array of decyear values
+    :return: a numpy array of datetime values
+    """
+    datetimes = []
+    for i in range(len(arr)):
 
-    else:
-        # get the starting point from inputted year
-        year = int((str(decyear))[:4])
-        start = dt.datetime(year - 1, 12, 31)
-        numdays = (decyear - year) * (365 + isleapyear(year))
+        year = int(arr[i])                                                  # get the year
+        start = dt.datetime(year - 1, 12, 31)                               # create starting datetime
+        numdays = (arr[i] - year) * (365 + calendar.isleap(year))           # calc number of days to current date
+        result = start + dt.timedelta(days=numdays)                         # add timedelta of those days
+        datetimes.append(result)                                            # append results
 
-        # return the timedelta of the days added to start
-        result = start + dt.timedelta(days=numdays)
-
-        return result
+    return datetimes
