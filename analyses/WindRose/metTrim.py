@@ -31,43 +31,8 @@ and Oceanic Tech., 3, 414-421, 1986.
 # Importing Libraries
 import pandas as pd
 import numpy as np
-from numba import njit
-import datetime as dt
 
-
-@njit
-def convDatetime(yr, mo, dy, hr):
-    """
-    convDatetime takes values (likely from an array) and quickly converts them to decimal year format. Unfortunately
-    it does not account for leap years but if a level of accuracy that high is not required using this function with
-    numba's @njit provides nanosecond for looping of massive arrays.
-
-    :param yr: year, numpy array
-    :param mo: month, numpy array
-    :param dy: day, numpy array
-    :param hr: hour, numpy array
-    :return: the decimal year
-    """
-    date = np.empty(yr.shape)                                                   # preallocate date
-    for i in range(len(yr)):                                                    # iterate through all values
-        date[i] = ((yr[i]) +                                                    # year +
-                   (mo[i] / 12) +                                               # month rem
-                   (dy[i] / 365 / 12) +                                         # day rem
-                   (hr[i] / 24 / 365 / 12))                                     # hr rem
-    return date
-
-
-def createDatetime(yr, mo, dy, hr):
-    """
-    Same thing as above function but converts to datetime format instead of decimal year
-    """
-
-    datetime = []
-    for i in range(len(yr)):
-        time = dt.datetime(yr[i], mo[i], dy[i], hr[i])
-        datetime.append(time)
-
-    return datetime
+from dateConv import convDatetime, createDatetime
 
 
 def metTrim():

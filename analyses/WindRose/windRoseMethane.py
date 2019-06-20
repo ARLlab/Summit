@@ -12,7 +12,7 @@ seasonal cycle has been developed in the data.
 # import libraries and functions
 import matplotlib.pyplot as plt
 from WindRose.metTrim import metTrim, createDatetime
-from decToDatetime import dateConv
+from dateConv import decToDatetime
 from WindRose.windRoseConc import metCombo
 import pandas as pd
 import matplotlib.cm as cm
@@ -32,7 +32,7 @@ def windRoseMethane():
 
     # ---- combining datasets (met and picarro)
     pic.columns = ['date', 'value']
-    pic['datetime'] = dateConv(pic['date'].values)
+    pic['datetime'] = decToDatetime(pic['date'].values)
     pic.drop('date', axis=1, inplace=True)
     earlyVals = ~(met['datetime'] <= pic['datetime'][0])
     met.drop(earlyVals, axis=0, inplace=True)

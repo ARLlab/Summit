@@ -9,7 +9,7 @@ with with CO and CO2 data from the Picarro analyzer at summit.
 import matplotlib.pyplot as plt
 from WindRose.metTrim import metTrim
 import pandas as pd
-from decToDatetime import dateConv
+from dateConv import decToDatetime
 import windrose
 
 import matplotlib.cm as cm
@@ -20,7 +20,7 @@ def picarroMetCombo(filename):
     met = metTrim()
     sheet = pd.read_csv(filename, encoding='utf8', header=None, delim_whitespace=True)
     sheet.columns = ['date', 'value']
-    sheet['datetime'] = dateConv(sheet['date'].values)
+    sheet['datetime'] = decToDatetime(sheet['date'].values)
     sheet.drop('date', axis=1, inplace=True)
     earlyVals = ~(met['datetime'] <= sheet['datetime'][0])
     met.drop(earlyVals, axis=0, inplace=True)
