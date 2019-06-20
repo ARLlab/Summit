@@ -45,7 +45,7 @@ def metPlotQC():
     plt.show()
 
     sns.set(style="white")
-    sns.despine(f)
+    sns.despine()
     g = sns.jointplot(met['dir'], met['spd'], kind='hex', cmap=cm.magma_r, color='#e65c00')
     g.set_axis_labels('Wind Direction Measured CW from True North', 'Wind Speed [m/s]', fontsize=12)
     g.fig.suptitle('Met Data from Summit, Greenland')
