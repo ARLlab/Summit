@@ -1,5 +1,6 @@
 # importing
 from pandas.plotting import register_matplotlib_converters
+from dateConv import decToDatetime
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -7,30 +8,10 @@ import datetime as dt
 import seaborn as sns
 import calendar
 
-
-def dateConv(arr):
-    """
-    An approach to convert decyear values into datetime values with numpy vectorization to improve efficiency
-
-    :param arr: a numpy array of decyear values
-    :return: a numpy array of datetime values
-    """
-    datetimes = []
-    for i in range(len(arr)):
-
-        year = int(arr[i])                                                  # get the year
-        start = dt.datetime(year - 1, 12, 31)                               # create starting datetime
-        numdays = (arr[i] - year) * (365 + calendar.isleap(year))           # calc number of days to current date
-        result = start + dt.timedelta(days=numdays)                         # add timedelta of those days
-        datetimes.append(result)                                            # append results
-
-    return datetimes
-
-
 def ch4plot():
 
     header = ['yr', 'value', 'function', 'resid', 'residLine']                                  # dataframe headers
-    root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit\textfiles'                      # data directory
+    root = r'C:\Users\ARL\Desktop\J_Summit\analyses\Data'
     data = pd.read_csv(root + '\\' + 'methane.txt', delim_whitespace=True, header=None,
                        encoding='utf8', error_bad_lines=False)
     data.columns = header
