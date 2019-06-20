@@ -11,7 +11,7 @@ from WindRose.metTrim import metTrim, createDatetime
 import pandas as pd
 import matplotlib.cm as cm
 import windrose
-
+import datetime as dt
 
 def metCombo(filename):
 

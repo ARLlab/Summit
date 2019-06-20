@@ -139,6 +139,7 @@ def ratioPlot():
                       line_kws={'label': 'rSquared: {:1.5f}\n Slope: {:1.5f}\n'.format(rSquared, slope[0])})
     g.set_axis_labels('Ethane MR [ppb]', 'Acetylene MR [ppb]', fontsize=12)
     g.fig.suptitle('Correlation between Ethane and Acetylene Normalized Residuals')
+    g.ax_joint.get_lines()[0].set_color('blue')
     plt.legend()
     plt.show()
 
