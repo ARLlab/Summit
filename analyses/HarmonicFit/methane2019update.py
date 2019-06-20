@@ -3,40 +3,22 @@ June 17th, 2019. This python file combines past data with updated 2019 data poin
 
 """
 
-from fileInput import fileLoad
+from fileLoading import loadExcel
+from dateConv import noaaDateConv, decToDatetime
+from scipy import stats
+
 import pandas as pd
-from noaaDates import noaaDateConv
 import datetime as dt
 import calendar
 import numpy as np
-from scipy import stats
-
-
-def dateConv(arr):
-    """
-    An approach to convert decyear values into datetime values with numpy vectorization to improve efficiency
-
-    :param arr: a numpy array of decyear values
-    :return: a numpy array of datetime values
-    """
-    datetimes = []
-    for i in range(len(arr)):
-
-        year = int(arr[i])                                                  # get the year
-        start = dt.datetime(year - 1, 12, 31)                               # create starting datetime
-        numdays = (arr[i] - year) * (365 + calendar.isleap(year))           # calc number of days to current date
-        result = start + dt.timedelta(days=numdays)                         # add timedelta of those days
-        datetimes.append(result)                                            # append results
-
-    return datetimes
 
 
 def methane():
 
     # import original dataset and new datasets
-    methanePrev = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\Methane.xlsx")
-    methane2018 = fileLoad(r'C:\Users\ARL\Desktop\SUM_CH4_insitu_2018.xlsx')
-    methane2019 = fileLoad(r'C:\Users\ARL\Desktop\Summit_GC_2019\CH4_results\SUM_CH4_insitu_2019.xlsx')
+    methanePrev = loadExcel(r"C:\Users\ARL\Desktop\Python Code\Data\Methane.xlsx")
+    methane2018 = loadExcel(r'C:\Users\ARL\Desktop\SUM_CH4_insitu_2018.xlsx')
+    methane2019 = loadExcel(r'C:\Users\ARL\Desktop\Summit_GC_2019\CH4_results\SUM_CH4_insitu_2019.xlsx')
 
     # identify column names we want to keep
     goodcol = ['Decimal Year', 'Run median']                                                # good columns
@@ -58,7 +40,7 @@ def methane():
     thresh = 5
     methaneFinal = methaneFinal[~(z > thresh)]
 
-    dates = dateConv(methaneFinal['DecYear'].values)                                        # conv to datetime
+    dates = decToDatetime(methaneFinal['DecYear'].values)                                        # conv to datetime
     methaneFinal['datetime'] = dates                                                        # add to dataframe
 
     noaaMethane = pd.DataFrame(columns=['datetime', 'MR'])

@@ -9,26 +9,7 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 from calendar import isleap
-from noaaDates import noaaDateConv
-
-
-def dateConv(arr):
-    """
-    An approach to convert decyear values into datetime values with numpy vectorization to improve efficiency
-
-    :param arr: a numpy array of decyear values
-    :return: a numpy array of datetime values
-    """
-    datetimes = []
-    for i in range(len(arr)):
-
-        year = int(arr[i])                                                  # get the year
-        start = dt.datetime(year - 1, 12, 31)                               # create starting datetime
-        numdays = (arr[i] - year) * (365 + isleap(year))                    # calc number of days to current date
-        result = start + dt.timedelta(days=numdays)                         # add timedelta of those days
-        datetimes.append(result)                                            # append results
-
-    return datetimes
+from dateConv import noaaDateConv, decToDatetime
 
 
 def ratioCreator(tolerence, cpd, bottom):
@@ -60,7 +41,7 @@ def ratioCreator(tolerence, cpd, bottom):
 def ratios():
 
     # import data sets
-    root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit\textFiles'
+    root = r'C:\Users\ARL\Desktop\J_Summit\analyses\Data'
     ethane = pd.read_csv(root + r'\ethaneFIT.txt', delim_whitespace=True, error_bad_lines=False, header=None)
     ace = pd.read_csv(root + r'\acetyleneFIT.txt', delim_whitespace=True, error_bad_lines=False, header=None)
     methane = pd.read_csv(root + r'\methane.txt', delim_whitespace=True, error_bad_lines=False, header=None)
@@ -86,7 +67,7 @@ def ratios():
     ace.name = 'ace'
     for sheet in [ethane, ace]:
         ratiosheet, datesheet = ratioCreator(tolerence, sheet, methane)
-        datesheet = dateConv(datesheet)
+        datesheet = decToDatetime(datesheet)
         df = pd.DataFrame(columns=['datetime', 'val'])
         df['datetime'], df['val'] = datesheet, ratiosheet
         df = noaaDateConv(df)

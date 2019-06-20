@@ -6,11 +6,10 @@ that overwrites previous nmhc data.
 
 
 """
-from fileInput import fileLoad
+from fileLoading import loadExcel
 import pandas as pd
 import datetime as dt
-from decToDatetime import convToDatetime
-from noaaDates import noaaDateConv
+from dateConv import noaaDateConv, decToDatetime
 import time
 
 
@@ -18,9 +17,9 @@ def nmhc():
 
     start = time.time()
     # import original data set and new datasets
-    nmhcPrev = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.xlsx")
-    nmhc2018 = fileLoad(r'C:\Users\ARL\Desktop\Ambient_2018_V2.xlsx')
-    nmhc2019 = fileLoad(r'C:\Users\ARL\Desktop\Summit_GC_2019\NMHC_results\Ambient_2019.xlsx')
+    nmhcPrev = loadExcel(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.xlsx")
+    nmhc2018 = loadExcel(r'C:\Users\ARL\Desktop\Ambient_2018_V2.xlsx')
+    nmhc2019 = loadExcel(r'C:\Users\ARL\Desktop\Summit_GC_2019\NMHC_results\Ambient_2019.xlsx')
 
     # identify the mixing ratio rows
     allrows = list(range(0, len(nmhc2018.index)))
@@ -54,14 +53,14 @@ def nmhc():
         yearint = int(yearstr)                                                                      # gets the year
 
         for x in yr[f'Decimal Day of Year {str(yearstr)[:4]}']:
-            datetime.append(convToDatetime(yearint, x))                                             # call decyear conv
+            datetime.append(decToDatetime(x))                                             # call decyear conv
 
         yr['datetime'] = datetime
 
     # create datetime column for past data
     datetime = []
     for x in nmhcPrev['DecYear']:
-        datetime.append(convToDatetime(0, x))
+        datetime.append(decToDatetime(x))
     nmhcPrev['datetime'] = datetime
 
     # remove old unneeded date columns

@@ -1,25 +1,27 @@
 # importing
 from pandas.plotting import register_matplotlib_converters
 from dateConv import decToDatetime
+from fileLoading import readCsv
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import datetime as dt
 import seaborn as sns
-import calendar
+
 
 def ch4plot():
 
     header = ['yr', 'value', 'function', 'resid', 'residLine']                                  # dataframe headers
     root = r'C:\Users\ARL\Desktop\J_Summit\analyses\Data'
-    data = pd.read_csv(root + '\\' + 'methane.txt', delim_whitespace=True, header=None,
-                       encoding='utf8', error_bad_lines=False)
+    filepath = root + '\\' + 'methane.txt'
+    data = readCsv(filepath)
     data.columns = header
 
     register_matplotlib_converters()
 
     # convert the dec year col to datetime
-    dates = dateConv(data['yr'])
+    dates = decToDatetime(data['yr'])
     data['datetime'] = dates
     data.drop('yr', axis=1, inplace=True)
 
@@ -36,9 +38,6 @@ def ch4plot():
     # x bounds
     low = min(data['datetime']) - dt.timedelta(days=30)
     high = max(data['datetime']) + dt.timedelta(days=30)
-
-    # sample data for speed
-    # data = data.sample(5000)
 
     # plotting
     sns.set()  # setup

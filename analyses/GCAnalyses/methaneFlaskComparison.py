@@ -22,7 +22,7 @@ from sklearn.linear_model import LinearRegression
 
 start: float = time.time()                                                                         # timer for curiosity
 # Reading in File
-root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit\textFiles'
+root = r'C:\Users\ARL\Desktop\J_Summit\analyses\Data'
 arl = pd.read_csv(root + r'\methane.txt', encoding='utf8', delim_whitespace=True)
 flask = pd.read_csv(root + r'\methaneFlask.txt', encoding='utf8', delim_whitespace=True)
 arl.columns = ['date', 'value', 'function', 'residuals', 'smooth_resid']

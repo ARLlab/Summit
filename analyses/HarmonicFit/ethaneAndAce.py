@@ -7,14 +7,14 @@ not the ethane and acetylene ratios with methane, just the raw data.
 
 """
 import numpy as np
-from fileInput import fileLoad
-from isleapyear import isleapyear
+from fileLoading import loadExcel
+from dateConv import isleapyear
 
 
 def ethaneAce():
 
     # Import Data Sets
-    nmhcData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.xlsx")
+    nmhcData = loadExcel(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.xlsx")
 
     # Cleaning Up Data
     nmhcData = nmhcData[nmhcData['DecYear'] > 2012]             # Only need years past 2012 in VOC Data
