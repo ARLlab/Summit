@@ -268,6 +268,10 @@ async def load_crfs(logger):
                 crf_dates.append(rf.date_start)  # prevent duplicates in this load
                 session.merge(rf)
                 logger.info(f'CRF {rf} added.')
+            else:
+                pass
+                # TODO: Account for updated CRFs
+                # Find matching CRF in db, update date_end, revision_date and compounds
 
         session.commit()
         return True
