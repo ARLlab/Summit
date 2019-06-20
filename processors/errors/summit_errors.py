@@ -42,9 +42,9 @@ logger = configure_logger(rundir, __name__)
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
 test_list = ['brbl4762@colorado.edu']
-global_list = ['brbl4762@colorado.edu']
+global_list = ['brbl4762@colorado.edu', 'jach4134@colorado.edu']
 processor_email_list = ['brbl4762@colorado.edu', 'jach4134@colorado.edu']
-instrument_email_list = ['brbl4762@colorado.edu']
+instrument_email_list = ['brbl4762@colorado.edu', 'jach4134@colorado.edu']
 
 
 class Error():
@@ -259,7 +259,7 @@ def send_processor_warning(name, type, body):
 def send_logparam_email(logfile, invalid_parameters):
     """
     Wrapper on logparam emails to take a list of parameters and send a one-off email.
-    :param filename: filename of the log 
+    :param filename: filename of the log
     :param invalid_parameters: list, of string parameters that failed their checks
     :return:
     """
