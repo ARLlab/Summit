@@ -799,6 +799,34 @@ def get_dates_peak_info(session, compound, info, date_start=None, date_end=None)
         return dates, info
 
 
+def reassign_cfs(date_start, date_end):
+    """
+    This looks through Datums for a specific period, reassigns their CRFs from the database,
+    and calls reintegrate_samples() on all the affected datums.
+
+    :param date_start: datetime, the date to start checking from
+    :param date_end: datetime, the end date to stop checking
+    :return: None
+
+    Outline:
+    This should be a one-off, since running it is for correcting what happened on-the-fly at runtime if we
+    didn't update RFs in time. If the database were deleted and everything were re-run, this wouldn't matter because
+    all the data would be properly related to CRFs that were loaded.
+
+    Connect to the VOC database and query for all Datums during the period
+        .filter(Datum.date.between(date_start, date_end))
+
+    Load all CRFs from database that have a start OR end date in the period
+
+    For each datum, find the matching CRF; see find_crf(crfs, sample_date)
+
+    Assign the CRF to that datum, then call the reintegrate() method on each affected datum
+
+    Merge every datum back to the DB and commit
+    """
+    pass
+
+
 def summit_voc_plot(dates, compound_dict, limits=None, minor_ticks=None, major_ticks=None,
                     y_label_str='Mixing Ratio (ppbv)'):
     """

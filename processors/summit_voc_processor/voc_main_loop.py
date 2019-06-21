@@ -260,14 +260,46 @@ async def load_crfs(logger):
         with TempDir(rundir):
             crfs = read_crf_data('summit_CRFs.txt')
 
-        crfs_in_db = session.query(Crf).order_by(Crf.id).all()
-        crf_dates = [rf.date_start for rf in crfs_in_db]
+        crf_dates_in_db = session.query(Crf.date_start).order_by(Crf.id).all()
+        crf_dates_in_db[:] = [rf.date_start for rf in crf_dates_in_db]
 
         for rf in crfs:
-            if rf.date_start not in crf_dates:  # prevent duplicates in db
-                crf_dates.append(rf.date_start)  # prevent duplicates in this load
+            if rf.date_start not in crf_dates_in_db:  # prevent duplicates in db
+                crf_dates_in_db.append(rf.date_start)  # prevent duplicates in this load
                 session.merge(rf)
                 logger.info(f'CRF {rf} added.')
+            else:
+                pass
+                # TODO: Account for updated CRFs
+                # Find matching CRF in db with date_start, update date_end, revision_date and compounds
+                # Is there a way to handle overlapping periods?
+                    # Oh, if the start or end date has a .between(start, end) match in the database...
+                        # Then that matching entry should be deleted before adding the newer ones.
+
+        """
+        NEW PLAN (for B):
+        
+        Make all CRFs from the file
+                
+        Eliminate any created CRFs from file if there's a matching date_start and date_end in the database
+        
+        IF there's any left in that list, create an empty one of crfs_to_add
+        
+        Check for any with a matching date_start but not date_end in the database and update the date_end and compounds
+            Remove those from the list after they're added
+        
+        Next, check for any in the remaining list that have a True one_or_none() response for querying for 
+        it's date_start or date_end being included between another's date_start and date_end; 
+        the query NEEDS to be > date_start, < date_end because otherwise the end date (non-inclusive) will 
+        always return True for the start date (inclusive) of the next period.
+        
+        If there's a match, delete it and add the new one to the list of new CRFs to add, BUT
+        
+        Catch a MultipleResultsFound on one_or_none() because that *could* occur if the RF file was fucked. Except it by
+        getting all those responses and deleting them before adding new ones to the crfs_to_add
+        
+        Add all crfs_to_add
+        """
 
         session.commit()
         return True
@@ -985,8 +1017,8 @@ async def check_new_logs(logger):
 
                     log_value = getattr(log, log_name)                                           # limit tuple
 
-                    if not limits[0] <= log_value <= limits[1]:                                  # items outside of bound
-                        failed.append(name)                                                     # append failed name
+                    if not limits[0] <= log_value <= limits[1]:                                 # items outside of bound
+                        failed.append(name)                                                   # append failed name
 
                         # print log statement for error identification in addition to email
                         if log_name != name:
@@ -995,7 +1027,7 @@ async def check_new_logs(logger):
                             logger.warning(f'Log {log.filename} failed due to parameter {name}')
 
                 if failed:
-                    send_logparam_email(log.filename, failed)                                   # send email with failed
+                    send_logparam_email(log, failed)                                 # send email with failed
 
             # Update the date of logcheck_config so we don't check same values twice
             logcheck_config.last_data_date = lastDate

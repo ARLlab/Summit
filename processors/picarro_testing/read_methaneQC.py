@@ -62,30 +62,32 @@ def brendan_test():
     from summit_core import methane_dir
     from summit_methane import SampleCorrection, Base, GcRun
 
-    filename = r'Z:\Data\Summit_GC\Summit_GC_2019\CH4_results\SUM_CH4_insitu_2019.xlsx'
+    filename = r'Z:\Data\Summit_GC\Summit_GC_2019\CH4_results\Methane_Automated_2019.xlsx'
     #filename = r'/home/brendan/PycharmProjects/Summit/processors/summit_methane_processor/SUM_CH4_insitu_2019.xlsx'
     # Brendan's path
 
     year = filename.split('.')[-2][-4:]  # risky...
 
-    engine, session = connect_to_db('sqlite:///summit_methane.sqlite', methane_dir)
+    engine, session = connect_to_db('sqlite:///summit_methane_tester.sqlite', methane_dir)
     Base.metadata.create_all(engine)
 
-    data = pd.read_excel(filename, usecols=check_cols_methane, sheet_name='data_2019')
-    data = data[data['SampleDay'] != 0]  # filter out not-yet-present data
+    data = pd.read_excel(filename, sheet_name='Sheet1')
 
-    counts = data.groupby(['SampleDay', 'SampleHour']).size()
+    indices = data['date'].dropna(how='all').index.tolist()
 
-    unique_runs = counts.index.tolist()
-    # returns a list of tuples where each tuple is a unique (day,hour) combo
+    for ind in indices:
+        if ind % 5 is not 0:
+            date = data.loc[ind, 'date']
+            filename = data.loc[ind, 'filename']
+            print(f'File {filename} for run {date} did not have the proper number of lines to analyze.')  # can't happen
+
+    indices = [i for i in indices if i % 5 is 0]  # remove any failed after warning above
 
     gc_runs = session.query(GcRun)
 
     ct = 0
-    for run in unique_runs:
-        doy, hour = run[0], run[1]
-
-        run_date = datetime.strptime(f'{year}{doy:03.0f}{hour:02.0f}', '%Y%j%H')
+    for ind in indices:
+        run_date = data.loc[ind, 'date'].to_pydatetime()
 
         matched_run = gc_runs.filter(GcRun.date == run_date).one_or_none()
 
@@ -93,17 +95,16 @@ def brendan_test():
             print(f'No run matched for {run_date}.')
             continue  # for now...
 
-        run_set = data[(data['SampleDay'] == doy) & (data['SampleHour'] == hour)][['Peak Area 1', 'Peak Area 2']]
+        run_set = data.loc[ind:ind+6, ['peak1', 'peak2']].dropna(axis=1, how='all')
 
-        if run_set.shape != (5,2):
-            print(f'Run for {run_date} did not have the correct dimensions and could not be processed.')
+        if not run_set.columns.tolist():  # if the subset of peak1 and peak2 is empty after dropping any where all = na
+            # print('WARNING - LOG ME')
+            continue
 
-        peaks1 = run_set['Peak Area 1'].values.tolist()  # column of peaks, ordered 1,3,5,7,9
-        peaks2 = run_set['Peak Area 2'].values.tolist()  # column of peaks, ordered 2,4,6,8,10
+        peaks1 = run_set['peak1'].values.tolist()  # column of peaks, ordered 1,3,5,7,9
+        peaks2 = run_set['peak2'].values.tolist()  # column of peaks, ordered 2,4,6,8,10
 
         ordered_peaks = merge_lists(peaks1, peaks2)  # returns peaks in order [0,1,2,3,4, ..., 9]
-
-        run = None  # default to no run found yet
 
         corrections = []
         for num, pa in enumerate(ordered_peaks):
@@ -111,7 +112,6 @@ def brendan_test():
             Finding samples in db:
             Use DOY, hour to find the run, then use run.id to get samples iteratively,
                 if sample of x num does not exist, warn/ log an error (should have been created when reading log)
-            
             """
 
             matched_sample = search_for_attr_value(matched_run.samples, 'sample_num', num)
@@ -119,9 +119,6 @@ def brendan_test():
             if not matched_sample:
                 print(f'Matched sample not found for sample number {num} in GcRun for {matched_run.date}.')
                 continue
-
-
-            # sample.date = run.pa_line.date + dt.timedelta(minutes=peak.rt - 1)
 
             corrections.append(SampleCorrection(num, pa, matched_sample))
 
@@ -131,6 +128,7 @@ def brendan_test():
         #     print(sample.pa)
 
         for corr in corrections:
+            # TODO: Check for already present in DB
             session.merge(corr)
 
         ct += 1
