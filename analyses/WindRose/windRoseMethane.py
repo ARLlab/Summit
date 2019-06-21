@@ -22,7 +22,7 @@ import windrose
 def windRoseMethane():
 
     # ---- import data
-    root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit\textfiles'
+    root = r'C:\Users\ARL\Desktop\J_Summit\analyses\Data'
     met = metTrim()
     arl = metCombo(root + r'\methane2019updated.txt')
     arl.dropna(axis=0, how='any', inplace=True)
@@ -34,12 +34,9 @@ def windRoseMethane():
     pic.columns = ['date', 'value']
     pic['datetime'] = decToDatetime(pic['date'].values)
     pic.drop('date', axis=1, inplace=True)
-    earlyVals = ~(met['datetime'] <= pic['datetime'][0])
-    met.drop(earlyVals, axis=0, inplace=True)
-    met.reset_index(drop=True, inplace=True)
     met.drop(['steady'], axis=1, inplace=True)
 
-    # merge the met data onto the concentration data by finding the nearest datetime within an hour\
+    # merge the met data onto the concentration data by finding the nearest datetime within an hour
     pic.dropna(axis=0, how='any', inplace=True)
     picarro = pd.merge_asof(pic.sort_values('datetime'), met,
                             on='datetime',
@@ -55,8 +52,6 @@ def windRoseMethane():
                                        flask['dy'], flask['hr'])
     flask.drop(['yr', 'mo', 'dy', 'hr'], axis=1, inplace=True)
     earlyVals = (met['datetime'] <= flask['datetime'][0])
-    met.drop(earlyVals, axis=0, inplace=True)
-    met.reset_index(drop=True, inplace=True)
     met.drop(['steady'], axis=1, inplace=True)
 
     # merge the met data onto the concentration data by finding the nearest datetime within an hour

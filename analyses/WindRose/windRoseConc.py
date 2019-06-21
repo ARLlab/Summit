@@ -13,6 +13,7 @@ import matplotlib.cm as cm
 import windrose
 
 
+# TODO: Move metCombo to it's own file
 def metCombo(filename):
 
     # ---- import data
@@ -30,8 +31,6 @@ def metCombo(filename):
 
     # ---- trimming data
     earlyVals = (met['datetime'] <= sheet['datetime'][0])                       # early met vals
-    met.drop(earlyVals, axis=0, inplace=True)                                   # trim early vals
-    met.reset_index(drop=True, inplace=True)                                    # reset index
     met.drop(['steady'], axis=1, inplace=True)                                  # remove some columns
 
     # merge the met data onto the concentration data by finding the nearest datetime within an hour
@@ -43,7 +42,7 @@ def metCombo(filename):
 
 
 def windRose():
-    root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit\textfiles'          # root source
+    root = r'C:\Users\ARL\Desktop\J_Summit\analyses\Data'          # root source
     ethPath = root + r'\ethane.txt'
     acePath = root + r'\acetylene.txt'
 
