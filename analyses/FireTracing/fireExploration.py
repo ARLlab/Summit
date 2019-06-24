@@ -21,8 +21,8 @@ for i in range(len(fire)):
 fire['yrs'] = yrs
 fire['yrs'] = fire['yrs'].values.astype(int)
 
-# sns.set(style="dark", palette="muted", color_codes=True)
-# sns.despine()
+sns.set(style="dark", palette="muted", color_codes=True)
+sns.despine()
 
 # sns.distplot(fire['yrs'].values.astype(int), norm_hist=False, kde=False)
 # plt.title('Distribution of NASA VIIRS Fire Count Data by Magnitude')
@@ -39,27 +39,20 @@ fire['yrs'] = fire['yrs'].values.astype(int)
 mybounds = {'x': (-73.2, -9.4),
             'y': (57.8, 84.3)}
 
-# sns.scatterplot(y='latitude', x='longitude', data=fire, hue='bright_ti4', palette=cm.magma_r)
-# plt.title('Fire Scatterplot')
-# plt.legend()
-# plt.ylabel('Latitude')
-# plt.xlabel('Longitude')
-# plt.xlim((mybounds[0], mybounds[2]))
-# plt.ylim((mybounds[1], mybounds[3]))
+# scatterplot mapping
 img = mpimg.imread(root + r'\greenland.PNG')
 
 fire.plot(kind='scatter', x='longitude', y='latitude',
           c='bright_ti4', cmap=plt.get_cmap('magma_r'),
           colorbar=True, figsize=(10, 7))
+
 plt.imshow(img, extent=[mybounds['x'][0], mybounds['x'][1],
                         mybounds['y'][0], mybounds['y'][1]], alpha=0.5)
 plt.xlabel('Longitude', fontsize=14)
 plt.ylabel('Latitude', fontsize=14)
 plt.title('NASA VIIRS Fire Count Overlay on Greenland')
-
-plt.legend
+plt.legend()
 
 
 plt.show()
 
-print('debug')
