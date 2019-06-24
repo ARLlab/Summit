@@ -32,13 +32,13 @@ def metPlotQC():
                         top=None, wspace=None, hspace=0.5)
 
     ax1 = sns.distplot(met['dir'], ax=ax[0])
-    ax1.set_title('Summit Wind Direction Timeseries')
+    ax1.set_title('Summit Wind Direction Histogram')
     ax1.set_xlabel('Direction Clockwise from True North')
     ax1.set_ylabel('Value Distribution')
     # ax1.set(xlim=(timelim[0], timelim[1]))
 
     ax2 = sns.distplot(met['spd'], ax=ax[1])
-    ax2.set_title('Summit Wind Speed Timeseries')
+    ax2.set_title('Summit Wind Speed Histogram')
     ax2.set_xlabel('Wind Speed [m/s]')
     ax2.set_ylabel('Value Distribution')
     # ax2.set(xlim=(timelim[0], timelim[1]))
