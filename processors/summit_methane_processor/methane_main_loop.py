@@ -95,6 +95,7 @@ async def check_load_pa_log(logger):
                 sets = split_into_sets_of_n(all_line_dates, 500)
             else:
                 sets = [all_line_dates]
+                # TODO: Can be reduced to just splitting, this step is done automatically by split_into.
 
             dates_already_in_db = []
             for set in sets:
@@ -294,7 +295,7 @@ async def match_peaks_to_samples(logger):
         if len(whole_set) > 500:  # subdivide set
             sets = split_into_sets_of_n(whole_set, 500)
         else:
-            sets = [whole_set]
+            sets = [whole_set]  # TODO: Can be reduced to just splitting, this step is done automatically by split_into.
 
         runs_w_unmatched_samples = []
         for set in sets:

@@ -4,6 +4,12 @@ from summit_errors import send_processor_email
 
 PROC = 'VOC Processor'
 
+def crf_warning_body(rf):
+    return ('Multiple exact matches found for a CRF between'
+            + f'{rf.date_start} and {rf.date_end}.\n'
+            + 'The CRF needs to be edited with any overlapping'
+            + ' start and end dates removed.')
+
 
 async def check_load_logs(logger):
     """
@@ -242,6 +248,8 @@ async def load_crfs(logger):
         from summit_core import voc_dir as rundir
         from summit_core import connect_to_db, TempDir
         from summit_voc import Base, Crf, read_crf_data
+        from sqlalchemy import or_, and_
+        from summit_errors import send_processor_warning
     except ImportError as e:
         logger.error('ImportError occurred in load_crfs()')
         send_processor_email(PROC, exception=e)
@@ -258,55 +266,90 @@ async def load_crfs(logger):
     try:
         logger.info('Running load_crfs()')
         with TempDir(rundir):
-            crfs = read_crf_data('summit_CRFs.txt')
+            crfs = read_crf_data('summit_CRFs.txt')  # creates a list of Crf objects
 
-        crf_dates_in_db = session.query(Crf.date_start).order_by(Crf.id).all()
-        crf_dates_in_db[:] = [rf.date_start for rf in crf_dates_in_db]
-
+        rfs_to_process = []
         for rf in crfs:
-            if rf.date_start not in crf_dates_in_db:  # prevent duplicates in db
-                crf_dates_in_db.append(rf.date_start)  # prevent duplicates in this load
-                session.merge(rf)
-                logger.info(f'CRF {rf} added.')
-            else:
-                pass
-                # TODO: Account for updated CRFs
-                # Find matching CRF in db with date_start, update date_end, revision_date and compounds
-                # Is there a way to handle overlapping periods?
-                    # Oh, if the start or end date has a .between(start, end) match in the database...
-                        # Then that matching entry should be deleted before adding the newer ones.
+            exact_match = (session.query(Crf)
+                                  .filter(Crf.date_start == rf.date_start, Crf.date_end == rf.date_end)
+                                  .all())
 
-        """
-        NEW PLAN (for B):
-        
-        Make all CRFs from the file
-                
-        Eliminate any created CRFs from file if there's a matching date_start and date_end in the database
-        
-        IF there's any left in that list, create an empty one of crfs_to_add
-        
-        Check for any with a matching date_start but not date_end in the database and update the date_end and compounds
-            Remove those from the list after they're added
-        
-        Next, check for any in the remaining list that have a True one_or_none() response for querying for 
-        it's date_start or date_end being included between another's date_start and date_end; 
-        the query NEEDS to be > date_start, < date_end because otherwise the end date (non-inclusive) will 
-        always return True for the start date (inclusive) of the next period.
-        
-        If there's a match, delete it and add the new one to the list of new CRFs to add, BUT
-        
-        Catch a MultipleResultsFound on one_or_none() because that *could* occur if the RF file was fucked. Except it by
-        getting all those responses and deleting them before adding new ones to the crfs_to_add
-        
-        Add all crfs_to_add
-        """
+            if exact_match:
+                if len(exact_match) > 1:
+                    logger.error(f'Multiple exact matches found for a CRF between {rf.date_start} and {rf.date_end}.')
+                    send_processor_warning('CRF', 'Loading', crf_warning_body(rf))
+                exact_match = exact_match[0]
+
+                # update the date_end and compound dict if only date_start matches, don't process the one from the file
+                exact_match.compounds = rf.compounds
+                exact_match.date_revision = rf.date_revision
+                session.merge(exact_match)
+                logger.info(f'CRF for {exact_match.date_start} to {exact_match.date_end} updated (exact).')
+
+            else:
+                # if no matching start and end dates, look for just start date
+                start_match = (session.query(Crf)
+                               .filter(Crf.date_start == rf.date_start)
+                               .all())
+                if start_match:
+                    if len(start_match) > 1:
+                        logger.error(
+                            f'Multiple start matches found for a CRF between {rf.date_start} and {rf.date_end}.')
+                        send_processor_warning('CRF', 'Loading', crf_warning_body(rf))
+                    start_match = start_match[0]
+                    # update the date_end and compound dict if only date_start matches
+                    start_match.date_end = rf.date_end
+                    start_match.compounds = rf.compounds
+                    start_match.date_revision = rf.date_revision
+                    session.merge(start_match)
+                    logger.info(f'CRF for {start_match.date_start} to {start_match.date_end} updated (start).')
+
+                else:
+                    # If there's no exact_match or start_match, we want to add this CRF as new, but, first, we want
+                    # to make sure it doesn't overlap with any CRFs already in the database, which could happen with
+                    # large re-workings of the CRF file.
+
+                    conditions = [
+                                  and_(Crf.date_start < rf.date_start, Crf.date_end > rf.date_start),
+                                  # ^ date_start of rf to add is within limits of one in the database
+                                  and_(Crf.date_start < rf.date_end, Crf.date_end > rf.date_end),
+                                  # ^ date_end of rf to add is within limits of one in the database
+                                  and_(Crf.date_start > rf.date_start, Crf.date_start < rf.date_end),
+                                  # ^ one in database has a date start contained in the bounds of the one to add
+                                  and_(Crf.date_end > rf.date_start, Crf.date_end < rf.date_end)
+                                  # ^ one in database has a date end contained in the bounds of the one to add
+                                  ]
+
+
+                    overlapping = (session.query(Crf)
+                                          .filter(or_(*conditions))
+                                          .all())
+
+                    if overlapping:
+                        # delete any overlapping CRFs in the database before adding this one
+                        for over in overlapping:
+                            logger.info(f'Deleting CRF from database for {over.date_start} to {over.date_end}')
+                            logger.info(f'It overlapped with CRF for {rf.date_start} to {rf.date_end} from the file.')
+                            session.delete(over)  # delete any in the database if their start/end dates overlap
+
+                    rfs_to_process.append(rf)
+
+        for rf in rfs_to_process:
+            session.add(rf)
+            logger.info(f'CRF for {rf.date_start} to {rf.date_end} added (new).')
 
         session.commit()
+
+        session.close()
+        engine.dispose()
+
         return True
 
     except Exception as e:
         logger.error(f'Exception {e.args} occurred in load_crfs()')
         send_processor_email(PROC, exception=e)
+        session.close()
+        engine.dispose()
         return False
 
 
