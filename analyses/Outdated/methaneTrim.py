@@ -4,13 +4,13 @@ data from the spreadsheet. Created on May 29th, 2019
 """
 
 # Import libraries
-from fileInput import fileLoad
+from fileLoading import loadExcel
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
 root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit\textFiles'
-methaneData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\Methane.xlsx")
+methaneData = loadExcel(r"C:\Users\ARL\Desktop\Python Code\Data\Methane.xlsx")
 methaneData = methaneData.dropna(axis=0, how='any')                         # Remove NaN values, entire row is removed
 
 # Remove extreme outliers

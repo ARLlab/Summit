@@ -19,13 +19,13 @@ from sklearn.linear_model import LinearRegression
 import seaborn as sns
 
 # Reading in file
-root = r'C:\Users\ARL\Desktop\J_Summit\analyses\HarmonicFit'                              # Root File Location
+root = r'C:\Users\ARL\Desktop\J_Summit\analyses\Data'                              # Root File Location
 
-ethane = pd.read_csv(root + r'\TextFiles\test1.txt', encoding='utf8', delim_whitespace=True)        # whitespace
+ethane = pd.read_csv(root + r'\\test1.txt', encoding='utf8', delim_whitespace=True)        # whitespace
 # delimitter read
 ethane = ethane.dropna(axis=1, how='any')
 
-ace = pd.read_csv(root + r'\TextFiles\aceDefault.txt', encoding='utf8', delim_whitespace=True)
+ace = pd.read_csv(root + r'\\aceDefault.txt', encoding='utf8', delim_whitespace=True)
 ace = ace.dropna(axis=1, how='any')
 
 # Performing Linear Regressions

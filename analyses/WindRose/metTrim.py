@@ -31,29 +31,8 @@ and Oceanic Tech., 3, 414-421, 1986.
 # Importing Libraries
 import pandas as pd
 import numpy as np
-from numba import njit
 
-
-@njit
-def convDatetime(yr, mo, dy, hr):
-    """
-    convDatetime takes values (likely from an array) and quickly converts them to decimal year format. Unfortunately
-    it does not account for leap years but if a level of accuracy that high is not required using this function with
-    numba's @njit provides nanosecond for looping of massive arrays.
-
-    :param yr: year, numpy array
-    :param mo: month, numpy array
-    :param dy: day, numpy array
-    :param hr: hour, numpy array
-    :return: the decimal year
-    """
-    date = np.empty(yr.shape)                                                   # preallocate date
-    for i in range(len(yr)):                                                    # iterate through all values
-        date[i] = ((yr[i]) +                                                    # year +
-                   (mo[i] / 12) +                                               # month rem
-                   (dy[i] / 365 / 12) +                                         # day rem
-                   (hr[i] / 24 / 365 / 12))                                     # hr rem
-    return date
+from dateConv import convDatetime, createDatetime
 
 
 def metTrim():
@@ -79,17 +58,41 @@ def metTrim():
     met = met.replace(-99.9, np.nan)
     met = met.dropna(axis=0, how='any')                                                 # remove rows with nan vals
 
-    # ---- convert date to dec datetime
+    # ---- convert date to datetime
     metInt = met.applymap(int)                                                          # make sure values are ints
-    dates = convDatetime(metInt['yr'].values,                                           # call convDatetime func
-                         metInt['mo'].values,
-                         metInt['dy'].values,
-                         metInt['hr'].values)
+    dates = createDatetime(metInt['yr'].values,
+                           metInt['mo'].values,
+                           metInt['dy'].values,
+                           metInt['hr'].values)
 
-    met['DecYear'] = dates                                                              # add it as a new column
+    met['datetime'] = dates                                                             # add it as a new column
     met = met.drop(['yr', 'mo', 'dy', 'hr'], axis=1)                                    # drop old date columns
 
+    # TODO: Confirm these values from Sam Dorsi with Detlev
+    # TODO: Bring it Met value with other data sets (ratios) and use it to trim poor data for better resid fit
+
+    # cutoff polluted values for checking
+    speedCutoff = 1.02889  # meters/second, too slow
+    dirCutoff = (342, 72)  # polution directions, above 342, below 72
+
+    origLen = len(met)
+    lenDrop = len(met[met['spd'] < speedCutoff])
+
+    met = met[met['spd'] > speedCutoff]
+    met.reset_index(drop=True, inplace=True)
+
+    valuesInRange = np.logical_or(met['dir'] >= dirCutoff[0],
+                                  met['dir'] <= dirCutoff[1])
+    lenDrop = lenDrop + len(met[valuesInRange])
+
+    met.drop(met[valuesInRange].index, axis=0, inplace=True)
+    met.reset_index(drop=True, inplace=True)
+
+    percentLost = (lenDrop / origLen) * 100
+    print(f'{percentLost} percent of data trimmed due to Summit camp pollution')
+
     return met
+
 
 if __name__ == '__main__':
     metTrim()

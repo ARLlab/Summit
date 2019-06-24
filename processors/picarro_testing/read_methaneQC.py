@@ -38,7 +38,7 @@ def main():
     run_median_dates = (run_median_dates - year) * 365  # convert to days
     daily_median_dates = (daily_median_dates - year) * 365
 
-    # We can make this more specific with the isleapyear() function in Summit.analyses.Basic_Functions if you want to
+    # We can make this more specific with the isleapyear() function in Summit.analyses.central if you want to
     # use it
 
     # Plotting
