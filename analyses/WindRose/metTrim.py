@@ -71,25 +71,25 @@ def metTrim():
     # TODO: Confirm these values from Sam Dorsi with Detlev
     # TODO: Bring it Met value with other data sets (ratios) and use it to trim poor data for better resid fit
 
-    # cutoff polluted values for checking
-    speedCutoff = 1.02889  # meters/second, too slow
-    dirCutoff = (342, 72)  # polution directions, above 342, below 72
-
-    origLen = len(met)
-    lenDrop = len(met[met['spd'] < speedCutoff])
-
-    met = met[met['spd'] > speedCutoff]
-    met.reset_index(drop=True, inplace=True)
-
-    valuesInRange = np.logical_or(met['dir'] >= dirCutoff[0],
-                                  met['dir'] <= dirCutoff[1])
-    lenDrop = lenDrop + len(met[valuesInRange])
-
-    met.drop(met[valuesInRange].index, axis=0, inplace=True)
-    met.reset_index(drop=True, inplace=True)
-
-    percentLost = (lenDrop / origLen) * 100
-    print(f'{percentLost} percent of data trimmed due to Summit camp pollution')
+    # # cutoff polluted values for checking
+    # speedCutoff = 1.02889  # meters/second, too slow
+    # dirCutoff = (342, 72)  # polution directions, above 342, below 72
+    #
+    # origLen = len(met)
+    # lenDrop = len(met[met['spd'] < speedCutoff])
+    #
+    # met = met[met['spd'] > speedCutoff]
+    # met.reset_index(drop=True, inplace=True)
+    #
+    # valuesInRange = np.logical_or(met['dir'] >= dirCutoff[0],
+    #                               met['dir'] <= dirCutoff[1])
+    # lenDrop = lenDrop + len(met[valuesInRange])
+    #
+    # met.drop(met[valuesInRange].index, axis=0, inplace=True)
+    # met.reset_index(drop=True, inplace=True)
+    #
+    # percentLost = (lenDrop / origLen) * 100
+    # print(f'{percentLost} percent of data trimmed due to Summit camp pollution')
 
     return met
 

@@ -11,13 +11,13 @@ from WindRose.metTrim import metTrim, createDatetime
 import pandas as pd
 import matplotlib.cm as cm
 import windrose
+from metRemoval import metRemove
 
 
 # TODO: Move metCombo to it's own file
-def metCombo(filename):
+def nmhcRead(filename):
 
     # ---- import data
-    met = metTrim()
     sheet = pd.read_csv(filename, encoding='utf8', delim_whitespace=True)
 
     # ---- data organization
@@ -29,25 +29,20 @@ def metCombo(filename):
                                        sheet['hr'])
     sheet.drop(['yr', 'mo', 'day', 'hr', 'min'], axis=1, inplace=True)                      # drop old cols
 
-    # ---- trimming data
-    earlyVals = (met['datetime'] <= sheet['datetime'][0])                       # early met vals
-    met.drop(['steady'], axis=1, inplace=True)                                  # remove some columns
-
-    # merge the met data onto the concentration data by finding the nearest datetime within an hour
-    combo = pd.merge_asof(sheet, met, on='datetime',
-                          direction='nearest',
-                          tolerance=pd.Timedelta('1 hour'))
-
-    return combo
+    return sheet
 
 
 def windRose():
-    root = r'C:\Users\ARL\Desktop\J_Summit\analyses\Data'          # root source
+
+    root = r'C:\Users\ARL\Desktop\Summit\analyses\Data'          # root source
     ethPath = root + r'\ethane.txt'
     acePath = root + r'\acetylene.txt'
 
-    ethane = metCombo(ethPath)
-    ace = metCombo(acePath)
+    ethane = nmhcRead(ethPath)
+    ace = nmhcRead(acePath)
+
+    ethane = metRemove(ethane, 1, dropMet=False)
+    ace = metRemove(ace, 1, dropMet=False)
 
     # ---- plotting
     # setup subplots

@@ -320,7 +320,6 @@ async def load_crfs(logger):
                                   # ^ one in database has a date end contained in the bounds of the one to add
                                   ]
 
-
                     overlapping = (session.query(Crf)
                                           .filter(or_(*conditions))
                                           .all())

@@ -828,6 +828,7 @@ async def update_excel_sheet(logger):
         else:
             most_recent_gcrun = most_recent_gcrun.date  # get date from tuple response
 
+        # object list of all the runs past the most recent date
         new_runs = session.query(GcRun).filter(GcRun.date > methane_sheet_config.last_data_date).all()
 
         if new_runs:
