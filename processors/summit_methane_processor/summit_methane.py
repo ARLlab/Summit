@@ -11,16 +11,16 @@ from sqlalchemy.orm import relationship
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
 # retention times based on sample number
-sample_rts = {0: [2, 3],  # TODO: Sample RTs should be treated similar to CompoundWindows in summit_voc
-              1: [8.3, 9.3],  # even though methane RTs are quite stable, large GC changes will still need to be handled
-              2: [14.65, 15.65],
-              3: [21, 22],
-              4: [27.3, 28.3],
-              5: [33.65, 34.65],
-              6: [40, 41],
-              7: [46.4, 47.4],
-              8: [52.75, 53.75],
-              9: [59, 60]}
+sample_rts = {0: (2, 3),  # TODO: Sample RTs should be treated similar to CompoundWindows in summit_voc
+              1: (8.3, 9.3),  # even though methane RTs are quite stable, large GC changes will still need to be handled
+              2: (14.65, 15.65),
+              3: (21, 22),
+              4: (27.3, 28.3),
+              5: (33.65, 34.65),
+              6: (40, 41),
+              7: (46.4, 47.4),
+              8: (52.75, 53.75),
+              9: (59, 60)}
 
 
 class Standard(Base):
