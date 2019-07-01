@@ -506,6 +506,7 @@ class Datum(Base):
         self.notes = None
         self.log_con = GcRun.log_con
         self.line_con = GcRun.nmhc_con
+        self.crfs = GcRun.crfs
 
     def __str__(self):
         return f'<data for {self.date_end} with {len(self.peaks)} peaks>'
