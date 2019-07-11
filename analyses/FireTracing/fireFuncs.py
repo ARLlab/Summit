@@ -62,24 +62,30 @@ def firedt(dataframe):
     return df
 
 
-def fireCombo(fireDF, otherDF):
+def fireCombo(fireDF, otherDF, VIRRS=True):
     from fireFuncs import firedt
     import numpy as np
     from scipy import stats
     import pandas as pd
 
-    # only keep high tolerence values
-    cond = fireDF['confidence'] == 'h'
-    fireDF = fireDF[cond]
-    fireDF.reset_index(drop=True, inplace=True)
+    if VIRRS:
+        # only keep high tolerence values for VIRRS
+        cond = fireDF['confidence'] == 'h'
+        fireDF = fireDF[cond]
+        fireDF.reset_index(drop=True, inplace=True)
 
     # call datetime function to make datetimes
     fireDF = firedt(fireDF)
 
-    # remove some other columns
-    badcols = ['scan', 'track', 'satellite', 'instrument', 'confidence', 'version', 'type', 'frp']
-    fireDF.drop(badcols, axis=1, inplace=True)
-    fireDF.reset_index(drop=True, inplace=True)
+    if VIRRS:
+        # remove some other columns for VIRRS Version
+        badcols = ['scan', 'track', 'satellite', 'instrument', 'confidence', 'version', 'type', 'frp']
+        fireDF.drop(badcols, axis=1, inplace=True)
+        fireDF.reset_index(drop=True, inplace=True)
+    else:
+        badcols = ['scan', 'track', 'satellite', 'instrument', 'confidence', 'version', 'type', 'frp', 'daynight']
+        fireDF.drop(badcols, axis=1, inplace=True)
+        fireDF.reset_index(drop=True, inplace=True)
 
     # identify Z scores of other DF in value and normed Resid
     values = otherDF['value'].values
