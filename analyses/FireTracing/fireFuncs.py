@@ -38,38 +38,37 @@ def firedt(dataframe):
 
     # seperate datetime components
     sep = values.str.split('-')
-    dataframe['yr'] = sep.str[0].astype(int)
-    dataframe['mo'] = sep.str[1].astype(int)
-    dataframe['dy'] = sep.str[2].astype(int)
-    dataframe['hr'] = np.zeros(len(dataframe['dy'])).astype(int)
+    dataframe.insert(len(dataframe.columns), 'yr', sep.str[0].astype(int), True)
+    dataframe.insert(len(dataframe.columns), 'mo', sep.str[1].astype(int), True)
+    dataframe.insert(len(dataframe.columns), 'dy', sep.str[2].astype(int), True)
+    dataframe.insert(len(dataframe.columns), 'hr', np.zeros(len(dataframe['dy'])).astype(int), True)
 
     # create datetimes
-    dataframe['datetime'] = createDatetime(dataframe['yr'].values,
-                                           dataframe['mo'].values,
-                                           dataframe['dy'].values,
-                                           dataframe['hr'].values)
+    dataframe.insert(len(dataframe.columns), 'dt',
+                     createDatetime(dataframe['yr'].values,
+                                    dataframe['mo'].values,
+                                    dataframe['dy'].values,
+                                    dataframe['hr'].values))
 
     # add timedelta of hour and minute from the acq_time column
     timedeltas = pd.to_timedelta(timedeltas, unit='m')
-    dataframe['datetime'] = dataframe['datetime'] + timedeltas
+    dataframe.insert(len(dataframe.columns), 'datetime',
+                     dataframe['dt'] + timedeltas)
 
     # remove other columns
-    badcols = ['acq_time', 'acq_date', 'yr', 'mo', 'dy', 'hr']
-    dataframe.drop(badcols, axis=1, inplace=True)
+    badcols = ['acq_time', 'acq_date', 'yr', 'mo', 'dy', 'hr', 'dt']
+    df = dataframe.drop(badcols, axis=1)
 
-    return dataframe
+    return df
 
 
 def fireCombo(fireDF, otherDF):
     import pandas as pd
     from fireFuncs import firedt
 
-    root = r'C:\Users\'
-    fire = pd.read_csv(root + r'\FireData' + r'\fire_archive_V1_58066.csv')
-
     # only keep high tolerence values
-    cond = fire['confidence'] == 'h'
-    fire = fire[cond]
+    cond = fireDF['confidence'] == 'h'
+    fire = fireDF[cond]
     fire.reset_index(drop=True, inplace=True)
 
     # call datetime function to make datetimes
@@ -79,8 +78,15 @@ def fireCombo(fireDF, otherDF):
     badcols = ['scan', 'track', 'satellite', 'instrument', 'confidence', 'version', 'type', 'frp']
     fire.drop(badcols, axis=1, inplace=True)
     fire.reset_index(drop=True, inplace=True)
-    pass
 
+    # identify Z scores of other DF
+
+    # pd merge asof by datetime with the hour
+
+    # print statement identifying how high z scores are? maybe the average z score?
+
+
+    return fire
 
 def shapePlot():
     pass

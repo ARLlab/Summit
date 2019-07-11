@@ -1,31 +1,37 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 import seaborn as sns
+import numpy as np
+import matplotlib.cm as cm
+import matplotlib.image as mpimg
+from fireFuncs import fireCombo
 
-from fireFuncs import readSF, shapePlot
-
-# seaborn setup
-sns.set(style='whitegrid', palette='pastel', color_codes=True)
-sns.mpl.rc('figure', figsize=(10, 6))
-
-# opening vector map
-
+# import fire data
 root = r'C:\Users\ARL\Desktop\FireData'
-fire, sf = readSF(root + r'\fire_archive_V1_58078.shp')
+fire = pd.read_csv(root + r'\fire_archive_V1_58066.csv')
 
-plt.figure()
-ax = plt.axes()
-ax.set_aspect('equal')
+# import other dataset to compare with
 
-shape_ex = sf.shape(id)
-longitudes = []
-latitudes = []
+# call fire combo to combine the datasets
+fire = fireCombo(fire, fire)
 
-for i in range(len(shape_ex.points)):
-    longitudes.append(shape_ex.points[i][0])
-    latitudes.append(shape_ex.points[i][1])
+mybounds = {'x': (-73.2, -9.4),
+            'y': (57.8, 84.3)}
 
-plt.plot(longitudes, latitudes)
+# scatterplot mapping
+img = mpimg.imread(root + r'\greenland.PNG')
 
+fire.plot(kind='scatter', x='longitude', y='latitude',
+          c='bright_ti4', cmap=plt.get_cmap('magma_r'),
+          colorbar=True, figsize=(10, 7))
+
+plt.imshow(img, extent=[mybounds['x'][0], mybounds['x'][1],
+                        mybounds['y'][0], mybounds['y'][1]], alpha=0.5)
+plt.xlabel('Longitude', fontsize=14)
+plt.ylabel('Latitude', fontsize=14)
+plt.title('NASA VIIRS Fire Count Overlay on Greenland')
+plt.legend()
+
+
+plt.show()
 
