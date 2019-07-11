@@ -21,7 +21,7 @@ def ratioPlot():
     register_matplotlib_converters()
 
     # import data
-    root = r'C:\Users\ARL\Desktop\J_Summit\analyses\Data'
+    root = r'C:\Users\ARL\Desktop\Summit\analyses\Data'
     ethane = readCsv(root + r'\ethaneRatioNoaa.txt')
     ace = readCsv(root + r'\aceRatioNoaa.txt')
 

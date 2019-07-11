@@ -63,30 +63,47 @@ def firedt(dataframe):
 
 
 def fireCombo(fireDF, otherDF):
-    import pandas as pd
     from fireFuncs import firedt
+    import numpy as np
+    from scipy import stats
+    import pandas as pd
 
     # only keep high tolerence values
     cond = fireDF['confidence'] == 'h'
-    fire = fireDF[cond]
-    fire.reset_index(drop=True, inplace=True)
+    fireDF = fireDF[cond]
+    fireDF.reset_index(drop=True, inplace=True)
 
     # call datetime function to make datetimes
-    fire = firedt(fire)
+    fireDF = firedt(fireDF)
 
     # remove some other columns
     badcols = ['scan', 'track', 'satellite', 'instrument', 'confidence', 'version', 'type', 'frp']
-    fire.drop(badcols, axis=1, inplace=True)
-    fire.reset_index(drop=True, inplace=True)
+    fireDF.drop(badcols, axis=1, inplace=True)
+    fireDF.reset_index(drop=True, inplace=True)
 
-    # identify Z scores of other DF
+    # identify Z scores of other DF in value and normed Resid
+    values = otherDF['value'].values
+    z = np.abs(stats.zscore(values))
+    otherDF['value_z'] = z
+
+    normedvals = otherDF['normResid'].values
+    z = np.abs(stats.zscore(normedvals))
+    otherDF['normed_z'] = z
 
     # pd merge asof by datetime with the hour
+    combo = pd.merge_asof(fireDF.sort_values('datetime'), otherDF,
+                          on='datetime',
+                          direction='nearest',
+                          tolerance=pd.Timedelta('1 hours'))
+    combo.dropna(axis=0, how='any', inplace=True)
+    combo.reset_index(drop=True, inplace=True)
 
-    # print statement identifying how high z scores are? maybe the average z score?
+    # remove some other columns
+    badcols = ['decyear', 'function', 'residsmooth']
+    combo.drop(badcols, axis=1, inplace=True)
 
+    return combo
 
-    return fire
 
 def shapePlot():
     pass
