@@ -70,7 +70,7 @@ def fireCombo(fireDF, otherDF, VIRRS=True):
 
     if VIRRS:
         # only keep high tolerence values for VIRRS
-        cond = fireDF['confidence'] == 'h'
+        cond = fireDF['confidence'] != 'l'
         fireDF = fireDF[cond]
         fireDF.reset_index(drop=True, inplace=True)
 

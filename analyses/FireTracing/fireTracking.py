@@ -20,7 +20,7 @@ def fireTrack():
     ace = readCsv(root + '\\' + r'aceRatioNoaa.txt')
 
     # import fire data
-    virrs = False
+    virrs = True
     root = r'C:\Users\ARL\Desktop\FireData'
     if virrs:
         fire = pd.read_csv(root + r'\fire_archive_V1_60132.csv')
