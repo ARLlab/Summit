@@ -15,6 +15,7 @@ import pandas as pd
 import seaborn as sns
 import datetime as dt
 import numpy as np
+from scipy import stats
 
 
 def ratioPlot():
@@ -36,12 +37,15 @@ def ratioPlot():
     ethane.name = 'Ethane'
     ace.name = 'Acetylene'
 
-    for sheet in [ethane, ace]:
+    for sheet in [ace]:
 
         sheet['datetime'] = decToDatetime(sheet['decyear'].values)
 
         normResid = sheet['resid'].values / sheet['value'].values
         normSmooth = sheet['residsmooth'].values / sheet['value'].values
+
+        z = np.abs(stats.zscore(normResid))
+        sheet['zscores'] = z
 
         sheet.drop(['resid', 'residsmooth'], axis=1, inplace=True)
         sheet['resid'] = normResid
@@ -61,7 +65,7 @@ def ratioPlot():
         ax2 = sns.lineplot(x='datetime', y='function', data=sheet, linewidth=2, label='Fitted Function', ax=ax[0])
         ax1.set_title(sheet.name + ' / Methane Ratio')
         ax1.set_xlabel('Datetime')
-        ax1.set_ylabel('Mixing Ratio [ppb]')
+        ax1.set_ylabel('Ratio Value')
         ax1.set(xlim=((min(sheet['datetime']) - dt.timedelta(days=10)),
                       (max(sheet['datetime']) + dt.timedelta(days=10))))
         ax1.set(ylim=(min(sheet['value']) - np.mean(sheet['value']/3),
@@ -75,7 +79,7 @@ def ratioPlot():
         ax4.get_lines()[0].set_color('purple')
         ax3.set_title('Normalized Residuals in ' + sheet.name)
         ax3.set_xlabel('Datetime')
-        ax3.set_ylabel('Mixing Ratio [ppb]')
+        ax3.set_ylabel('Residual / Value Ratio')
         ax3.set(xlim=((min(sheet['datetime']) - dt.timedelta(days=10)),
                       (max(sheet['datetime']) + dt.timedelta(days=10))))
         ax3.set(ylim=(np.mean(sheet['resid']) - np.std(sheet['resid']) * 8,
@@ -92,7 +96,7 @@ def ratioPlot():
         ax5 = sns.scatterplot(x='DOY', y='resid', data=sheet, alpha=0.7, label='Normalized Residuals', ax=ax[2])
         ax5.set_title('Normalized Residuals by Julian Day')
         ax5.set_xlabel('Day of Year')
-        ax5.set_ylabel('Mixing Ratio [ppb]')
+        ax5.set_ylabel('Residual / Value Ratio')
         ax5.set(xlim=((min(sheet['DOY'])),
                       (max(sheet['DOY']))))
         ax5.set(ylim=(np.mean(sheet['resid']) - np.std(sheet['resid']) * 8,
