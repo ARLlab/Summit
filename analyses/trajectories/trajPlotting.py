@@ -24,5 +24,3 @@ plt.title('Back Trajectories')
 plt.legend()
 
 plt.show()
-
-print('debug')
