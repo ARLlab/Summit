@@ -22,9 +22,9 @@ def pysplitDates():
     ethane = readCsv(root + r'\ethaneRatioNoaa.txt')                        # ethane data read in
     ace = readCsv(root + r'\aceRatioNoaa.txt')                              # data read in acetylene
 
-    header = ['decyear', 'value', 'function', 'resid', 'residsmooth']       # assign column names
     for sheet in [ethane, ace]:
-        sheet.columns = header                                              # reassign header
+        header = ['decyear', 'value', 'function', 'resid', 'residsmooth']       # assign column names
+        sheet.columns = header
         print(f'Number of data points is {len(sheet)}')
 
     ethane = ethane[ethane['value'] >= 0.0000001]
