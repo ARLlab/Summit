@@ -21,6 +21,7 @@ async def check_load_logs(logger):
 
     try:
         import os
+        import math
         from summit_core import voc_logs_path as logpath
         from summit_core import voc_dir as rundir
         from summit_core import connect_to_db, TempDir, core_dir, Config
@@ -44,9 +45,18 @@ async def check_load_logs(logger):
 
         logfns = [file.name for file in os.scandir(logpath) if 'l.txt' in file.name]
 
+        # If logfns > 999, than SQL throws a query error of too many variables, so we split it up at the 900 point.
+        # This fix is temporary, but it should rarely go above 1000 log files unless not run for more than a whole
+        # weekend.
         if logfns:
-            logs_in_db = session.query(LogFile).filter(LogFile.filename.in_(logfns)).all()
-            logs_in_db[:] = [l.filename for l in logs_in_db]
+            if len(logfns) > 1000:
+                first_logs = session.query(LogFile).filter(LogFile.filename.in_(logfns[:900])).all()
+                secondary_logs = session.query(LogFile).filter(LogFile.filename.in_(logfns[900:])).all()
+                logs_in_db = first_logs + secondary_logs
+                logs_in_db[:] = [l.filename for l in logs_in_db]
+            else:
+                logs_in_db = session.query(LogFile).filter(LogFile.filename.in_(logfns)).all()
+                logs_in_db[:] = [l.filename for l in logs_in_db]
 
             logs_to_load = []
             for log in logfns:
