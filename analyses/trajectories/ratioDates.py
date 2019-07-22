@@ -84,7 +84,7 @@ def pysplitDates():
         residuals = sheet['resid'].values                                       # numpy array of resid
         z = np.abs(stats.zscore(residuals))                                     # calculate z scores
         sheet['zscores'] = z                                                    # assign as column
-        thresh = 3                                                              # z score threshold
+        thresh = 0                                                              # z score threshold
         sheetZ = sheet[z > thresh]                                              # remove non outliers
         print(f'Number of outliers is {len(sheetZ)}')
 

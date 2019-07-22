@@ -22,11 +22,21 @@ import pandas as pd
 
 # Change figure seetings
 from matplotlib.pyplot import figure
+import matplotlib
 
 ## Import function
 from fileInput import fileLoad
 nmhcData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.XLSX")
 methaneData = fileLoad(r"C:\Users\ARL\Desktop\Python Code\Data\Methane.XLSX")
+
+
+plt.rc('font', size=22)          # controls default text sizes
+plt.rc('axes', titlesize=18)     # fontsize of the axes title
+plt.rc('axes', labelsize=18)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=14)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=16)    # fontsize of the tick labels
+plt.rc('legend', fontsize=16)    # legend fontsize
+plt.rc('figure', titlesize=20)  # fontsize of the figure title
 
 ## Plotting NMHC
 date = nmhcData.loc[:,'DecYear'] # Variable describing the decimal Year
@@ -37,9 +47,9 @@ numYears = np.linspace(2008,2018,num=((2018 - 2008)+1)) # number of years total
 for i in numCompounds:
     plt.figure(i) # Open a new fig for each compounds
     figure(num=None, figsize=(8, 6), dpi=160, facecolor='w', edgecolor='k')
-    plt.xlabel('Day of Year',fontdict=None,labelpad=None) # x labels all same
-    plt.ylabel('Mixing Ratio [Parts per Billion]',fontdict=None,labelpad=None) # y labels
-    plt.title('Summit %s from 2008-2018' %compounds[int(i)],fontdict=None,pad=None)
+    plt.xlabel('Day of Year',fontdict=None,labelpad=None, fontsize=14) # x labels all same
+    plt.ylabel('Mixing Ratio [Parts per Billion]',fontsize=14,fontdict=None,labelpad=None) # y labels
+    plt.title('Summit %s from 2008-2018' %compounds[int(i)],fontsize=18, fontdict=None,pad=None)
     plt.xticks(np.arange(0,361,30)) # 365 has no nice divsors
 
     for j in numYears:
@@ -47,6 +57,9 @@ for i in numCompounds:
         x = (((nmhcData.loc[(date >= j) & (date < (j+1)),'DecYear'].values)-j) * 365) + 1
         # The y axes is the mixing ratio of that given day, for the specific compound
         y = nmhcData.loc[(date >= j) & (date < (j+1)),compounds[int(i)]].values
+        nonzero = y > 0
+        y = y[nonzero]
+        x = x[nonzero]
         plt.plot(x,y,'.',alpha=0.5,label='%i'%j)
         plt.legend(bbox_to_anchor=(1.04,1), loc="upper left") # puts legend outside of graph
 
