@@ -44,16 +44,25 @@ async def check_load_logs(logger):
         logger.info('Running check_load_logs()')
 
         logfns = [file.name for file in os.scandir(logpath) if 'l.txt' in file.name]
-
-        # If logfns > 999, than SQL throws a query error of too many variables, so we split it up at the 900 point.
-        # This fix is temporary, but it should rarely go above 1000 log files unless not run for more than a whole
-        # weekend.
         if logfns:
-            if len(logfns) > 1000:
-                first_logs = session.query(LogFile).filter(LogFile.filename.in_(logfns[:900])).all()
-                secondary_logs = session.query(LogFile).filter(LogFile.filename.in_(logfns[900:])).all()
-                logs_in_db = first_logs + secondary_logs
+            # if greater than 999 files, SQL throws error, use list comprehension to query in chunks
+            if len(logfns) >= 999:
+                logger.info('Number of Logs > 999, processing in chunks')
+                # number of files to query in a given chunk
+                iterations = math.ceil(len(logfns) / 1000)
+                n = int(len(logfns) / (iterations * 2))
+
+                # list comprehension to seperate logfns into seperate chunks
+                chunked_logfiles = [logfns[i * n:(i + 1) * n] for i in range((len(logfns) + n - 1) // n)]
+
+                # query each chunk and append it to the total logs in db
+                logs_in_db = []
+                for i in range(len(chunked_logfiles)):
+                    database_logs = session.query(LogFile).filter(LogFile.filename.in_(chunked_logfiles[i])).all()
+                    logs_in_db = logs_in_db + database_logs
+
                 logs_in_db[:] = [l.filename for l in logs_in_db]
+            # else, the number of logfiles is normal and under 1000
             else:
                 logs_in_db = session.query(LogFile).filter(LogFile.filename.in_(logfns)).all()
                 logs_in_db[:] = [l.filename for l in logs_in_db]
