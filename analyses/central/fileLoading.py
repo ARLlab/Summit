@@ -33,6 +33,5 @@ def readCsv(filename):
                        header=None,
                        error_bad_lines=False,
                        warn_bad_lines=True,
-                       engine='Python',
                        )
     return data
