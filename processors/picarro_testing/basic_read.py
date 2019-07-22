@@ -74,8 +74,7 @@ class CalEvent():
         self.CO_std = self.CO[self.get_back_period(self.cal_period)].std()
 
     def __str__(self):
-        return f"<CalEvent {self.id} with {len(self.CH4)}, {len(self.CO2)}, {len(
-            self.CO)}, CH4, CO2, and CO data points>"
+        return f"<CalEvent {self.id} with {len(self.CH4)}, {len(self.CO2)}, {len(self.CO)}, CH4, CO2, and CO data points>"
 
     def __repr__(self):
         return f"<CalEvent {self.id} with {len(self.CH4)} CH4, CO2, and CO data points>"
