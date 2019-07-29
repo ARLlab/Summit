@@ -45,11 +45,12 @@ def metPlotQC():
 
     plt.show()
 
-    sns.set(style="white")
+    sns.set(style="white", font_scale=1.5)
     sns.despine()
     g = sns.jointplot(met['dir'], met['spd'], kind='hex', cmap=cm.magma_r, color='#e65c00')
-    g.set_axis_labels('Wind Direction Measured CW from True North', 'Wind Speed [m/s]', fontsize=12)
-    g.fig.suptitle('Met Data from Summit, Greenland')
+    g.set_axis_labels('Wind Direction Measured CW from True North', 'Wind Speed [m/s]', fontsize=20)
+    g.fig.suptitle('Met Data from Summit, Greenland', fontsize=28)
+    plt.tick_params(axis='both', labelsize=18)
     plt.legend()
 
     plt.show()

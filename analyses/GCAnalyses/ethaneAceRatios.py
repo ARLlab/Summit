@@ -121,9 +121,9 @@ def ratioPlot():
 
     g = sns.jointplot(combo['resid_x'], combo['resid_y'], kind='reg', color='#e65c00',
                       line_kws={'label': 'rSquared: {:1.5f}\n Slope: {:1.5f}\n'.format(rSquared, slope[0])})
-    g.set_axis_labels('Ethane MR [ppb]', 'Acetylene MR [ppb]', fontsize=20)
+    g.set_axis_labels('Ethane/Methane Ratio', 'Acetylene/Methane Ration', fontsize=20)
     plt.tick_params(axis='both', labelsize=18)
-    g.fig.suptitle('Correlation between Ethane and Acetylene Residuals', fontsize=28)
+    g.fig.suptitle('Correlation between Ethane and Acetylene Ratio Residuals', fontsize=28)
     g.ax_joint.get_lines()[0].set_color('blue')
     plt.legend()
     plt.show()

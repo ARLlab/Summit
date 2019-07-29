@@ -1,6 +1,5 @@
 # import libraries and functions
 from WindRose.metTrim import metTrim
-from dateConv import createDatetime
 import pandas as pd
 import numpy as np
 
@@ -44,6 +43,7 @@ def metRemove(sheet, tolerance, dropMet=True):
                                   combo['dir'] <= dirCutoff[1])
 
     combo.drop(combo[valuesInRange].index, axis=0, inplace=True)
+
     combo.reset_index(drop=True, inplace=True)
 
     percentChange = (1 - (len(combo) / lenOrig)) * 100
