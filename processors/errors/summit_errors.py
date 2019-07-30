@@ -196,6 +196,8 @@ class LogParameterEmail(EmailTemplate):
             log_value = getattr(log, parameter, 'Value Not Found')
             body = body + f'{parameter}: {log_value} was outside limits of {limits}\n'
 
+        body = body + 'Usually these are not a concern - check documentation for more information'
+
         super().__init__(sender, instrument_email_list, body, subject=subject)
 
 

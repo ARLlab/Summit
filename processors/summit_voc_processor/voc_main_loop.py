@@ -1059,7 +1059,7 @@ async def check_new_logs(logger):
 
                 failed = []                                                                     # prealloc failed list
 
-                for name, limits in log_parameter_bounds.items():                                        # loop over param dict
+                for name, limits in log_parameter_bounds.items():                               # loop over param dict
 
                     # replace primary and secondary with appropriate classification (A or B)
                     if '_primary' in name or '_secondary' in name:
@@ -1079,7 +1079,10 @@ async def check_new_logs(logger):
                     log_value = getattr(log, log_name)                                           # limit tuple
 
                     if not limits[0] <= log_value <= limits[1]:                                 # items outside of bound
-                        failed.append(name)                                                   # append failed name
+                        if log_name != name:
+                            failed.append(name + '||' + log_name)                               # append failed name
+                        else:
+                            failed.append(name)
 
                         # print log statement for error identification in addition to email
                         if log_name != name:
