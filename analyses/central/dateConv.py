@@ -6,6 +6,7 @@ the entire root folder.
 """
 from numba import njit
 import numpy as np
+import pandas as pd
 
 def toYearFraction(date):
     """
@@ -149,4 +150,67 @@ def createDatetime(yr, mo, dy, hr):
         datetime.append(time)
 
     return datetime
+
+
+def visitToDatetime(date, arrival, depart):
+    """
+    Converts arrival and departure times from the TAWO visit log into a start and end datetime
+    :return: datetime column with before, after tuple
+
+    Warning: The fact that this function works is honestly beyond me. Only Jesus can understand it at this point. It
+    is an amalgamation of frustration and defeat with Python datetimes. Good luck.
+    """
+    import calendar
+    import datetime as dt
+
+    # replace NaT values with previous date
+    mask = np.isnat(date)                                               # boolean array of where NaT values are
+    idx = np.flatnonzero(mask)                                          # indexes of NaT
+    nidx = np.flatnonzero(~mask)                                        # other indexs
+    date[mask] = pd.Timestamp('1980-01-01')                             # replace NaT with 2000 date
+    date = [pd.Timestamp(x) for x in date]                              # convert n64dt to timestamp
+    date = [calendar.timegm(x.timetuple()) + 86400 for x in date]       # convert timestamp to unix time value
+    date = np.array(date)                                               # convert back to numpy array
+    nonnats = date[~mask]                                               # get actual non NaT values
+    date[mask] = np.interp(idx, nidx, nonnats) - 86400                  # interp unix date values
+    date = [dt.datetime.fromtimestamp(x) for x in date]                 # convert unix timestamp to datetime
+
+    s, d = [], []
+    for i in range(len(arrival)):
+        base = dt.datetime(date[i].year,                                # collect the base remove hour
+                           date[i].month,
+                           date[i].day)
+
+        # get start hour information
+        shour = int(str(arrival[i])[:2])
+        sminute = int(str(arrival[i])[2:])
+        start = base + pd.Timedelta(f'{shour} hours') + pd.Timedelta(f'{sminute} minutes')
+
+        # departing hour information
+        dhour = int(str(depart[i])[:2])
+        dminute = int(str(depart[i])[2:])
+        end = base + pd.Timedelta(f'{dhour} hours') + pd.Timedelta(f'{dminute} minutes')
+
+        # create and append a tuple
+        s.append(start)
+        d.append(end)
+
+    return s, d
+
+
+def updateDatetime(year, doy):
+    """
+    creates datetimes for updating NMHC info
+    :param year: the year
+    :param doy: the decimal day of year
+    :return: datetime
+    """
+    import datetime as dt
+    import calendar
+
+    start = dt.datetime(year - 1, 12, 31)  # create starting datetime
+    result = start + dt.timedelta(days=doy)  # add timedelta of those days
+
+    return result
+
 

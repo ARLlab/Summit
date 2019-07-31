@@ -16,7 +16,7 @@ import numpy as np
 def methane():
 
     # import original dataset and new datasets
-    methanePrev = loadExcel(r"C:\Users\ARL\Desktop\Python Code\Data\Methane.xlsx")
+    methanePrev = loadExcel(r"C:\Users\ARL\Desktop\Jashan\Summit\analyses\Data\Methane.xlsx")
     methane2018 = loadExcel(r'C:\Users\ARL\Desktop\SUM_CH4_insitu_2018.xlsx')
     methane2019 = loadExcel(r'C:\Users\ARL\Desktop\Summit_GC_2019\CH4_results\SUM_CH4_insitu_2019.xlsx')
 
