@@ -5,6 +5,7 @@ This script contains functions for easily getting into SQLlite databases
 import sqlite3
 from sqlite3 import Error
 import pandas as pd
+import math
 
 
 def create_connection(db_file):
@@ -38,9 +39,23 @@ def get_data(conn, startdate, enddate, cpd):
     rows = cur.fetchall()
 
     # convert to clean dataframe
-    data = pd.DataFrame(rows)
-    data.columns = ['id', 'date', '1', 'status', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14',
-                    'ch4', '15', '16', '17']
+    if len(rows) > 100000:
+        iterations = math.ceil(len(rows) / 100000)
+        n = int(len(rows) / (iterations * 2))
+
+        chunked_rows = [rows[i * n:(i + 1) * n] for i in range((len(rows) + n - 1) // n)]
+
+        data = pd.DataFrame()
+        for i in range(len(chunked_rows)):
+            frame = pd.DataFrame(chunked_rows[i])
+            data = data.append(frame, ignore_index=True)
+            del frame
+            print(f'Data Chunk {i} Appended')
+
+    data.columns = ['id', 'date', '1', 'status', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
+                    'ch4', '14', '15']
+    badcols = list(pd.Series(range(1, 16)).astype(str))
+    data.drop(badcols, axis=1, inplace=True)
 
     # create proper datetimes
     data['datetime'] = pd.to_datetime(data['date'])
@@ -50,10 +65,7 @@ def get_data(conn, startdate, enddate, cpd):
     # create fake date points
     data.insert(data.shape[1], 'rows', data.index.value_counts().sort_index().cumsum())
 
-    # drop poor columns
-    badcols = list(range(1, 18))
-    data.drop(badcols, axis=1, inplace=True)
-
     print('Data Gathered')
 
     return data
+

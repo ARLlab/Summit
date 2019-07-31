@@ -21,12 +21,12 @@ dbdir = os.path.join(root2, 'summit_picarro.sqlite')
 conn = create_connection(dbdir)
 
 # identify date range
-start = '2019-04-23 00:00:00'
+start = '2019-06-00 00:00:00'
 end = '2019-07-30 23:59:59'
 
 # get the data
 with conn:
-    ethane = get_data(conn, start, end, 'data')
+    methane = get_data(conn, start, end, 'data')
 
 # data cleaning
 dates = visits['Date'].values
@@ -43,10 +43,10 @@ visits['start'], visits['end'] = visitToDatetime(dates,
                                                  visits['Arrival time (Z)'].values,
                                                  visits['Departure time (Z)'].values)
 
-# ethane cleaning
-ethane.drop(['yr', 'mo', 'dy', 'hr', 'na'], axis=1, inplace=True)
-ethane.dropna(how='any', inplace=True)
-ethane.reset_index(drop=True, inplace=True)
+# methane cleaning
+methane.dropna(how='any', inplace=True)
+methane.reset_index(drop=True, inplace=True)
+methane = methane[methane['status'] == 963]
 
 # remove leftover columns
 badcols = ['Arrival time (Z)', 'Departure time (Z)']
@@ -57,37 +57,33 @@ visits['datetime'] = visits['start'] + (visits['end'] - visits['start'])/2
 
 
 combo = pd.merge_asof(visits.sort_values('datetime'),
-                      ethane.sort_values('datetime'),
+                      methane.sort_values('datetime'),
                       on='datetime', direction='nearest',
-                      tolerance=pd.Timedelta('3 hour'))
+                      tolerance=pd.Timedelta('1 minute'))
 combo.dropna(axis=0, how='any', inplace=True)
-ethane = ethane[ethane['datetime'] > dt.datetime(2019, 1, 1, 1)]
+methane = methane[methane['datetime'] > dt.datetime(2019, 1, 1, 1)]
 
 sns.set(style="whitegrid")
 f, ax = plt.subplots(figsize=(9, 9))
 sns.despine(f, left=True, bottom=True)
-sns.scatterplot(x='datetime', y='val', data=combo, hue='# persons', ax=ax, s=70, zorder=5,
+sns.scatterplot(x='datetime', y='ch4', data=combo, hue='# persons', ax=ax, s=70, zorder=5,
                 palette='seismic',
                 hue_norm=(0, 6))
-sns.scatterplot(x='datetime', y='val', data=ethane, ax=ax, s=25, alpha=0.5, color='red', label='Background Values')
+sns.scatterplot(x='datetime', y='ch4', data=methane, ax=ax, s=25, alpha=0.5, color='red', label='Background Values')
 plt.title('TAWO Vistor Log Correlation')
 plt.xlabel('')
-plt.ylabel('Methane Mixing Ratio (ppb)')
+plt.ylabel('Methane Mixing Ratio (ppm) [Picarro Data]')
 
 # New xticks plot
 months = mdates.MonthLocator()              # Add tick every month
-days = mdates.DayLocator(range(1, 32, 5))   # Add tick every 5th day in a month
 monthFmt = mdates.DateFormatter('%b')       # Use abbreviated month name
 
 # Add the locators to the axis
 ax.xaxis.set_major_locator(months)
 ax.xaxis.set_major_formatter(monthFmt)
-ax.xaxis.set_minor_locator(days)
 
-plt.xlim(dt.datetime(2019, 4, 30), dt.datetime(2019, 7, 1))
-plt.ylim(1890, 1965)
+plt.xlim(dt.datetime(2019, 6, 1), dt.datetime(2019, 7, 31))
+plt.ylim()
 plt.legend()
 
 plt.show()
-
-print('debug point')
