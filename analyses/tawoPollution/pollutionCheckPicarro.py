@@ -22,7 +22,7 @@ conn = create_connection(dbdir)
 
 # identify date range
 start = '2019-06-00 00:00:00'
-end = '2019-07-30 23:59:59'
+end = '2019-07-27 23:59:59'
 
 # get the data
 with conn:
@@ -82,7 +82,7 @@ monthFmt = mdates.DateFormatter('%b')       # Use abbreviated month name
 ax.xaxis.set_major_locator(months)
 ax.xaxis.set_major_formatter(monthFmt)
 
-plt.xlim(dt.datetime(2019, 6, 1), dt.datetime(2019, 7, 31))
+plt.xlim(dt.datetime(2019, 6, 1), dt.datetime(2019, 7, 28))
 plt.ylim()
 plt.legend()
 
