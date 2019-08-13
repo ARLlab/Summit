@@ -14,7 +14,6 @@ import windrose
 from metRemoval import metRemove
 
 
-# TODO: Move metCombo to it's own file
 def nmhcRead(filename):
 
     # ---- import data
@@ -47,20 +46,29 @@ def windRose():
     # ---- plotting
     # setup subplots
     fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw=dict(projection='windrose'))                            #
-    fig.suptitle('NMHC Conc. Residuals at Summit by Wind Direction', fontsize=16)
-    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.2, hspace=-0.2)
+    fig.suptitle('NMHC Conc. Residuals at Summit by Wind Direction', fontsize=23)
+    plt.subplots_adjust(left=.05, bottom=None, right=.95, top=0.98, wspace=0.2, hspace=-0.2)
+
 
     # setup ethane windrose
     ax1.bar(ethane['dir'].values, ethane['val'].values, normed=False, opening=0.9, edgecolor='black',
-            nsector=24, bins=14, cmap=cm.viridis_r, blowto=False)
-    ax1.set_title('Summit Ethane Conc. Residual [ppb]\n')
-    ax1.set_legend(loc=8, fancybox=True, shadow=True, bbox_to_anchor=(0.70, -.45))
+            nsector=24, bins=12, cmap=cm.viridis_r, blowto=False)
+    ax1.set_title('Summit Ethane Conc. Residual [ppb]\n', fontsize=20)
+    ax1.set_legend(loc=8, fancybox=True, shadow=True, bbox_to_anchor=(0.70, -.45), prop=dict(size=16),
+                   fontsize='x-large')
+    ax1.tick_params(axis='both', labelsize=16)
+    plt.legend()
+    plt.setp(plt.gca().get_legend().get_texts(), fontsize='18')
 
     # setup acetylene windrose
     ax2.bar(ace['dir'].values, ace['val'].values, normed=False, opening=0.9, edgecolor='black',
             nsector=24, bins=6, cmap=cm.viridis_r, blowto=False)
-    ax2.set_title('Summit Ace Conc. Residual [ppb]\n')
-    ax2.set_legend(loc=8, fancybox=True, shadow=True, bbox_to_anchor=(0.5, -.35))
+    ax2.set_title('Summit Ace Conc. Residual [ppb]\n', fontsize=20)
+    ax2.set_legend(loc=8, fancybox=True, shadow=True, bbox_to_anchor=(0.5, -.35), prop=dict(size=16),
+                   fontsize='x-large')
+    ax2.tick_params(axis='both', labelsize=16)
+
+    plt.setp(plt.gca().get_legend().get_texts(), fontsize='18')
 
     plt.show()
 

@@ -9,7 +9,7 @@ that overwrites previous nmhc data.
 from fileLoading import loadExcel
 import pandas as pd
 import datetime as dt
-from dateConv import noaaDateConv, decToDatetime
+from dateConv import noaaDateConv, decToDatetime, updateDatetime
 import time
 
 
@@ -17,7 +17,7 @@ def nmhc():
 
     start = time.time()
     # import original data set and new datasets
-    nmhcPrev = loadExcel(r"C:\Users\ARL\Desktop\Python Code\Data\NMHC.xlsx")
+    nmhcPrev = loadExcel(r"C:\Users\ARL\Desktop\Jashan\Summit\analyses\Data\NMHC.xlsx")
     nmhc2018 = loadExcel(r'C:\Users\ARL\Desktop\Ambient_2018_V2.xlsx')
     nmhc2019 = loadExcel(r'C:\Users\ARL\Desktop\Summit_GC_2019\NMHC_results\Ambient_2019.xlsx')
 
@@ -51,17 +51,14 @@ def nmhc():
         sampledate = yr['Unnamed: 0'][1]
         yearstr = str(sampledate)[:4]
         yearint = int(yearstr)                                                                      # gets the year
-
+        yr.dropna(axis=0, how='any', inplace=True)
         for x in yr[f'Decimal Day of Year {str(yearstr)[:4]}']:
-            datetime.append(decToDatetime(x))                                             # call decyear conv
+            datetime.append(updateDatetime(yearint, x))                                             # call decyear conv
 
         yr['datetime'] = datetime
 
     # create datetime column for past data
-    datetime = []
-    for x in nmhcPrev['DecYear']:
-        datetime.append(decToDatetime(x))
-    nmhcPrev['datetime'] = datetime
+    nmhcPrev['datetime'] = decToDatetime(nmhcPrev['DecYear'].values)
 
     # remove old unneeded date columns
     for yr in [nmhc2018, nmhc2019]:
