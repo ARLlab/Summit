@@ -458,8 +458,8 @@ async def plot_new_data(logger):
             name = summit_picarro_plot(None, ({'Summit CO2': [dates, co2]}),
                                        limits={'right': date_limits.get('right', None),
                                                'left': date_limits.get('left', None),
-                                               'bottom': 400,
-                                               'top': 440},
+                                               'bottom': 390,
+                                               'top': 420},
                                        major_ticks=major_ticks,
                                        minor_ticks=minor_ticks,
                                        unit_string='ppmv')
