@@ -22,7 +22,7 @@ conn = create_connection(dbdir)
 
 # identify date range
 start = '2019-06-00 00:00:00'
-end = '2019-07-27 23:59:59'
+end = '2019-07-30 23:59:59'
 
 # get the data
 with conn:
@@ -47,6 +47,7 @@ visits['start'], visits['end'] = visitToDatetime(dates,
 methane.dropna(how='any', inplace=True)
 methane.reset_index(drop=True, inplace=True)
 methane = methane[methane['status'] == 963]
+methane = methane[methane['pos'] == 1.0]
 
 # remove leftover columns
 badcols = ['Arrival time (Z)', 'Departure time (Z)']
@@ -62,17 +63,26 @@ combo = pd.merge_asof(visits.sort_values('datetime'),
                       tolerance=pd.Timedelta('1 minute'))
 combo.dropna(axis=0, how='any', inplace=True)
 methane = methane[methane['datetime'] > dt.datetime(2019, 1, 1, 1)]
+combo.drop([21, 22, 31], axis=0, inplace=True)
+combo.reset_index(drop=True, inplace=True)
+
+max = 1950
+min = 1890
+rangey = max-min
 
 sns.set(style="whitegrid")
 f, ax = plt.subplots(figsize=(9, 9))
 sns.despine(f, left=True, bottom=True)
-sns.scatterplot(x='datetime', y='ch4', data=combo, hue='# persons', ax=ax, s=70, zorder=5,
-                palette='seismic',
-                hue_norm=(0, 6))
-sns.scatterplot(x='datetime', y='ch4', data=methane, ax=ax, s=25, alpha=0.5, color='red', label='Background Values')
+for i in range(len(combo)):
+    ax.axvspan(xmin=combo['start'].iloc[i],
+               xmax=combo['end'].iloc[i],
+               ymin=((combo['ch4'].iloc[i] - min) / rangey) - 0.1,
+               ymax=((combo['ch4'].iloc[i] - min) / rangey) + 0.1,
+               alpha=0.3, color='red')
+sns.scatterplot(x='datetime', y='ch4', data=methane, ax=ax, s=25, alpha=0.99, color='blue', label='Background Values')
 plt.title('TAWO Vistor Log Correlation')
 plt.xlabel('')
-plt.ylabel('Methane Mixing Ratio (ppm) [Picarro Data]')
+plt.ylabel('Methane Mixing Ratio (ppb) [Picarro Data]')
 
 # New xticks plot
 months = mdates.MonthLocator()              # Add tick every month
@@ -82,8 +92,8 @@ monthFmt = mdates.DateFormatter('%b')       # Use abbreviated month name
 ax.xaxis.set_major_locator(months)
 ax.xaxis.set_major_formatter(monthFmt)
 
-plt.xlim(dt.datetime(2019, 6, 1), dt.datetime(2019, 7, 28))
-plt.ylim()
+plt.xlim(dt.datetime(2019, 6, 1), dt.datetime(2019, 7, 31))
+plt.ylim(min, max)
 plt.legend()
 
 plt.show()

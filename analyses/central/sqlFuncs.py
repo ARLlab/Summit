@@ -52,9 +52,9 @@ def get_data(conn, startdate, enddate, cpd):
             del frame
             print(f'Data Chunk {i} Appended')
 
-    data.columns = ['id', 'date', '1', 'status', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
-                    'ch4', '14', '15']
-    badcols = list(pd.Series(range(1, 16)).astype(str))
+    data.columns = ['id', 'date', '1', 'status', '2', '3', '4', '5', '6', 'pos', '7', '8', '9', '10', '11', 'ch4',
+                    '12', '13', '14']
+    badcols = list(pd.Series(range(1, 15)).astype(str))
     data.drop(badcols, axis=1, inplace=True)
 
     # create proper datetimes
