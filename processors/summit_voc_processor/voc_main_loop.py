@@ -876,8 +876,8 @@ async def plot_logdata(logger):
 
             name = 'sample_flow_and_pressure.png'
             summit_log_plot(name, dates,
-                            ({'Sample Pressure (PSI)': [None, logdict.get('sampleflow2')],
-                              'Sample Flow (V)': [None, logdict.get('samplepressure2')]}),
+                            ({'Sample Flow (V)': [None, logdict.get('samplepressure2')],
+                              'Sample Pressure (PSI)': [None, logdict.get('sampleflow2')]}),
                             limits={'right': date_limits.get('right', None),
                                     'left': date_limits.get('left', None),
                                     'bottom': 0,
@@ -913,7 +913,6 @@ async def plot_logdata(logger):
                                     'left': date_limits.get('left', None),
                                     'bottom': -50,
                                     'top': 350},
-                            y_label_str='Pressure (PSI)',
                             major_ticks=major_ticks,
                             minor_ticks=minor_ticks)
 
@@ -922,8 +921,8 @@ async def plot_logdata(logger):
 
             name = 'gc_oven_start_end.png'
             summit_log_plot(name, dates,
-                            ({'GC Start Temp': [None, logdict.get('GCstarttemp')],
-                              'GC Oven Temp': [None, logdict.get('GCoventemp')]}),
+                            ({'GC Oven Temp': [None, logdict.get('GCoventemp')],
+                              'GC Start Temp': [None, logdict.get('GCstarttemp')]}),
                             limits={'right': date_limits.get('right', None),
                                     'left': date_limits.get('left', None),
                                     'bottom': 0,
@@ -942,6 +941,7 @@ async def plot_logdata(logger):
                                     'left': date_limits.get('left', None),
                                     'bottom': 0,
                                     'top': 25},
+                            y_label_str='Pressure (PSI)',
                             major_ticks=major_ticks,
                             minor_ticks=minor_ticks)
 

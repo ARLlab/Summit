@@ -450,12 +450,7 @@ async def plot_dailies(logger):
             inlet_plot = Plot(plotdir / name, remotedir, True)
             add_or_ignore_plot(inlet_plot, core_session)
 
-            name = summit_daily_plot(dailydict.get('date'), ({'Battery V': [None, dailydict.get('battv')],
-                                                              '12Va': [None, dailydict.get('v12a')],
-                                                              '15Va': [None, dailydict.get('v15a')],
-                                                              '15Vb': [None, dailydict.get('v15b')],
-                                                              '24V': [None, dailydict.get('v24')],
-                                                              '5Va': [None, dailydict.get('v5a')]}),
+            name = summit_daily_plot(dailydict.get('date'), ({'5Va': [None, dailydict.get('v5a')]}),
                                      limits={'right': date_limits.get('right', None),
                                              'left': date_limits.get('left', None),
                                              'bottom': 0,
@@ -477,7 +472,7 @@ async def plot_dailies(logger):
                                              'left': date_limits.get('left', None),
                                              'bottom': -1,
                                              'top': 3.5},
-                                     y_label_str='Flow (Ml/min)',
+                                     y_label_str='Flow (MFC V)',
                                      major_ticks=major_ticks,
                                      minor_ticks=minor_ticks)
 
