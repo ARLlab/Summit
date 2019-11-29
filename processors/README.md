@@ -1,5 +1,14 @@
 ## Per-Instrument Data Processors
 
+## /errors
+
+##### Project-wide error-management and emailing
+Error states like no incoming data or errors in processor logs are tracked by individiual processors as well as the core processor.
+##### summit_errors.py
+Classes and functions for error handling and email templates for alerts. Particular subclasses may only be used by one processor, but are kept here.
+##### error_main_loop.py
+Async runtimes for system-level error tracking. No incoming data is tracked, and existing errors in the system are checked for resolution and resolved if they're no longer an issue. Other error tracking is done at the level of individual processors.
+
 ## /methane
 
 ##### Processing for methane data from the GC-FID
