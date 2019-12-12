@@ -159,6 +159,8 @@ def plot_blanks_mr(compounds, start_date, end_date):
         fig1.savefig(fr'C:\Users\ARL\Desktop\Summit\analyses\Connor\plots\blanks_vs_day\{name}_blanks', dpi=600)
         fig2.savefig(fr'C:\Users\ARL\Desktop\Summit\analyses\Connor\plots\blanks_vs_day\{name}_blanks_separate',
                    dpi=600)
+        fig1.clf()
+        fig2.clf()
 
 def plot_rf(compounds, start_date, end_date):
     for name in compounds:
@@ -199,8 +201,13 @@ def plot_rf(compounds, start_date, end_date):
         ax3.title.set_text(f'{name} brad hall responce factors')
         ax3.set_ylabel('Mixing Ratio')
         ax3.set_xlabel('Decimal Year')
+        fig2.tight_layout()
 
-        plt.savefig(fr'C:\Users\ARL\Desktop\Summit\analyses\Connor\plots\mr_vs_day\{name}_mr', dpi=600)
+        fig1.savefig(fr'C:\Users\ARL\Desktop\Summit\analyses\Connor\plots\rf_vs_day\{name}_rf', dpi=600)
+        fig2.savefig(fr'C:\Users\ARL\Desktop\Summit\analyses\Connor\plots\rf_vs_day\{name}_rf_separate',
+                     dpi=600)
+        fig1.clf()
+        fig2.clf()
 
 def create_csv(name):
     dframe = indv_compound(name)
@@ -219,7 +226,7 @@ if __name__ == '__main__':
     compounds = ['ethane', 'ethene', 'propane', 'propene', 'i-butane', 'n-butane', 'i-pentane', 'n-pentane',
                  'hexane', 'Benzene', 'Toluene']
 
-    plot_blanks_mr(['ethane'], '2019-1-1 0:0:0', '2019-12-30 0:0:0')
+    plot_rf(compounds, '2019-1-1 0:0:0', '2019-12-30 0:0:0')
 
 
     '''post_feb = indv_compound('hexane').set_index('date')
