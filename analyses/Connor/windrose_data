@@ -1,14 +1,16 @@
 import plotly.graph_objects as go
-
+import pandas as pd
+from windrose import WindroseAxes
+from matplotlib import pyplot as plt
 
 with open(r'met_sum_insitu_1_obop_hour_2019.txt', 'r') as data:
     li = data.readlines()
-    '''for i in range(len(li)):
-        li[i] = li[i].split(' ')
-    '''
+
     new_list = []
+    date_list = []
     for i in range(len(li)):
         temp_list = []
+        temp_date_list = []
         if int(li[i][19:22]) != 999:
             dir = li[i][19:22]
             temp_list.append(dir.replace(' ', '0'))
@@ -17,11 +19,10 @@ with open(r'met_sum_insitu_1_obop_hour_2019.txt', 'r') as data:
             temp_list[0] = float(temp_list[0])
             temp_list[1] = float(temp_list[1])
             new_list.append(temp_list)
-    print(len(new_list))
-'''
-for i in range(len(new_list)):
-    print(new_list[i])
-    '''
+
+            date = li[i][4:17]
+            date_list.append(date.replace(' ', '-'))
+
 zerothree = []
 threesix = []
 sixnine = []
@@ -57,7 +58,7 @@ def wind_direction(data):
     return totals_list
 
 
-fig = go.Figure()
+'''fig = go.Figure()
 
 fig.add_trace(go.Barpolar(
     r=wind_direction(twelvemore),
@@ -95,4 +96,26 @@ fig.update_layout(
 
 )
 fig.show()
+'''
+
+data = pd.DataFrame(new_list, index=date_list, columns=['wind_dir', 'wind_sp'])
+
+ws = data['wind_sp'].tolist()
+wd = data['wind_dir'].tolist()
+wd_adj=[]
+'''for i in range(len(wd)):
+    if wd[i] >=0 and wd[i] < 270:
+        c = wd[i] + 90
+        wd_adj.append(c)
+    elif wd[i] >= 270:
+        k = wd[i] - 270
+        wd_adj.append(k)
+'''
+ax = WindroseAxes.from_ax()
+ax.bar(wd, ws, opening=1, edgecolor='white', bins=8, nsector=32)
+ax.set_legend()
+print(wd)
+print(wd_adj)
+plt.show()
+
 
