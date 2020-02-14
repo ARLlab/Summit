@@ -447,8 +447,8 @@ async def plot_new_data(logger):
             name = summit_picarro_plot(None, ({'Summit CO': [dates_co, co]}),
                                        limits={'right': date_limits.get('right', None),
                                                'left': date_limits.get('left', None),
-                                               'bottom': 80,
-                                               'top': 230},
+                                               'bottom': 60,
+                                               'top': 180},
                                        major_ticks=major_ticks,
                                        minor_ticks=minor_ticks)
 
@@ -458,7 +458,7 @@ async def plot_new_data(logger):
             name = summit_picarro_plot(None, ({'Summit CO2': [dates, co2]}),
                                        limits={'right': date_limits.get('right', None),
                                                'left': date_limits.get('left', None),
-                                               'bottom': 390,
+                                               'bottom': 400,
                                                'top': 420},
                                        major_ticks=major_ticks,
                                        minor_ticks=minor_ticks,

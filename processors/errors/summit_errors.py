@@ -41,11 +41,11 @@ logger = configure_logger(rundir, __name__)
 
 Base = declarative_base()  # needed to subclass for sqlalchemy objects
 
-global_list = ['jach4134@colorado.edu', 'jhueber@colorado.edu', 'hean8281@colorado.edu']
+global_list = ['jach4134@colorado.edu', 'jhueber@colorado.edu', 'hean8281@colorado.edu', 'Connor.Davel@colorado.edu']
 
-processor_email_list = ['jach4134@colorado.edu', 'jhueber@colorado.edu', 'hean8281@colorado.edu']
+processor_email_list = ['jach4134@colorado.edu', 'jhueber@colorado.edu', 'hean8281@colorado.edu', 'Connor.Davel@colorado.edu']
 
-instrument_email_list = ['jach4134@colorado.edu', 'jhueber@colorado.edu', 'hean8281@colorado.edu']
+instrument_email_list = ['jach4134@colorado.edu', 'jhueber@colorado.edu', 'hean8281@colorado.edu', 'Connor.Davel@colorado.edu']
 
 
 class Error():

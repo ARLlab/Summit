@@ -363,7 +363,7 @@ async def add_one_standard(logger):
 
         current_standard_dates = [S.date_st for S in session.query(Standard).all()]
 
-        my_only_standard = Standard('ws_2019', 2067.16, datetime(2019, 1, 1), datetime(2019, 12, 31))
+        my_only_standard = Standard('ws_2019', 2067.16, datetime(2019, 1, 1), datetime(2021, 12, 31))
 
         if my_only_standard.date_st not in current_standard_dates:
             session.merge(my_only_standard)
