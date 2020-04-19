@@ -89,47 +89,55 @@ def convert_asc_to_txt(loaddir, outputdir):
                 if f.suffix in '.ASC':      # verify the ending is .asc
                     files.append(f)         # append to files
 
+        # loop to select only new ASC files for converting
+        existing_files = []
+        for f in outputdir.iterdir():
+            if f.is_file():
+                if f.suffix in '.ASC':
+                    existing_files.append(f)
+
     except Exception as e:
         print(f'Error {e.args} prevented loading of datafiles in convert_asc_to_txt')
 
     # try to convert files, otherwise fail
     for f in files:
-        try:
-            dframe = pd.read_csv(f, names=['mq', 'na'])                         # load dataset
-            dframe = dframe[~dframe['mq'].isin(['IPOINT=1', 'IPOINT=2'])]       # remove IPOINT rows
+        if f not in existing_files:   # select only new files
+            try:
+                dframe = pd.read_csv(f, names=['mq', 'na'])                         # load dataset
+                dframe = dframe[~dframe['mq'].isin(['IPOINT=1', 'IPOINT=2'])]       # remove IPOINT rows
 
-            # create the date
-            filename = f.name
-            year = int(filename[0:4])
-            doy = int(filename[4:7])
-            hour = int(filename[7:9])
-            minute = int(filename[9:11])
-            second = int(filename[11:13])
-            base_date = datetime(year=year, month=1, day=1)
-            date_time = base_date + timedelta(days=(doy - 1), hours=hour, minutes=minute,
-                                              seconds=second)
-            date_time = datetime.strftime(date_time, '%m/%d/%Y %H:%M:%S')
+                # create the date
+                filename = f.name
+                year = int(filename[0:4])
+                doy = int(filename[4:7])
+                hour = int(filename[7:9])
+                minute = int(filename[9:11])
+                second = int(filename[11:13])
+                base_date = datetime(year=year, month=1, day=1)
+                date_time = base_date + timedelta(days=(doy - 1), hours=hour, minutes=minute,
+                                                  seconds=second)
+                date_time = datetime.strftime(date_time, '%m/%d/%Y %H:%M:%S')
 
-            # a few clean up items
-            dframe.dropna(axis=0, how='any', inplace=True)
-            dframe = dframe.astype('int64')
-            dframe.reset_index(drop=True, inplace=True)
+                # a few clean up items
+                dframe.dropna(axis=0, how='any', inplace=True)
+                dframe = dframe.astype('int64')
+                dframe.reset_index(drop=True, inplace=True)
 
-            # format into TERN specified column structure
-            tern_df = pd.DataFrame(columns=['retention', 'm/Q = 1'])
-            tern_df['m/Q = 1'] = dframe['mq'] / 1000
-            tern_df['retention'] = tern_df.index / 10
-            tern_df.insert(0, 'date', date_time, allow_duplicates=True)
+                # format into TERN specified column structure
+                tern_df = pd.DataFrame(columns=['retention', 'm/Q = 1'])
+                tern_df['m/Q = 1'] = dframe['mq'] / 1000
+                tern_df['retention'] = tern_df.index / 10
+                tern_df.insert(0, 'date', date_time, allow_duplicates=True)
 
 
-            # output to .csv
-            tern_df.to_csv(rf'{outputdir}\{f.name.split(".")[0]}.txt', index=False)
+                # output to .csv
+                tern_df.to_csv(rf'{outputdir}\{f.name.split(".")[0]}.txt', index=False)
 
-        except Exception as e:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(f'Error {e.args} prevented file {f.name} from being converted')
-            print(exc_type, fname, exc_tb.tb_lineno)
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(f'Error {e.args} prevented file {f.name} from being converted')
+                print(exc_type, fname, exc_tb.tb_lineno)
 
     # for the purposes of SUMMIT (experiments that will continually grow as the year progresses), we only want to
     # check if the number of ASC files is the same as the number of txt file. DO NOT DELETE OLD ASC FILES.
