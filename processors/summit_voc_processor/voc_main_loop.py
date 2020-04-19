@@ -398,9 +398,9 @@ async def add_compound_windows(logger):
         windows_in_db = session.query(CompoundWindow).all()
         dates_in_db = [w.date_start for w in windows_in_db]
 
-        window1 = CompoundWindow(datetime(2018, 11, 1), datetime(2019, 4, 9),
+        window1 = CompoundWindow(datetime(2019, 12, 16), datetime(2020, 4, 9),
                                  compound_windows_1)  # TODO: This is a guess
-        window2 = CompoundWindow(datetime(2019, 4, 9), datetime(2019, 12, 31), compound_windows_2)  # TODO: Also a guess
+        window2 = CompoundWindow(datetime(2019, 4, 9), datetime(2019, 12, 16), compound_windows_2)  # TODO: Also a guess
 
         if window1.date_start not in dates_in_db:
             session.add(window1)

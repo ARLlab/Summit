@@ -71,22 +71,22 @@ sheet_slices = {
 
 compound_windows_1 = (
     {'ethane': (1.65, 1.85),  # compound retention windows for every named compound at Summit 'name':(low, high)
-     'ethene': (2.04, 2.152),
-     'propane': (2.85, 3.1),
-     'propene': (5.75, 5.95),
-     'i-butane': (7.3, 7.68),
-     '4b': (.3, .5),  # 4b, acet and n-butane are not addressed by RT, but rather RT difference from i-but
-     'acetylene': (.6, .725),
-     'n-butane': (.56, .6),
-     '5a': (9.5, 10.3),
-     '5b': (11.25, 11.65),
-     '5c': (12.48, 12.55),
-     'i-pentane': (12.60, 12.78),
-     'cfc': (12.80, 13),
-     'n-pentane': (13, 13.4),
-     'hexane': (16.9, 17.05),
-     'benzene': (19.95, 20.25),
-     'toluene': (23.3, 23.75)})
+     'ethene': (1.95, 2.152),
+     'propane': (2.6, 3.1),
+     'propene': (5.1, 5.4),
+     'i-butane': (6.5, 7.1),
+     '4b': (.2, .37),  # 4b, acet and n-butane are not addressed by RT, but rather RT difference from i-but
+     'acetylene': (.39, .5),
+     'n-butane': (.51, .6),
+     '5a': (9, 9.5),
+     '5b': (10, 11.1),
+     '5c': (11.43, 11.56),
+     'i-pentane': (11.65, 11.70),
+     'cfc': (11.73, 11.85),
+     'n-pentane': (12.1, 12.7),
+     'hexane': (15.94, 15.98),
+     'benzene': (18.9, 20.25),
+     'toluene': (22.1, 22.95)})
 
 compound_windows_2 = (
     {'ethane': (1.6, 1.8),  # compound retention windows for every named compound at Summit 'name':(low, high)
@@ -106,7 +106,6 @@ compound_windows_2 = (
      'hexane': (16.2, 16.45),
      'benzene': (19.3, 19.7),
      'toluene': (22.55, 22.95)})
-
 
 class CompoundWindow(Base):
     """

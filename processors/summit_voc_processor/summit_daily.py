@@ -328,7 +328,7 @@ def summit_daily_plot(dates, compound_dict, limits=None, minor_ticks=None, major
 
 async def plot_dailies(logger):
     """
-    Loads dailies for the last 3 weeks and plots with ticks for every three days and minor ticks for every day.
+    Loads dailies for the last 3 days and plots with ticks for every three days and minor ticks for every day.
     Plots are registered with the core database so they're uploaded to the Taylor drive.
 
     :param logger: logger, to log events to

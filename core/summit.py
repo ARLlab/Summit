@@ -50,7 +50,8 @@ async def main(logger):
             daily_plots = await asyncio.create_task(plot_dailies(logger))
 
         vocs = await asyncio.create_task(voc_processor())
-        methane = await asyncio.create_task(methane_processor())
+        # 3/14/2020 - Commented out GC Methane Processor because of requested change - Jashan
+        # methane = await asyncio.create_task(methane_processor())
         picarro = await asyncio.create_task(picarro_processor())
 
         if methane or picarro:

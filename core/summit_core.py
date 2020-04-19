@@ -228,6 +228,18 @@ def connect_to_db(engine_str, directory):
     return engine, sess
 
 
+def check_path_date(filepath):
+    """
+    Returns the file's 'Date Modified' from window
+    :param filepath: file-like object
+    :return: datetime object of date modified
+    """
+
+    if Path.is_file(filepath):
+        epochseconds = Path.stat(filepath).st_mtime
+        return dt.datetime.fromtimestamp(epochseconds)
+
+
 def check_filesize(filepath):
     """
     Returns the filesize in bytes.
@@ -612,6 +624,8 @@ async def move_log_files(logger):
         try:
             from summit_errors import send_processor_email, EmailTemplate, sender, processor_email_list
             from shutil import copy
+            import datetime as dt
+            import os
         except ImportError:
             logger.error('ImportError occurred in move_log_files()')
             return False
@@ -633,8 +647,16 @@ async def move_log_files(logger):
             file_types = ['.txt', '.txt', '.txt', '.dat']
 
             for sync_path, type_, data_path, file_type in zip(sync_paths, data_types, data_paths, file_types):
+
+                # change the name of the daily files before reading them in (implemented: 2/14/2020)
+                for d in get_all_data_files(daily_logs_sync, '.txt'):
+                    if check_path_date(d).year == dt.datetime.now().year and "2020" not in str(d):
+                        name, extension = os.path.splitext(d)
+                        d.rename(name + '_' + str(dt.datetime.now().year) + extension)
+
                 sync_files = [MovedFile(path, type_, 'sync', check_filesize(path))
                               for path in get_all_data_files(sync_path, file_type)]
+
                 data_files = (session.query(MovedFile)
                               .filter(MovedFile.location == 'data')
                               .filter(MovedFile.type == type_)
