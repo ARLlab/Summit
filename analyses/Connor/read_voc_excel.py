@@ -737,7 +737,7 @@ def excel_rf_BH(compound, start, end):
             dframe_2017 = dframe_2017[dframe_2017['date'] < end_date]
             dframe_2017 = dframe_2017[dframe_2017['date'] > start_date]
             dframe_2017.set_index('date', inplace=True)
-            dframe_2017.rename(columns={compound: f'{compound}_mr'}, inplace=True)
+            dframe_2017.rename(columns={compound: f'{compound}_rf'}, inplace=True)
             if end_year >= 2018:
                 dframe_2018 = pd.read_excel(r'Z:\Data\Summit_GC\Summit_GC_2018\NMHC_results\BH_STD_2018.xlsx',
                                             header=None)
@@ -772,7 +772,7 @@ def excel_rf_BH(compound, start, end):
                 dframe_2018 = dframe_2018[dframe_2018['date'] < end_date]
                 dframe_2018 = dframe_2018[dframe_2018['date'] > start_date]
                 dframe_2018.set_index('date', inplace=True)
-                dframe_2018.rename(columns={compound: f'{compound}_mr'}, inplace=True)
+                dframe_2018.rename(columns={compound: f'{compound}_rf'}, inplace=True)
                 if end_year >= 2019:
                     dframe_2019 = pd.read_excel(
                         r'C:\Users\ARL\Desktop\Summit_GC_2019\NMHC_results\BH_STD_2019.xlsx',
@@ -809,7 +809,7 @@ def excel_rf_BH(compound, start, end):
                     dframe_2019 = dframe_2019[dframe_2019['date'] < end_date]
                     dframe_2019 = dframe_2019[dframe_2019['date'] > start_date]
                     dframe_2019.set_index('date', inplace=True)
-                    dframe_2019.rename(columns={compound: f'{compound}_mr'}, inplace=True)
+                    dframe_2019.rename(columns={compound: f'{compound}_rf'}, inplace=True)
     elif start_year == 2018:
         if end_year >= 2018:
             dframe_2018 = pd.read_excel(r'Z:\Data\Summit_GC\Summit_GC_2018\NMHC_results\BH_STD_2018.xlsx',
@@ -844,7 +844,7 @@ def excel_rf_BH(compound, start, end):
             dframe_2018 = dframe_2018[dframe_2018['date'] < end_date]
             dframe_2018 = dframe_2018[dframe_2018['date'] > start_date]
             dframe_2018.set_index('date', inplace=True)
-            dframe_2018.rename(columns={compound: f'{compound}_mr'}, inplace=True)
+            dframe_2018.rename(columns={compound: f'{compound}_rf'}, inplace=True)
             if end_year >= 2019:
                 dframe_2019 = pd.read_excel(r'C:\Users\ARL\Desktop\Summit_GC_2019\NMHC_results\BH_STD_2019.xlsx',
                                             header=None)
@@ -879,7 +879,7 @@ def excel_rf_BH(compound, start, end):
                 dframe_2019 = dframe_2019[dframe_2019['date'] < end_date]
                 dframe_2019 = dframe_2019[dframe_2019['date'] > start_date]
                 dframe_2019.set_index('date', inplace=True)
-                dframe_2019.rename(columns={compound: f'{compound}_mr'}, inplace=True)
+                dframe_2019.rename(columns={compound: f'{compound}_rf'}, inplace=True)
     elif start_year == 2019:
         dframe_2019 = pd.read_excel(r'C:\Users\ARL\Desktop\Summit_GC_2019\NMHC_results\BH_STD_2019.xlsx',
                                     header=None)
@@ -913,7 +913,7 @@ def excel_rf_BH(compound, start, end):
         dframe_2019 = dframe_2019[dframe_2019['date'] < end_date]
         dframe_2019 = dframe_2019[dframe_2019['date'] > start_date]
         dframe_2019.set_index('date', inplace=True)
-        dframe_2019.rename(columns={compound: f'{compound}_mr'}, inplace=True)
+        dframe_2019.rename(columns={compound: f'{compound}_rf'}, inplace=True)
 
     dframe = pd.concat([dframe_2017, dframe_2018, dframe_2019])
     dframe = dframe.loc[dframe.index < end_date]
@@ -938,6 +938,8 @@ def excel_rf_Brad6(compound, start, end):
 
     dframe['file'] = dframe_transposed.iloc[:, 0]
     dframe['decimal_date'] = dframe_transposed.iloc[:, 39]
+    dframe['decmial_date_year'] = [(2019 + (float(row[0]) - 1) / 365) for row in
+                                        dframe[['decimal_date']].values]
     dframe.dropna(inplace=True, subset=['file'])
 
     dframe['Year'] = dframe['file'].apply(lambda x: int(str(x)[0:4]))
@@ -1010,7 +1012,7 @@ def excel_rf_BA(compound, start, end):
             dframe_2017 = dframe_2017[dframe_2017['date'] < end_date]
             dframe_2017 = dframe_2017[dframe_2017['date'] > start_date]
             dframe_2017.set_index('date', inplace=True)
-            dframe_2017.rename(columns={compound: f'{compound}_mr'}, inplace=True)
+            dframe_2017.rename(columns={compound: f'{compound}_rf'}, inplace=True)
             if end_year >= 2018:
                 dframe_2018 = pd.read_excel(r'Z:\Data\Summit_GC\Summit_GC_2018\NMHC_results\BA_STD_2018.xlsx',
                                             header=None, sheet_name='BA 2018 data')
@@ -1045,7 +1047,7 @@ def excel_rf_BA(compound, start, end):
                 dframe_2018 = dframe_2018[dframe_2018['date'] < end_date]
                 dframe_2018 = dframe_2018[dframe_2018['date'] > start_date]
                 dframe_2018.set_index('date', inplace=True)
-                dframe_2018.rename(columns={compound: f'{compound}_mr'}, inplace=True)
+                dframe_2018.rename(columns={compound: f'{compound}_rf'}, inplace=True)
                 if end_year >= 2019:
                     dframe_2019 = pd.read_excel(r'Z:\Data\Summit_GC\Summit_GC_2019\NMHC_results\BA_STD_2019.xlsx',
                                             header=None, sheet_name='BA 2019 data')
@@ -1081,7 +1083,7 @@ def excel_rf_BA(compound, start, end):
                     dframe_2019 = dframe_2019[dframe_2019['date'] < end_date]
                     dframe_2019 = dframe_2019[dframe_2019['date'] > start_date]
                     dframe_2019.set_index('date', inplace=True)
-                    dframe_2019.rename(columns={compound: f'{compound}_mr'}, inplace=True)
+                    dframe_2019.rename(columns={compound: f'{compound}_rf'}, inplace=True)
     elif start_year == 2018:
         if end_year >= 2018:
             dframe_2018 = pd.read_excel(r'Z:\Data\Summit_GC\Summit_GC_2018\NMHC_results\BA_STD_2018.xlsx',
@@ -1116,7 +1118,7 @@ def excel_rf_BA(compound, start, end):
             dframe_2018 = dframe_2018[dframe_2018['date'] < end_date]
             dframe_2018 = dframe_2018[dframe_2018['date'] > start_date]
             dframe_2018.set_index('date', inplace=True)
-            dframe_2018.rename(columns={compound: f'{compound}_mr'}, inplace=True)
+            dframe_2018.rename(columns={compound: f'{compound}_rf'}, inplace=True)
             if end_year >= 2019:
                 dframe_2019 = pd.read_excel(r'Z:\Data\Summit_GC\Summit_GC_2019\NMHC_results\BA_STD_2019.xlsx',
                                             header=None, sheet_name='BA 2019 data')
@@ -1151,7 +1153,7 @@ def excel_rf_BA(compound, start, end):
                 dframe_2019 = dframe_2019[dframe_2019['date'] < end_date]
                 dframe_2019 = dframe_2019[dframe_2019['date'] > start_date]
                 dframe_2019.set_index('date', inplace=True)
-                dframe_2019.rename(columns={compound: f'{compound}_mr'}, inplace=True)
+                dframe_2019.rename(columns={compound: f'{compound}_rf'}, inplace=True)
     elif start_year == 2019:
         dframe_2019 = pd.read_excel(r'Z:\Data\Summit_GC\Summit_GC_2019\NMHC_results\BA_STD_2019.xlsx',
                                             header=None, sheet_name='BA 2019 data')
@@ -1185,7 +1187,7 @@ def excel_rf_BA(compound, start, end):
         dframe_2019 = dframe_2019[dframe_2019['date'] < end_date]
         dframe_2019 = dframe_2019[dframe_2019['date'] > start_date]
         dframe_2019.set_index('date', inplace=True)
-        dframe_2019.rename(columns={compound: f'{compound}_mr'}, inplace=True)
+        dframe_2019.rename(columns={compound: f'{compound}_rf'}, inplace=True)
 
     dframe = pd.concat([dframe_2017, dframe_2018, dframe_2019])
     dframe = dframe.loc[dframe.index < end_date]
